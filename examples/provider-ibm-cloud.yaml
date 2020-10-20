@@ -1,0 +1,7 @@
+---
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-ibm-cloud
+spec:
+  package: "crossplane/provider-ibm-cloud:master"
