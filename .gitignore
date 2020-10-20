@@ -1,0 +1,9 @@
+/.cache
+/.work
+/_output
+cover.out
+/vendor
+/.vendor-new
+
+# ignore IDE folders
+.vscode/
