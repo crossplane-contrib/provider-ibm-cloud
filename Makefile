@@ -105,11 +105,8 @@ submodules:
 run: go.build
 	@$(INFO) Running Crossplane locally out-of-cluster . . .
 	@# To see other arguments that can be provided, run the command with --help instead
-	$(GO_OUT_DIR)/provider --debug
+	$(GO_OUT_DIR)/$(PROJECT_NAME) --debug
 
-dev: generate
-	kubectl apply -f package/crds/ -R
-	go run cmd/provider/main.go -d
 
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
