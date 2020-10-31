@@ -58,9 +58,6 @@ spec:
                 entityLock:
                   description: Indicates if the resource instance is locked for further update or delete operations. It does not affect actions performed on child resources like aliases, bindings or keys. False by default.
                   type: string
-                name:
-                  description: The name of the instance. Must be 180 characters or less and cannot include any special characters other than `(space) - . _ :`.
-                  type: string
                 parameters:
                   description: Configuration options represented as key-value pairs that are passed through to the target resource brokers.
                   type: object
@@ -82,7 +79,6 @@ spec:
                   description: The deployment location where the instance should be hosted.
                   type: string
               required:
-              - name
               - resourcePlanName
               - serviceName
               - target
@@ -162,6 +158,9 @@ spec:
                 name:
                   description: An human-readable name of the instance.
                   type: string
+                parameters:
+                  description: Configuration options represented as key-value pairs that are passed through to the target resource brokers.
+                  type: object
                 planHistory:
                   description: The plan history of the instance.
                   items:
@@ -206,6 +205,14 @@ spec:
                 subType:
                   description: The sub-type of instance, e.g. `cfaas`.
                   type: string
+                tags:
+                  description: tags set for the instance
+                  items:
+                    type: string
+                  type: array
+                target:
+                  description: The deployment location where the instance is hosted.
+                  type: string
                 targetCrn:
                   description: The full deployment CRN as defined in the global catalog. The Cloud Resource Name (CRN) of the deployment location where the instance is provisioned.
                   type: string
@@ -219,6 +226,8 @@ spec:
                 url:
                   description: When you provision a new resource, a relative URL path is created identifying the location of the instance.
                   type: string
+              required:
+              - target
               type: object
             conditions:
               description: Conditions of the resource.

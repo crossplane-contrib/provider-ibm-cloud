@@ -1,0 +1,16 @@
+apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+kind: ResourceInstance
+metadata:
+  name: cos
+  annotations:
+    crossplane.io/external-name: cos-wow
+spec:
+  forProvider:
+    target: global
+    resourceGroupName: default
+    serviceName: cloud-object-storage
+    resourcePlanName: standard
+    tags:
+      - dev
+  providerConfigRef:
+    name: ibm-cloud

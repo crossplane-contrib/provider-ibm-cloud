@@ -25,6 +25,8 @@ import (
 // A ProviderConfigSpec defines the desired state of a ProviderConfig.
 type ProviderConfigSpec struct {
 	v1alpha1.ProviderConfigSpec `json:",inline"`
+	// Region for IBM Cloud API
+	Region string `json:"region,omitempty"`
 }
 
 // A ProviderConfigStatus represents the status of a ProviderConfig.

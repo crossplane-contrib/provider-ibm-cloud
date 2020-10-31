@@ -22,13 +22,16 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/resourcecontrollerv2"
 )
 
 // Setup creates all IBM Cloud controllers with the supplied logger and adds
 // them to the supplied manager.
 func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger) error{
-		config.Setup,
+		config.SetupConfig,
+		config.SetupToken,
+		resourcecontrollerv2.Setup,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

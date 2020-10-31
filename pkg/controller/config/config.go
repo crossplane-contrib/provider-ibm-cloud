@@ -28,9 +28,9 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 )
 
-// Setup adds a controller that reconciles ProviderConfigs by accounting for
+// SetupConfig adds a controller that reconciles ProviderConfigs by accounting for
 // their current usage.
-func Setup(mgr ctrl.Manager, l logging.Logger) error {
+func SetupConfig(mgr ctrl.Manager, l logging.Logger) error {
 	name := providerconfig.ControllerName(v1beta1.ProviderConfigGroupKind)
 
 	of := resource.ProviderConfigKinds{

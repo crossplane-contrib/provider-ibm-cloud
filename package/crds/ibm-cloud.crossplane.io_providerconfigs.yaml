@@ -75,6 +75,9 @@ spec:
               required:
               - source
               type: object
+            region:
+              description: Region for IBM Cloud API
+              type: string
           required:
           - credentials
           type: object
