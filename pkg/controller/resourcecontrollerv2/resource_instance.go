@@ -117,16 +117,16 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	}
 
 	// SDK throws a validation error if a nil ID is provided, need to catch this situation before call to SDK
-	if cr.Status.AtProvider.ID == nil {
+	if cr.Status.AtProvider.ID == "" {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
-	instance, _, err := c.client.ResourceControllerV2().GetResourceInstance(&rcv2.GetResourceInstanceOptions{ID: cr.Status.AtProvider.ID})
+	instance, _, err := c.client.ResourceControllerV2().GetResourceInstance(&rcv2.GetResourceInstanceOptions{ID: &cr.Status.AtProvider.ID})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(rcv2c.IsInstanceNotFound, err), errGetInstanceFailed)
 	}
 
-	if ibmc.PtrString(instance.State) == rcv2c.StatePendingReclamation {
+	if ibmc.StringValue(instance.State) == rcv2c.StatePendingReclamation {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
@@ -145,7 +145,7 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
 	}
 
-	switch ibmc.PtrString(cr.Status.AtProvider.State) {
+	switch cr.Status.AtProvider.State {
 	case rcv2c.StateActive:
 		cr.Status.SetConditions(cpv1alpha1.Available())
 	case rcv2c.StateInactive:
@@ -209,8 +209,9 @@ func (c *riExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalUpdate{}, errors.New(errNotResourceInstance)
 	}
 
+	id := cr.Status.AtProvider.ID
 	updInstanceOpts := &rcv2.UpdateResourceInstanceOptions{}
-	if err := rcv2c.GenerateUpdateResourceInstanceOptions(c.client, meta.GetExternalName(cr), cr, updInstanceOpts); err != nil {
+	if err := rcv2c.GenerateUpdateResourceInstanceOptions(c.client, meta.GetExternalName(cr), id, cr.Spec.ForProvider, updInstanceOpts); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdRes)
 	}
 
@@ -238,7 +239,7 @@ func (c *riExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	cr.SetConditions(cpv1alpha1.Deleting())
 
-	_, err := c.client.ResourceControllerV2().DeleteResourceInstance(&rcv2.DeleteResourceInstanceOptions{ID: cr.Status.AtProvider.ID})
+	_, err := c.client.ResourceControllerV2().DeleteResourceInstance(&rcv2.DeleteResourceInstanceOptions{ID: &cr.Status.AtProvider.ID})
 	if err != nil {
 		return errors.Wrap(resource.Ignore(rcv2c.IsInstancePendingReclamation, err), errDeleteRes)
 	}

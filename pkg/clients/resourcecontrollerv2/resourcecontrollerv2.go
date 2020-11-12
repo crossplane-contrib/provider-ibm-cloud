@@ -38,7 +38,7 @@ const (
 // LateInitializeSpec fills unassigned fields with the values in *rcv2.ResourceInstance object.
 func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstanceParameters, in *rcv2.ResourceInstance) error { // nolint:gocyclo
 	if spec.Target == "" {
-		spec.Target = ibmc.StringValue(GenerateTarget(in))
+		spec.Target = GenerateTarget(in)
 	}
 	if spec.AllowCleanup == nil {
 		spec.AllowCleanup = in.AllowCleanup
@@ -56,8 +56,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		}
 		spec.ResourcePlanName = ibmc.StringValue(pName)
 	}
-	if spec.ResourceGroupName == nil {
-		spec.ResourceGroupName = in.ResourceGroupID
+	if spec.ResourceGroupName == "" {
 		rgName, err := ibmc.GetResourceGroupName(client, ibmc.StringValue(in.ResourceGroupID))
 		if err != nil {
 			return err
@@ -68,7 +67,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		spec.ServiceName = ibmc.GetServiceName(in)
 	}
 	if spec.Tags == nil {
-		tags, err := ibmc.GetResourceInstanceTags(client, in.TargetCrn)
+		tags, err := ibmc.GetResourceInstanceTags(client, ibmc.StringValue(in.TargetCrn))
 		if err != nil {
 			return err
 		}
@@ -84,7 +83,7 @@ func GenerateCreateResourceInstanceOptions(client ibmc.ClientSession, name strin
 		return errors.Wrap(err, errGetResPlaID)
 	}
 
-	rgID, err := ibmc.GetResourceGroupID(client, *in.ResourceGroupName)
+	rgID, err := ibmc.GetResourceGroupID(client, in.ResourceGroupName)
 	if err != nil {
 		return errors.Wrap(err, errGetResGroupID)
 	}
@@ -101,18 +100,17 @@ func GenerateCreateResourceInstanceOptions(client ibmc.ClientSession, name strin
 }
 
 // GenerateUpdateResourceInstanceOptions produces UpdateResourceInstanceOptions object from ResourceInstance object.
-func GenerateUpdateResourceInstanceOptions(client ibmc.ClientSession, name string, in *v1alpha1.ResourceInstance, o *rcv2.UpdateResourceInstanceOptions) error {
-	pars := in.Spec.ForProvider
-	rPlanID, err := ibmc.GetResourcePlanID(client, pars.ServiceName, pars.ResourcePlanName)
+func GenerateUpdateResourceInstanceOptions(client ibmc.ClientSession, name, id string, in v1alpha1.ResourceInstanceParameters, o *rcv2.UpdateResourceInstanceOptions) error {
+	rPlanID, err := ibmc.GetResourcePlanID(client, in.ServiceName, in.ResourcePlanName)
 	if err != nil {
 		return errors.Wrap(err, errGetResPlaID)
 	}
 
 	o.Name = ibmc.StringPtr(name)
 	o.ResourcePlanID = rPlanID
-	o.AllowCleanup = pars.AllowCleanup
-	o.ID = in.Status.AtProvider.ID
-	o.Parameters = ibmc.GenerateMapFromRawExtension(pars.Parameters)
+	o.AllowCleanup = in.AllowCleanup
+	o.ID = ibmc.StringPtr(id)
+	o.Parameters = ibmc.GenerateMapFromRawExtension(in.Parameters)
 
 	return nil
 }
@@ -120,36 +118,36 @@ func GenerateUpdateResourceInstanceOptions(client ibmc.ClientSession, name strin
 // GenerateObservation produces ResourceInstanceObservation object from *rcv2.ResourceInstance object.
 func GenerateObservation(client ibmc.ClientSession, in *rcv2.ResourceInstance) (v1alpha1.ResourceInstanceObservation, error) {
 	o := v1alpha1.ResourceInstanceObservation{
-		AccountID:           in.AccountID,
-		AllowCleanup:        in.AllowCleanup,
+		AccountID:           ibmc.StringValue(in.AccountID),
+		AllowCleanup:        *in.AllowCleanup,
 		CreatedAt:           GenerateMetaV1Time(in.CreatedAt),
-		Crn:                 in.Crn,
-		DashboardURL:        in.DashboardURL,
+		Crn:                 ibmc.StringValue(in.Crn),
+		DashboardURL:        ibmc.StringValue(in.DashboardURL),
 		DeletedAt:           GenerateMetaV1Time(in.DeletedAt),
-		GUID:                in.Guid,
-		ID:                  in.ID,
+		GUID:                ibmc.StringValue(in.Guid),
+		ID:                  ibmc.StringValue(in.ID),
 		LastOperation:       ibmc.GenerateRawExtensionFromMap(in.LastOperation),
-		Locked:              in.Locked,
-		Name:                in.Name,
+		Locked:              *in.Locked,
+		Name:                ibmc.StringValue(in.Name),
 		PlanHistory:         GeneratePlanHistory(in.PlanHistory),
-		ResourceAliasesURL:  in.ResourceAliasesURL,
-		ResourceBindingsURL: in.ResourceBindingsURL,
-		ResourceGroupCrn:    in.ResourceGroupCrn,
-		ResourceGroupID:     in.ResourceGroupID,
-		ResourceID:          in.ResourceID,
-		ResourceKeysURL:     in.ResourceKeysURL,
-		ResourcePlanID:      in.ResourcePlanID,
-		State:               in.State,
-		SubType:             in.SubType,
+		ResourceAliasesURL:  ibmc.StringValue(in.ResourceAliasesURL),
+		ResourceBindingsURL: ibmc.StringValue(in.ResourceBindingsURL),
+		ResourceGroupCrn:    ibmc.StringValue(in.ResourceGroupCrn),
+		ResourceGroupID:     ibmc.StringValue(in.ResourceGroupID),
+		ResourceID:          ibmc.StringValue(in.ResourceID),
+		ResourceKeysURL:     ibmc.StringValue(in.ResourceKeysURL),
+		ResourcePlanID:      ibmc.StringValue(in.ResourcePlanID),
+		State:               ibmc.StringValue(in.State),
+		SubType:             ibmc.StringValue(in.SubType),
 		Target:              GenerateTarget(in),
-		TargetCrn:           in.TargetCrn,
-		Type:                in.Type,
-		URL:                 in.URL,
+		TargetCrn:           ibmc.StringValue(in.TargetCrn),
+		Type:                ibmc.StringValue(in.Type),
+		URL:                 ibmc.StringValue(in.URL),
 		UpdatedAt:           GenerateMetaV1Time(in.UpdatedAt),
 		Parameters:          ibmc.GenerateRawExtensionFromMap(in.Parameters),
 	}
 	// ServiceEndpoints can be found in instance.Parameters["service-endpoints"]
-	tags, err := ibmc.GetResourceInstanceTags(client, in.Crn)
+	tags, err := ibmc.GetResourceInstanceTags(client, ibmc.StringValue(in.Crn))
 	if err != nil {
 		return o, err
 	}
@@ -158,15 +156,15 @@ func GenerateObservation(client ibmc.ClientSession, in *rcv2.ResourceInstance) (
 }
 
 // GenerateTarget generates Target from Crn
-func GenerateTarget(in *rcv2.ResourceInstance) *string {
+func GenerateTarget(in *rcv2.ResourceInstance) string {
 	if in.Crn == nil {
-		return nil
+		return ""
 	}
 	crn, err := crn.Parse(*in.Crn)
 	if err != nil {
-		return nil
+		return ""
 	}
-	return &crn.Region
+	return crn.Region
 }
 
 // GenerateMetaV1Time converts strfmt.DateTime to metav1.Time
@@ -186,7 +184,7 @@ func GeneratePlanHistory(in []rcv2.PlanHistoryItem) []v1alpha1.PlanHistoryItem {
 	o := make([]v1alpha1.PlanHistoryItem, 0)
 	for _, phi := range in {
 		item := v1alpha1.PlanHistoryItem{
-			ResourcePlanID: phi.ResourcePlanID,
+			ResourcePlanID: ibmc.StringValue(phi.ResourcePlanID),
 			StartDate:      GenerateMetaV1Time(phi.StartDate),
 		}
 		o = append(o, item)
@@ -207,6 +205,7 @@ func IsUpToDate(client ibmc.ClientSession, name string, in *v1alpha1.ResourceIns
 
 	// name needs special treatment as it is not present in ResourceInstanceParameters
 	if name != *observed.Name {
+		l.Info(cmp.Diff(name, *observed.Name))
 		return false, nil
 	}
 	return cmp.Equal(desired, actual, cmpopts.EquateEmpty(), cmpopts.IgnoreFields(v1alpha1.ResourceInstanceParameters{})), nil
@@ -215,7 +214,7 @@ func IsUpToDate(client ibmc.ClientSession, name string, in *v1alpha1.ResourceIns
 // GenerateResourceInstanceParameters generates service instance parameters from resource instance
 func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.ResourceInstance) (*v1alpha1.ResourceInstanceParameters, error) {
 	o := &v1alpha1.ResourceInstanceParameters{
-		Target:       ibmc.StringValue(GenerateTarget(in)),
+		Target:       GenerateTarget(in),
 		AllowCleanup: in.AllowCleanup,
 		EntityLock:   ibmc.StringPtr(strconv.FormatBool(*in.Locked)),
 		ServiceName:  ibmc.GetServiceName(in),
@@ -231,7 +230,7 @@ func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.Reso
 		return nil, err
 	}
 	o.ResourcePlanName = ibmc.StringValue(pName)
-	tags, err := ibmc.GetResourceInstanceTags(client, in.Crn)
+	tags, err := ibmc.GetResourceInstanceTags(client, ibmc.StringValue(in.Crn))
 	if err != nil {
 		return nil, err
 	}

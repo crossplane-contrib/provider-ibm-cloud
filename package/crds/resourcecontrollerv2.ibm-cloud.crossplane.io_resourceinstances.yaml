@@ -79,6 +79,7 @@ spec:
                   description: The deployment location where the instance should be hosted.
                   type: string
               required:
+              - resourceGroupName
               - resourcePlanName
               - serviceName
               - target
@@ -226,8 +227,6 @@ spec:
                 url:
                   description: When you provision a new resource, a relative URL path is created identifying the location of the instance.
                   type: string
-              required:
-              - target
               type: object
             conditions:
               description: Conditions of the resource.
