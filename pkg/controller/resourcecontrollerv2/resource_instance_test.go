@@ -92,43 +92,43 @@ func withConditions(c ...cpv1alpha1.Condition) instanceModifier {
 }
 
 func withState(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.State = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.State = s }
 }
 
 func withName(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Name = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Name = s }
 }
 
 func withID(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ID = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ID = s }
 }
 
 func withGUID(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.GUID = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.GUID = s }
 }
 
 func withCrn(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Crn = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Crn = s }
 }
 
 func withResourceID(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceID = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceID = s }
 }
 
 func withResourcePlanID(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourcePlanID = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourcePlanID = s }
 }
 
 func withResourceGroupID(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceGroupID = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceGroupID = s }
 }
 
 func withLocked(b bool) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Locked = &b }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Locked = b }
 }
 
 func withAllowCleanup(b bool) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.AllowCleanup = &b }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.AllowCleanup = b }
 }
 
 func withTags(t []string) instanceModifier {
@@ -136,7 +136,7 @@ func withTags(t []string) instanceModifier {
 }
 
 func withTarget(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Target = &s }
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Target = s }
 }
 
 func withParameters(p *runtime.RawExtension) instanceModifier {
@@ -271,7 +271,7 @@ func ResourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 		EntityLock:        ibmc.StringPtr(entityLock),
 		AllowCleanup:      ibmc.BoolPtr(false),
 		Parameters:        ibmc.GenerateRawExtensionFromMap(parameters),
-		ResourceGroupName: ibmc.StringPtr(resourceGroupName),
+		ResourceGroupName: resourceGroupName,
 		ResourcePlanName:  resourcePlanName,
 		ServiceName:       serviceName,
 		Tags:              tags,

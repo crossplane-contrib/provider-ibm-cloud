@@ -23,6 +23,10 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
+// In spec mandatory fields should be by value, and optional fields pointers
+// In status, all fields should be by value, except timestamps - metav1.Time, and runtime.RawExtension which requires special treatment
+// https://github.com/crossplane/crossplane/blob/master/design/one-pager-managed-resource-api-design.md#pointer-types-and-markers
+
 // ResourceInstanceParameters are the configurable fields of a ResourceInstance.
 type ResourceInstanceParameters struct {
 	// The deployment location where the instance should be hosted.
@@ -31,8 +35,7 @@ type ResourceInstanceParameters struct {
 
 	// The name of the resource group where the instance is deployed
 	// +immutable
-	// +optional
-	ResourceGroupName *string `json:"resourceGroupName,omitempty"`
+	ResourceGroupName string `json:"resourceGroupName"`
 
 	// The name of the service offering like cloud-object-storage, kms etc
 	// +immutable
@@ -64,65 +67,65 @@ type ResourceInstanceParameters struct {
 // ResourceInstanceObservation are the observable fields of a ResourceInstance.
 type ResourceInstanceObservation struct {
 	// The ID associated with the instance.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// When you create a new resource, a globally unique identifier (GUID) is assigned. This GUID is a unique internal
 	// identifier managed by the resource controller that corresponds to the instance.
-	GUID *string `json:"guid,omitempty"`
+	GUID string `json:"guid,omitempty"`
 
 	// The full Cloud Resource Name (CRN) associated with the instance. For more information about this format, see [Cloud
 	// Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
-	Crn *string `json:"crn,omitempty"`
+	Crn string `json:"crn,omitempty"`
 
 	// When you provision a new resource, a relative URL path is created identifying the location of the instance.
-	URL *string `json:"url,omitempty"`
+	URL string `json:"url,omitempty"`
 
 	// An human-readable name of the instance.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// An alpha-numeric value identifying the account ID.
-	AccountID *string `json:"accountId,omitempty"`
+	AccountID string `json:"accountId,omitempty"`
 
 	// The short ID of the resource group.
-	ResourceGroupID *string `json:"resourceGroupId,omitempty"`
+	ResourceGroupID string `json:"resourceGroupId,omitempty"`
 
 	// The long ID (full CRN) of the resource group.
-	ResourceGroupCrn *string `json:"resourceGroupCrn,omitempty"`
+	ResourceGroupCrn string `json:"resourceGroupCrn,omitempty"`
 
 	// ResourceID is the unique ID of the offering. This value is provided by and stored in the global catalog.
-	ResourceID *string `json:"resourceId,omitempty"`
+	ResourceID string `json:"resourceId,omitempty"`
 
 	// The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
-	ResourcePlanID *string `json:"resourcePlanId,omitempty"`
+	ResourcePlanID string `json:"resourcePlanId,omitempty"`
 
 	// The deployment location where the instance is hosted.
-	Target *string `json:"target"`
+	Target string `json:"target,omitempty"`
 
 	// The full deployment CRN as defined in the global catalog. The Cloud Resource Name (CRN) of the deployment location
 	// where the instance is provisioned.
-	TargetCrn *string `json:"targetCrn,omitempty"`
+	TargetCrn string `json:"targetCrn,omitempty"`
 
 	// The current state of the instance. For example, if the instance is deleted, it will return removed.
-	State *string `json:"state,omitempty"`
+	State string `json:"state,omitempty"`
 
 	// The type of the instance, e.g. `service_instance`.
-	Type *string `json:"type,omitempty"`
+	Type string `json:"type,omitempty"`
 
 	// The sub-type of instance, e.g. `cfaas`.
-	SubType *string `json:"subType,omitempty"`
+	SubType string `json:"subType,omitempty"`
 
 	// A boolean that dictates if the resource instance should be deleted (cleaned up) during the processing of a region
 	// instance delete call.
-	AllowCleanup *bool `json:"allowCleanup,omitempty"`
+	AllowCleanup bool `json:"allowCleanup,omitempty"`
 
 	// A boolean that dictates if the resource instance is locked or not.
-	Locked *bool `json:"locked,omitempty"`
+	Locked bool `json:"locked,omitempty"`
 
 	// The status of the last operation requested on the instance.
 	LastOperation *runtime.RawExtension `json:"lastOperation,omitempty"`
 
 	// The resource-broker-provided URL to access administrative features of the instance.
-	DashboardURL *string `json:"dashboardUrl,omitempty"`
+	DashboardURL string `json:"dashboardUrl,omitempty"`
 
 	// Configuration options represented as key-value pairs that are passed through to the target resource brokers.
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
@@ -131,13 +134,13 @@ type ResourceInstanceObservation struct {
 	PlanHistory []PlanHistoryItem `json:"planHistory,omitempty"`
 
 	// The relative path to the resource aliases for the instance.
-	ResourceAliasesURL *string `json:"resourceAliasesUrl,omitempty"`
+	ResourceAliasesURL string `json:"resourceAliasesUrl,omitempty"`
 
 	// The relative path to the resource bindings for the instance.
-	ResourceBindingsURL *string `json:"resourceBindingsUrl,omitempty"`
+	ResourceBindingsURL string `json:"resourceBindingsUrl,omitempty"`
 
 	// The relative path to the resource keys for the instance.
-	ResourceKeysURL *string `json:"resourceKeysUrl,omitempty"`
+	ResourceKeysURL string `json:"resourceKeysUrl,omitempty"`
 
 	// The date when the instance was created.
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
@@ -155,7 +158,7 @@ type ResourceInstanceObservation struct {
 // PlanHistoryItem : An element of the plan history of the instance.
 type PlanHistoryItem struct {
 	// The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
-	ResourcePlanID *string `json:"resourcePlanId"`
+	ResourcePlanID string `json:"resourcePlanId"`
 
 	// The date on which the plan was changed.
 	StartDate *metav1.Time `json:"startDate"`

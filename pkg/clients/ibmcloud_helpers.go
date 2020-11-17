@@ -27,6 +27,7 @@ import (
 )
 
 const (
+	errServiceNotFound       = "service not found in catalog"
 	errListServiceCatEntries = "error listing service entries from catalog"
 	errListPlanCatEntries    = "error listing plan entries from catalog"
 	errPlanIDNotFound        = "could not find plan ID for plan name"
@@ -79,6 +80,10 @@ func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearch
 		return nil, errors.Wrap(err, errListServiceCatEntries)
 	}
 
+	if len(svcEntries.Resources) == 0 {
+		return nil, errors.New(errServiceNotFound)
+	}
+
 	id := svcEntries.Resources[0].Metadata.Ui.PrimaryOfferingID
 
 	getChildOptions := &gcat.GetChildObjectsOptions{
@@ -109,27 +114,27 @@ func GetResourceGroupID(client ClientSession, rgName string) (*string, error) {
 }
 
 // GetResourceGroupName gets a resource group name from a resource group ID
-func GetResourceGroupName(client ClientSession, rgID string) (*string, error) {
+func GetResourceGroupName(client ClientSession, rgID string) (string, error) {
 	opts := &rmgrv2.ListResourceGroupsOptions{}
 
 	entries, _, err := client.ResourceManagerV2().ListResourceGroups(opts)
 	if err != nil {
-		return nil, errors.Wrap(err, errListRG)
+		return "", errors.Wrap(err, errListRG)
 	}
 
 	for _, rg := range entries.Resources {
 		if *rg.ID == rgID {
-			return rg.Name, nil
+			return StringValue(rg.Name), nil
 		}
 	}
 
-	return nil, errors.New(errRGNameNotFound)
+	return "", errors.New(errRGNameNotFound)
 }
 
 // GetResourceInstanceTags gets tags for a resource instance
-func GetResourceInstanceTags(client ClientSession, crn *string) ([]string, error) {
+func GetResourceInstanceTags(client ClientSession, crn string) ([]string, error) {
 	listTagsOpts := &gtagv1.ListTagsOptions{
-		AttachedTo: crn,
+		AttachedTo: &crn,
 	}
 	entries, _, err := client.GlobalTaggingV1().ListTags(listTagsOpts)
 	if err != nil {
@@ -149,7 +154,7 @@ func GetResourceInstanceTags(client ClientSession, crn *string) ([]string, error
 }
 
 // UpdateResourceInstanceTags update tags for the instance as needed
-func UpdateResourceInstanceTags(client ClientSession, crn *string, tags []string) error {
+func UpdateResourceInstanceTags(client ClientSession, crn string, tags []string) error {
 	actualTags, err := GetResourceInstanceTags(client, crn)
 	if err != nil {
 		return err
@@ -159,7 +164,7 @@ func UpdateResourceInstanceTags(client ClientSession, crn *string, tags []string
 	if len(toAttach) > 0 {
 		attachTagsOpts := &gtagv1.AttachTagOptions{
 			TagNames:  toAttach,
-			Resources: []gtagv1.Resource{{ResourceID: crn}},
+			Resources: []gtagv1.Resource{{ResourceID: &crn}},
 		}
 		_, _, err = client.GlobalTaggingV1().AttachTag(attachTagsOpts)
 		if err != nil {
@@ -170,7 +175,7 @@ func UpdateResourceInstanceTags(client ClientSession, crn *string, tags []string
 	if len(toDetach) > 0 {
 		detachTagsOpts := &gtagv1.DetachTagOptions{
 			TagNames:  toDetach,
-			Resources: []gtagv1.Resource{{ResourceID: crn}},
+			Resources: []gtagv1.Resource{{ResourceID: &crn}},
 		}
 		_, _, err = client.GlobalTaggingV1().DetachTag(detachTagsOpts)
 		if err != nil {
