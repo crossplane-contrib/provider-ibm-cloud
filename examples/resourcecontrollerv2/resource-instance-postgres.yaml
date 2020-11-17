@@ -1,0 +1,15 @@
+apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+kind: ResourceInstance
+metadata:
+  name: mypostgres
+spec:
+  forProvider:
+    name: mypostgres
+    target: us-south
+    resourceGroupName: default
+    serviceName: databases-for-postgresql
+    resourcePlanName: standard
+    tags:
+      - dev
+  providerConfigRef:
+    name: ibm-cloud

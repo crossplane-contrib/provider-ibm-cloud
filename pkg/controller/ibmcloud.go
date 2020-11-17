@@ -31,7 +31,8 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 	for _, setup := range []func(ctrl.Manager, logging.Logger) error{
 		config.SetupConfig,
 		config.SetupToken,
-		resourcecontrollerv2.Setup,
+		resourcecontrollerv2.SetupResourceInstance,
+		resourcecontrollerv2.SetupResourceKey,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

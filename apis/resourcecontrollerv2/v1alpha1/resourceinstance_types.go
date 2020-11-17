@@ -29,6 +29,9 @@ import (
 
 // ResourceInstanceParameters are the configurable fields of a ResourceInstance.
 type ResourceInstanceParameters struct {
+	// An human-readable name of the instance.
+	Name string `json:"name"`
+
 	// The deployment location where the instance should be hosted.
 	// +immutable
 	Target string `json:"target"`
@@ -80,9 +83,6 @@ type ResourceInstanceObservation struct {
 	// When you provision a new resource, a relative URL path is created identifying the location of the instance.
 	URL string `json:"url,omitempty"`
 
-	// An human-readable name of the instance.
-	Name string `json:"name,omitempty"`
-
 	// An alpha-numeric value identifying the account ID.
 	AccountID string `json:"accountId,omitempty"`
 
@@ -98,9 +98,6 @@ type ResourceInstanceObservation struct {
 	// The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
 	ResourcePlanID string `json:"resourcePlanId,omitempty"`
 
-	// The deployment location where the instance is hosted.
-	Target string `json:"target,omitempty"`
-
 	// The full deployment CRN as defined in the global catalog. The Cloud Resource Name (CRN) of the deployment location
 	// where the instance is provisioned.
 	TargetCrn string `json:"targetCrn,omitempty"`
@@ -114,21 +111,11 @@ type ResourceInstanceObservation struct {
 	// The sub-type of instance, e.g. `cfaas`.
 	SubType string `json:"subType,omitempty"`
 
-	// A boolean that dictates if the resource instance should be deleted (cleaned up) during the processing of a region
-	// instance delete call.
-	AllowCleanup bool `json:"allowCleanup,omitempty"`
-
-	// A boolean that dictates if the resource instance is locked or not.
-	Locked bool `json:"locked,omitempty"`
-
 	// The status of the last operation requested on the instance.
 	LastOperation *runtime.RawExtension `json:"lastOperation,omitempty"`
 
 	// The resource-broker-provided URL to access administrative features of the instance.
 	DashboardURL string `json:"dashboardUrl,omitempty"`
-
-	// Configuration options represented as key-value pairs that are passed through to the target resource brokers.
-	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
 
 	// The plan history of the instance.
 	PlanHistory []PlanHistoryItem `json:"planHistory,omitempty"`
@@ -145,14 +132,32 @@ type ResourceInstanceObservation struct {
 	// The date when the instance was created.
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
 
+	// The subject who created the instance.
+	CreatedBy string `json:"createdBy,omitempty"`
+
 	// The date when the instance was last updated.
 	UpdatedAt *metav1.Time `json:"updatedAt,omitempty"`
+
+	// The subject who updated the instance.
+	UpdatedBy string `json:"updatedBy,omitempty"`
 
 	// The date when the instance was deleted.
 	DeletedAt *metav1.Time `json:"deletedAt,omitempty"`
 
-	// tags set for the instance
-	Tags []string `json:"tags,omitempty"`
+	// The subject who deleted the instance.
+	DeletedBy string `json:"deletedBy,omitempty"`
+
+	// The date when the instance was scheduled for reclamation.
+	ScheduledReclaimAt *metav1.Time `json:"scheduledReclaimAt,omitempty"`
+
+	// The subject who initiated the instance reclamation.
+	ScheduledReclaimBy string `json:"scheduledReclaimBy,omitempty"`
+
+	// The date when the instance under reclamation was restored.
+	RestoredAt *metav1.Time `json:"restoredAt,omitempty"`
+
+	// The subject who restored the instance back from reclamation.
+	RestoredBy string `json:"restoredBy,omitempty"`
 }
 
 // PlanHistoryItem : An element of the plan history of the instance.

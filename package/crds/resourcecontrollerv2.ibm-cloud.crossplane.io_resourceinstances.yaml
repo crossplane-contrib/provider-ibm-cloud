@@ -58,6 +58,9 @@ spec:
                 entityLock:
                   description: Indicates if the resource instance is locked for further update or delete operations. It does not affect actions performed on child resources like aliases, bindings or keys. False by default.
                   type: string
+                name:
+                  description: An human-readable name of the instance.
+                  type: string
                 parameters:
                   description: Configuration options represented as key-value pairs that are passed through to the target resource brokers.
                   type: object
@@ -79,6 +82,7 @@ spec:
                   description: The deployment location where the instance should be hosted.
                   type: string
               required:
+              - name
               - resourceGroupName
               - resourcePlanName
               - serviceName
@@ -127,12 +131,12 @@ spec:
                 accountId:
                   description: An alpha-numeric value identifying the account ID.
                   type: string
-                allowCleanup:
-                  description: A boolean that dictates if the resource instance should be deleted (cleaned up) during the processing of a region instance delete call.
-                  type: boolean
                 createdAt:
                   description: The date when the instance was created.
                   format: date-time
+                  type: string
+                createdBy:
+                  description: The subject who created the instance.
                   type: string
                 crn:
                   description: The full Cloud Resource Name (CRN) associated with the instance. For more information about this format, see [Cloud Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
@@ -144,6 +148,9 @@ spec:
                   description: The date when the instance was deleted.
                   format: date-time
                   type: string
+                deletedBy:
+                  description: The subject who deleted the instance.
+                  type: string
                 guid:
                   description: When you create a new resource, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the instance.
                   type: string
@@ -152,15 +159,6 @@ spec:
                   type: string
                 lastOperation:
                   description: The status of the last operation requested on the instance.
-                  type: object
-                locked:
-                  description: A boolean that dictates if the resource instance is locked or not.
-                  type: boolean
-                name:
-                  description: An human-readable name of the instance.
-                  type: string
-                parameters:
-                  description: Configuration options represented as key-value pairs that are passed through to the target resource brokers.
                   type: object
                 planHistory:
                   description: The plan history of the instance.
@@ -200,19 +198,25 @@ spec:
                 resourcePlanId:
                   description: The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
                   type: string
+                restoredAt:
+                  description: The date when the instance under reclamation was restored.
+                  format: date-time
+                  type: string
+                restoredBy:
+                  description: The subject who restored the instance back from reclamation.
+                  type: string
+                scheduledReclaimAt:
+                  description: The date when the instance was scheduled for reclamation.
+                  format: date-time
+                  type: string
+                scheduledReclaimBy:
+                  description: The subject who initiated the instance reclamation.
+                  type: string
                 state:
                   description: The current state of the instance. For example, if the instance is deleted, it will return removed.
                   type: string
                 subType:
                   description: The sub-type of instance, e.g. `cfaas`.
-                  type: string
-                tags:
-                  description: tags set for the instance
-                  items:
-                    type: string
-                  type: array
-                target:
-                  description: The deployment location where the instance is hosted.
                   type: string
                 targetCrn:
                   description: The full deployment CRN as defined in the global catalog. The Cloud Resource Name (CRN) of the deployment location where the instance is provisioned.
@@ -223,6 +227,9 @@ spec:
                 updatedAt:
                   description: The date when the instance was last updated.
                   format: date-time
+                  type: string
+                updatedBy:
+                  description: The subject who updated the instance.
                   type: string
                 url:
                   description: When you provision a new resource, a relative URL path is created identifying the location of the instance.

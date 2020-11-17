@@ -19,14 +19,21 @@ package clients
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 	"strings"
+	"time"
 
-	"github.com/crossplane/crossplane-runtime/pkg/resource"
+	"github.com/go-openapi/strfmt"
 	"github.com/pkg/errors"
+
 	v1 "k8s.io/api/core/v1"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -43,14 +50,18 @@ const (
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
 
-	errTokNotFound    = "IAM access token key not found in provider config secret"
-	errGetSecret      = "cannot get credentials secret"
-	errGetTracker     = "error setting up provider config usage tracker"
-	errGetProviderCfg = "error getting provider config"
-	errNoSecret       = "no credentials secret reference was provided"
-	errGetGcat        = "error initializing GlobalCatalogV1 client"
-	errGetGtag        = "error initializing GlobalTaggingV1 client"
-	errParseTok       = "error parsig IAM access token"
+	errTokNotFound        = "IAM access token key not found in provider config secret"
+	errGetSecret          = "cannot get credentials secret"
+	errGetTracker         = "error setting up provider config usage tracker"
+	errGetProviderCfg     = "error getting provider config"
+	errNoSecret           = "no credentials secret reference was provided"
+	errGetGcat            = "error initializing GlobalCatalogV1 client"
+	errGetGtag            = "error initializing GlobalTaggingV1 client"
+	errParseTok           = "error parsig IAM access token"
+	errNotFound           = "Not Found"
+	errPendingReclamation = "Instance is pending reclamation"
+	errGone               = "Gone"
+	errRemovedInvalid     = "The resource instance is removed/invalid"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -194,22 +205,13 @@ func (c *clientSessionImpl) GlobalTaggingV1() *gtagv1.GlobalTaggingV1 {
 	return c.globalTaggingV1
 }
 
-// StringValue converts the supplied string pointer to a string, returning the
-// empty string if the pointer is nil.
-func StringValue(v *string) string {
+// StrPtr2Bytes converts the supplied string pointer to a byte array
+// and returns nil for nil pointer
+func StrPtr2Bytes(v *string) []byte {
 	if v == nil {
-		return ""
+		return nil
 	}
-	return *v
-}
-
-// Int64Value converts the supplied int64 pointer to an int, returning zero if
-// the pointer is nil.
-func Int64Value(v *int64) int64 {
-	if v == nil {
-		return 0
-	}
-	return *v
+	return []byte(*v)
 }
 
 // BoolValue converts the supplied bool pointer to an bool, returning false if
@@ -221,17 +223,14 @@ func BoolValue(v *bool) bool {
 	return *v
 }
 
-// StringPtr converts the supplied string to a pointer to that string.
-func StringPtr(p string) *string { return &p }
-
 // Int64Ptr converts the supplied int64 to a pointer to that int64.
 func Int64Ptr(p int64) *int64 { return &p }
 
 // BoolPtr converts the supplied bool to a pointer to that bool
 func BoolPtr(p bool) *bool { return &p }
 
-// GenerateRawExtensionFromMap -
-func GenerateRawExtensionFromMap(in map[string]interface{}) *runtime.RawExtension {
+// MapToRawExtension - create a Map from a RawExtension
+func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
 	if len(in) == 0 {
 		return nil
 	}
@@ -242,14 +241,23 @@ func GenerateRawExtensionFromMap(in map[string]interface{}) *runtime.RawExtensio
 	return o
 }
 
-// GenerateMapFromRawExtension -
-func GenerateMapFromRawExtension(in *runtime.RawExtension) map[string]interface{} {
+// RawExtensionToMap - create a RawExtension from a Map
+func RawExtensionToMap(in *runtime.RawExtension) map[string]interface{} {
 	if in == nil {
 		return nil
 	}
 	o := make(map[string]interface{})
 	_ = json.Unmarshal(in.Raw, &o)
 	return o
+}
+
+// DateTimeToMetaV1Time converts strfmt.DateTime to metav1.Time
+func DateTimeToMetaV1Time(t *strfmt.DateTime) *metav1.Time {
+	if t == nil {
+		return nil
+	}
+	tx := metav1.NewTime(time.Time(*t))
+	return &tx
 }
 
 // TagsDiff computes the difference between desired tags and actual tags and returns
@@ -280,4 +288,48 @@ func TagsDiff(desired, actual []string) (toAttach, toDetach []string) {
 		}
 	}
 	return toAttach, toDetach
+}
+
+// ConvertVarsMap connection vars map to format used in secret
+func ConvertVarsMap(in map[string]interface{}) map[string][]byte {
+	o := map[string][]byte{}
+	for k, v := range in {
+		o[k] = []byte(fmt.Sprintf("%s", v))
+	}
+	return o
+}
+
+// ConvertStructToMap - converts any struct to a map[string]interface{}
+func ConvertStructToMap(in interface{}) (map[string]interface{}, error) {
+	o := map[string]interface{}{}
+	j, err := json.Marshal(in)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(j, &o); err != nil {
+		return nil, err
+	}
+	return o, nil
+}
+
+// IsResourceGone returns true if resource is gone
+func IsResourceGone(err error) bool {
+	return strings.Contains(err.Error(), errGone) ||
+		strings.Contains(err.Error(), http.StatusText(http.StatusNotFound))
+}
+
+// IsResourceInactive returns true if resource is inactive
+func IsResourceInactive(err error) bool {
+	return strings.Contains(err.Error(), errRemovedInvalid)
+}
+
+// IsResourceNotFound returns true if the SDK returns a not found error
+func IsResourceNotFound(err error) bool {
+	return strings.Contains(err.Error(), errNotFound)
+}
+
+// IsResourcePendingReclamation returns true if instance is being already deleted
+func IsResourcePendingReclamation(err error) bool {
+	return strings.Contains(err.Error(), errPendingReclamation) ||
+		strings.Contains(err.Error(), http.StatusText(http.StatusNotFound))
 }

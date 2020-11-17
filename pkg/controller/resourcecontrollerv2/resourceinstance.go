@@ -30,6 +30,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
@@ -37,7 +38,7 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	rcv2c "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourcecontrollerv2"
+	rcv2c "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourceinstance"
 )
 
 const (
@@ -47,17 +48,16 @@ const (
 	errCreateRes             = "could not create resource instance"
 	errDeleteRes             = "could not delete resource instance"
 	errGetInstanceFailed     = "error getting instance"
-	errFindInstances         = "error finding instances"
 	errCheckUpToDate         = "cannot determine if instance is up to date"
 	errGetAuth               = "error getting auth info"
 	errGenObservation        = "error generating observation"
-	errNamedInstanceExists   = "resource instance with the name %s already exists"
 	errCreateResInstanceOpts = "error creating resource instance options"
 	errUpdRes                = "error updating instance"
+	errBadRequwst            = "error getting instance: Bad Request"
 )
 
-// Setup adds a controller that reconciles ResourceInstance managed resources.
-func Setup(mgr ctrl.Manager, l logging.Logger) error {
+// SetupResourceInstance adds a controller that reconciles ResourceInstance managed resources.
+func SetupResourceInstance(mgr ctrl.Manager, l logging.Logger) error {
 	name := managed.ControllerName(v1alpha1.ResourceInstanceGroupKind)
 	log := l.WithValues("resourceinstance-controller", name)
 
@@ -68,7 +68,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 			usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &v1beta1.ProviderConfigUsage{}),
 			clientFn: ibmc.NewClient,
 			logger:   log}),
-		managed.WithInitializers(managed.NewNameAsExternalName(mgr.GetClient())),
+		managed.WithInitializers(managed.NewDefaultProviderConfig(mgr.GetClient())),
 		managed.WithLogger(log),
 		managed.WithRecorder(event.NewAPIRecorder(mgr.GetEventRecorderFor(name))))
 
@@ -116,17 +116,18 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalObservation{}, errors.New(errNotResourceInstance)
 	}
 
-	// SDK throws a validation error if a nil ID is provided, need to catch this situation before call to SDK
-	if cr.Status.AtProvider.ID == "" {
-		return managed.ExternalObservation{ResourceExists: false}, nil
+	if meta.GetExternalName(cr) == "" {
+		return managed.ExternalObservation{
+			ResourceExists: false,
+		}, nil
 	}
 
-	instance, _, err := c.client.ResourceControllerV2().GetResourceInstance(&rcv2.GetResourceInstanceOptions{ID: &cr.Status.AtProvider.ID})
+	instance, _, err := c.client.ResourceControllerV2().GetResourceInstance(&rcv2.GetResourceInstanceOptions{ID: reference.ToPtrValue(meta.GetExternalName(cr))})
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(rcv2c.IsInstanceNotFound, err), errGetInstanceFailed)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetInstanceFailed)
 	}
 
-	if ibmc.StringValue(instance.State) == rcv2c.StatePendingReclamation {
+	if reference.FromPtrValue(instance.State) == rcv2c.StatePendingReclamation {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
@@ -154,7 +155,7 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		cr.Status.SetConditions(cpv1alpha1.Unavailable())
 	}
 
-	upToDate, err := rcv2c.IsUpToDate(c.client, meta.GetExternalName(cr), &cr.Spec.ForProvider, instance, c.logger)
+	upToDate, err := rcv2c.IsUpToDate(c.client, &cr.Spec.ForProvider, instance, c.logger)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -162,7 +163,7 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	return managed.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  upToDate,
-		ConnectionDetails: managed.ConnectionDetails{},
+		ConnectionDetails: nil,
 	}, nil
 }
 
@@ -174,16 +175,8 @@ func (c *riExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 
 	cr.SetConditions(cpv1alpha1.Creating())
 	resInstanceOptions := &rcv2.CreateResourceInstanceOptions{}
-	if err := rcv2c.GenerateCreateResourceInstanceOptions(c.client, meta.GetExternalName(cr), cr.Spec.ForProvider, resInstanceOptions); err != nil {
+	if err := rcv2c.GenerateCreateResourceInstanceOptions(c.client, cr.Spec.ForProvider, resInstanceOptions); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateResInstanceOpts)
-	}
-
-	list, err := ibmc.FindResourceInstancesByName(c.client, meta.GetExternalName(cr))
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errFindInstances)
-	}
-	if len(list.Resources) > 0 {
-		return managed.ExternalCreation{}, errors.Errorf(errNamedInstanceExists, meta.GetExternalName(cr))
 	}
 
 	instance, _, err := c.client.ResourceControllerV2().CreateResourceInstance(resInstanceOptions)
@@ -191,16 +184,8 @@ func (c *riExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateRes)
 	}
 
-	cr.Status.AtProvider, err = rcv2c.GenerateObservation(c.client, instance)
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errGenObservation)
-	}
-
-	return managed.ExternalCreation{
-		// Optionally return any details that may be required to connect to the
-		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
-	}, nil
+	meta.SetExternalName(cr, reference.FromPtrValue(instance.ID))
+	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
 func (c *riExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
@@ -211,7 +196,7 @@ func (c *riExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 
 	id := cr.Status.AtProvider.ID
 	updInstanceOpts := &rcv2.UpdateResourceInstanceOptions{}
-	if err := rcv2c.GenerateUpdateResourceInstanceOptions(c.client, meta.GetExternalName(cr), id, cr.Spec.ForProvider, updInstanceOpts); err != nil {
+	if err := rcv2c.GenerateUpdateResourceInstanceOptions(c.client, id, cr.Spec.ForProvider, updInstanceOpts); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdRes)
 	}
 
@@ -224,11 +209,7 @@ func (c *riExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdRes)
 	}
 
-	return managed.ExternalUpdate{
-		// Optionally return any details that may be required to connect to the
-		// external resource. These will be stored as the connection secret.
-		ConnectionDetails: managed.ConnectionDetails{},
-	}, nil
+	return managed.ExternalUpdate{}, nil
 }
 
 func (c *riExternal) Delete(ctx context.Context, mg resource.Managed) error {
@@ -241,7 +222,7 @@ func (c *riExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	_, err := c.client.ResourceControllerV2().DeleteResourceInstance(&rcv2.DeleteResourceInstanceOptions{ID: &cr.Status.AtProvider.ID})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(rcv2c.IsInstancePendingReclamation, err), errDeleteRes)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourcePendingReclamation, err), errDeleteRes)
 	}
 	return nil
 }
