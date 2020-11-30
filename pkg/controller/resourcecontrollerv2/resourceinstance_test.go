@@ -28,13 +28,13 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
@@ -46,8 +46,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourcecontrollerv2"
-	ibmcrcv2 "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourcecontrollerv2"
+	ibmcc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourceinstance"
 )
 
 const (
@@ -95,10 +94,6 @@ func withState(s string) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.State = s }
 }
 
-func withName(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Name = s }
-}
-
 func withID(s string) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ID = s }
 }
@@ -123,29 +118,9 @@ func withResourceGroupID(s string) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceGroupID = s }
 }
 
-func withLocked(b bool) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Locked = b }
-}
-
-func withAllowCleanup(b bool) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.AllowCleanup = b }
-}
-
-func withTags(t []string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Tags = t }
-}
-
-func withTarget(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Target = s }
-}
-
-func withParameters(p *runtime.RawExtension) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Parameters = p }
-}
-
 func withCreatedAt(t strfmt.DateTime) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) {
-		i.Status.AtProvider.CreatedAt = ibmcrcv2.GenerateMetaV1Time(&t)
+		i.Status.AtProvider.CreatedAt = ibmc.DateTimeToMetaV1Time(&t)
 	}
 }
 
@@ -188,7 +163,7 @@ var tagsHandler = func(w http.ResponseWriter, r *http.Request) {
 	tags := gtagv1.TagList{
 		Items: []gtagv1.Tag{
 			{
-				Name: ibmc.StringPtr("dev"),
+				Name: reference.ToPtrValue("dev"),
 			},
 		},
 	}
@@ -202,8 +177,8 @@ var rgHandler = func(w http.ResponseWriter, r *http.Request) {
 	rgl := rmgrv2.ResourceGroupList{
 		Resources: []rmgrv2.ResourceGroup{
 			{
-				ID:   ibmc.StringPtr(resourceGroupID),
-				Name: ibmc.StringPtr(resourceGroupName),
+				ID:   reference.ToPtrValue(resourceGroupID),
+				Name: reference.ToPtrValue(resourceGroupName),
 			},
 		},
 	}
@@ -219,7 +194,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			{
 				Metadata: &gcat.CatalogEntryMetadata{
 					Ui: &gcat.UIMetaData{
-						PrimaryOfferingID: ibmc.StringPtr(serviceName),
+						PrimaryOfferingID: reference.ToPtrValue(serviceName),
 					},
 				},
 			},
@@ -230,25 +205,9 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 
 func listResourceInstancesNoItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	//	fmt.Printf("called listResourceInstancesNoItems %+v\n", r)
 	w.WriteHeader(http.StatusOK)
 	_ = r.Body.Close()
 	_ = json.NewEncoder(w).Encode(&rcv2.ResourceInstancesList{RowsCount: ibmc.Int64Ptr(0)})
-}
-
-func listResourceInstancesWithItems(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = r.Body.Close()
-	list := &rcv2.ResourceInstancesList{
-		RowsCount: ibmc.Int64Ptr(1),
-		Resources: []rcv2.ResourceInstance{
-			{
-				Name: &name,
-			},
-		},
-	}
-	_ = json.NewEncoder(w).Encode(list)
 }
 
 // handler to mock client SDK call to global catalog API for plans
@@ -258,19 +217,20 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 	planEntry := gcat.EntrySearchResult{
 		Resources: []gcat.CatalogEntry{
 			{
-				ID:   ibmc.StringPtr(resourcePlanID),
-				Name: ibmc.StringPtr(resourcePlanName),
+				ID:   reference.ToPtrValue(resourcePlanID),
+				Name: reference.ToPtrValue(resourcePlanName),
 			},
 		},
 	}
 	_ = json.NewEncoder(w).Encode(planEntry)
 }
 
-func ResourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
+func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 	o := v1alpha1.ResourceInstanceParameters{
-		EntityLock:        ibmc.StringPtr(entityLock),
+		Name:              name,
+		EntityLock:        reference.ToPtrValue(entityLock),
 		AllowCleanup:      ibmc.BoolPtr(false),
-		Parameters:        ibmc.GenerateRawExtensionFromMap(parameters),
+		Parameters:        ibmc.MapToRawExtension(parameters),
 		ResourceGroupName: resourceGroupName,
 		ResourcePlanName:  resourcePlanName,
 		ServiceName:       serviceName,
@@ -300,10 +260,8 @@ func genTestSDKResourceInstance() *rcv2.ResourceInstance {
 
 func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstance {
 	i := instance(
-		withName(name),
-		withExternalNameAnnotation(name),
-		withSpec(ResourceInstanceSpec()),
-		withAllowCleanup(allowCleanup),
+		withExternalNameAnnotation(id),
+		withSpec(resourceInstanceSpec()),
 		withID(id),
 		withCrn(crn),
 		withGUID(guid),
@@ -311,11 +269,7 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 		withResourcePlanID(resourcePlanID),
 		withResourceGroupID(resourceGroupID),
 		withResourceID(resourceID),
-		withTags(tags),
-		withLocked(locked),
 		withCreatedAt(createdAt),
-		withTarget(target),
-		withParameters(ibmc.GenerateRawExtensionFromMap(parameters)),
 		withConditions(cpv1alpha1.Available()),
 	)
 	for _, m := range im {
@@ -383,7 +337,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(),
-				err: nil,
+				err: errors.New(errBadRequwst),
 			},
 		},
 		"ObservedResourceInstanceUpToDate": {
@@ -422,10 +376,9 @@ func TestObserve(t *testing.T) {
 			},
 			args: args{
 				mg: instance(
-					withName(name),
-					withExternalNameAnnotation(name),
+					withExternalNameAnnotation(id),
 					withID(id),
-					withSpec(ResourceInstanceSpec()),
+					withSpec(resourceInstanceSpec()),
 				),
 			},
 			want: want{
@@ -433,7 +386,7 @@ func TestObserve(t *testing.T) {
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
-					ConnectionDetails: managed.ConnectionDetails{},
+					ConnectionDetails: nil,
 				},
 			},
 		},
@@ -474,18 +427,17 @@ func TestObserve(t *testing.T) {
 			},
 			args: args{
 				mg: instance(
-					withName(name),
-					withExternalNameAnnotation(name),
+					withExternalNameAnnotation(id),
 					withID(id),
-					withSpec(ResourceInstanceSpec()),
+					withSpec(resourceInstanceSpec()),
 				),
 			},
 			want: want{
-				mg: genTestCRResourceInstance(withLocked(true)),
+				mg: genTestCRResourceInstance(),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
-					ConnectionDetails: managed.ConnectionDetails{},
+					ConnectionDetails: nil,
 				},
 			},
 		},
@@ -500,7 +452,7 @@ func TestObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						ri := genTestSDKResourceInstance()
-						ri.State = ibmc.StringPtr(ibmcc.StatePendingReclamation)
+						ri.State = reference.ToPtrValue(ibmcc.StatePendingReclamation)
 						_ = json.NewEncoder(w).Encode(ri)
 					},
 				},
@@ -610,51 +562,14 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: instance(withSpec(ResourceInstanceSpec())),
+				mg: instance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
-				mg:  genTestCRResourceInstance(withConditions(cpv1alpha1.Creating())),
-				cre: managed.ExternalCreation{ConnectionDetails: managed.ConnectionDetails{}},
+				mg: instance(withSpec(resourceInstanceSpec()),
+					withConditions(cpv1alpha1.Creating()),
+					withExternalNameAnnotation(id)),
+				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
-			},
-		},
-		"AlreadyExists": {
-			handlers: []handler{
-				{
-					path: "/v2/resource_instances",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							listResourceInstancesWithItems(w, r)
-							return
-						}
-						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusOK)
-						_ = r.Body.Close()
-						_ = json.NewEncoder(w).Encode(&rcv2.ResourceInstance{})
-					},
-				},
-				{
-					path:        "/resource_groups/",
-					handlerFunc: rgHandler,
-				},
-				{
-					path:        "/",
-					handlerFunc: svcatHandler,
-				},
-				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
-				},
-			},
-			args: args{
-				mg: instance(withSpec(ResourceInstanceSpec())),
-			},
-			want: want{
-				mg:  instance(withSpec(ResourceInstanceSpec()), withConditions(cpv1alpha1.Creating())),
-				err: errors.Errorf(errNamedInstanceExists, name),
 			},
 		},
 		"Failed": {
@@ -695,10 +610,10 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: instance(withSpec(ResourceInstanceSpec())),
+				mg: instance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
-				mg:  instance(withSpec(ResourceInstanceSpec()), withConditions(cpv1alpha1.Creating())),
+				mg:  instance(withSpec(resourceInstanceSpec()), withConditions(cpv1alpha1.Creating())),
 				err: errors.Wrap(errors.New(errNoRCDep), errCreateRes),
 			},
 		},
@@ -901,11 +816,11 @@ func TestUpdate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: genTestCRResourceInstance(withSpec(ResourceInstanceSpec())),
+				mg: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg:  genTestCRResourceInstance(),
-				upd: managed.ExternalUpdate{ConnectionDetails: managed.ConnectionDetails{}},
+				upd: managed.ExternalUpdate{ConnectionDetails: nil},
 				err: nil,
 			},
 		},
@@ -933,7 +848,7 @@ func TestUpdate(t *testing.T) {
 			},
 
 			args: args{
-				mg: genTestCRResourceInstance(withSpec(ResourceInstanceSpec())),
+				mg: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg:  genTestCRResourceInstance(),

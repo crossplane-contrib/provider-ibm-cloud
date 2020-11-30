@@ -2,6 +2,7 @@ package clients
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -9,7 +10,10 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
+
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -75,7 +79,7 @@ var tagsHandler = func(w http.ResponseWriter, r *http.Request) {
 func map2tags(m map[string]bool) []gtagv1.Tag {
 	s := []gtagv1.Tag{}
 	for key := range m {
-		s = append(s, gtagv1.Tag{Name: StringPtr(dupString(key))})
+		s = append(s, gtagv1.Tag{Name: reference.ToPtrValue(dupString(key))})
 	}
 	return s
 }
@@ -91,8 +95,8 @@ var rgHandler = func(w http.ResponseWriter, r *http.Request) {
 	rgl := rmgrv2.ResourceGroupList{
 		Resources: []rmgrv2.ResourceGroup{
 			{
-				ID:   StringPtr(resourceGroupID),
-				Name: StringPtr(resourceGroupName),
+				ID:   reference.ToPtrValue(resourceGroupID),
+				Name: reference.ToPtrValue(resourceGroupName),
 			},
 		},
 	}
@@ -107,8 +111,8 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 	planEntry := gcat.EntrySearchResult{
 		Resources: []gcat.CatalogEntry{
 			{
-				ID:   StringPtr(resourcePlanID),
-				Name: StringPtr(resourcePlanName),
+				ID:   reference.ToPtrValue(resourcePlanID),
+				Name: reference.ToPtrValue(resourcePlanName),
 			},
 		},
 	}
@@ -130,7 +134,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 				{
 					Metadata: &gcat.CatalogEntryMetadata{
 						Ui: &gcat.UIMetaData{
-							PrimaryOfferingID: StringPtr(svc[0]),
+							PrimaryOfferingID: reference.ToPtrValue(svc[0]),
 						},
 					},
 				},
@@ -165,7 +169,7 @@ func TestGetResourcePlanID(t *testing.T) {
 				serviceName: invalidServiceName,
 				planName:    resourcePlanName,
 			},
-			want: want{planID: nil, err: errors.Wrap(errors.New(errServiceNotFound), errListPlanCatEntries)},
+			want: want{planID: nil, err: errors.Wrap(errors.New(errNotFound), errListPlanCatEntries)},
 		},
 		"PlanIDNotFound": {
 			args: args{
@@ -224,7 +228,7 @@ func TestGetResourcePlanName(t *testing.T) {
 				serviceName: invalidServiceName,
 				planID:      resourcePlanID,
 			},
-			want: want{planName: nil, err: errors.Wrap(errors.New(errServiceNotFound), errListPlanCatEntries)},
+			want: want{planName: nil, err: errors.Wrap(errors.New(errNotFound), errListPlanCatEntries)},
 		},
 		"PlanNameNotFound": {
 			args: args{
@@ -452,7 +456,9 @@ func TestUpdateResourceInstanceTags(t *testing.T) {
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
 				t.Errorf("UpdateResourceInstanceTags(...): want: %s\ngot: %s\n", tc.want.err, err)
 			}
-			if diff := cmp.Diff(tc.want.tags, tags); diff != "" {
+			if diff := cmp.Diff(tc.want.tags, tags, cmpopts.SortSlices(func(x, y interface{}) bool {
+				return fmt.Sprint("%# v", x) < fmt.Sprint("%# v", y)
+			})); diff != "" {
 				t.Errorf("UpdateResourceInstanceTags(...): -want, +got:\n%s", diff)
 			}
 		})

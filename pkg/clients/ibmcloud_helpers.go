@@ -19,6 +19,8 @@ package clients
 import (
 	"github.com/pkg/errors"
 
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
+
 	"github.com/IBM-Cloud/bluemix-go/crn"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
@@ -27,7 +29,6 @@ import (
 )
 
 const (
-	errServiceNotFound       = "service not found in catalog"
 	errListServiceCatEntries = "error listing service entries from catalog"
 	errListPlanCatEntries    = "error listing plan entries from catalog"
 	errPlanIDNotFound        = "could not find plan ID for plan name"
@@ -71,8 +72,8 @@ func GetResourcePlanName(client ClientSession, serviceName, planID string) (*str
 
 func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearchResult, error) {
 	listCEOpts := &gcat.ListCatalogEntriesOptions{
-		Q:       StringPtr(serviceName),
-		Include: StringPtr("*"),
+		Q:       reference.ToPtrValue(serviceName),
+		Include: reference.ToPtrValue("*"),
 	}
 
 	svcEntries, _, err := client.GlobalCatalogV1().ListCatalogEntries(listCEOpts)
@@ -81,14 +82,14 @@ func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearch
 	}
 
 	if len(svcEntries.Resources) == 0 {
-		return nil, errors.New(errServiceNotFound)
+		return nil, errors.New(errNotFound)
 	}
 
 	id := svcEntries.Resources[0].Metadata.Ui.PrimaryOfferingID
 
 	getChildOptions := &gcat.GetChildObjectsOptions{
 		ID:   id,
-		Kind: StringPtr("*"),
+		Kind: reference.ToPtrValue("*"),
 	}
 	planEntry, _, err := client.GlobalCatalogV1().GetChildObjects(getChildOptions)
 
@@ -124,7 +125,7 @@ func GetResourceGroupName(client ClientSession, rgID string) (string, error) {
 
 	for _, rg := range entries.Resources {
 		if *rg.ID == rgID {
-			return StringValue(rg.Name), nil
+			return reference.FromPtrValue(rg.Name), nil
 		}
 	}
 
@@ -204,6 +205,20 @@ func FindResourceInstancesByName(client ClientSession, name string) (*rcv2.Resou
 		Name: &name,
 	}
 	return QueryResourceInstances(client, queryOpts)
+}
+
+// QueryResourceKeys finds resource instances based on query options
+func QueryResourceKeys(client ClientSession, queryOpts *rcv2.ListResourceKeysOptions) (*rcv2.ResourceKeysList, error) {
+	list, _, err := client.ResourceControllerV2().ListResourceKeys(queryOpts)
+	return list, err
+}
+
+// FindResourceKeysByName finds resources instances matching name
+func FindResourceKeysByName(client ClientSession, name string) (*rcv2.ResourceKeysList, error) {
+	queryOpts := &rcv2.ListResourceKeysOptions{
+		Name: &name,
+	}
+	return QueryResourceKeys(client, queryOpts)
 }
 
 // QueryResourceInstances finds resource instances based on query options

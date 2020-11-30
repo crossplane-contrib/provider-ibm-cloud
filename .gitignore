@@ -8,3 +8,4 @@ cover.out
 
 # ignore IDE folders
 .vscode/
+.DS_Store

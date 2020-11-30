@@ -37,14 +37,23 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// ResourceInstance type metadata.
+// Resourcecontrollerv2 types metadata.
 var (
 	ResourceInstanceKind             = reflect.TypeOf(ResourceInstance{}).Name()
 	ResourceInstanceGroupKind        = schema.GroupKind{Group: Group, Kind: ResourceInstanceKind}.String()
 	ResourceInstanceKindAPIVersion   = ResourceInstanceKind + "." + SchemeGroupVersion.String()
 	ResourceInstanceGroupVersionKind = SchemeGroupVersion.WithKind(ResourceInstanceKind)
+
+	ResourceKeyKind             = reflect.TypeOf(ResourceKey{}).Name()
+	ResourceKeyGroupKind        = schema.GroupKind{Group: Group, Kind: ResourceKeyKind}.String()
+	ResourceKeyKindAPIVersion   = ResourceKeyKind + "." + SchemeGroupVersion.String()
+	ResourceKeyGroupVersionKind = SchemeGroupVersion.WithKind(ResourceKeyKind)
 )
 
 func init() {
-	SchemeBuilder.Register(&ResourceInstance{}, &ResourceInstanceList{})
+	SchemeBuilder.Register(
+		&ResourceInstance{},
+		&ResourceInstanceList{},
+		&ResourceKey{},
+		&ResourceKeyList{})
 }

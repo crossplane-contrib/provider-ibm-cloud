@@ -1,0 +1,15 @@
+apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+kind: ResourceKey
+metadata:
+  name: mycos-creds
+spec:
+  forProvider:
+    name: mycos-creds
+    sourceRef:
+      name: cos
+    role: Manager
+  providerConfigRef:
+    name: ibm-cloud
+  writeConnectionSecretToRef:
+    name: mycos
+    namespace: crossplane-system  

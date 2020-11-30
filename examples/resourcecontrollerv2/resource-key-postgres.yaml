@@ -1,0 +1,19 @@
+apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+kind: ResourceKey
+metadata:
+  name: mypostgres-creds
+spec:
+  forProvider:
+    name: mypostgres-creds
+    sourceRef:
+      name: mypostgres
+    role: Manager
+  providerConfigRef:
+    name: ibm-cloud
+  connectionTemplates:
+    connectionString: "jdbc:postgresql://{{ (index .connection.postgres.hosts 0).hostname }}:{{ (index .connection.postgres.hosts 0).port }}{{ .connection.postgres.path }}"
+    user: "{{ .connection.postgres.authentication.username }}"
+    password: "{{ .connection.postgres.authentication.password }}"
+  writeConnectionSecretToRef:
+    name: mypostgres
+    namespace: crossplane-system  

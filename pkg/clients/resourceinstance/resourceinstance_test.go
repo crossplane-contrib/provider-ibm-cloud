@@ -1,4 +1,4 @@
-package resourcecontrollerv2
+package resourceinstance
 
 import (
 	"encoding/json"
@@ -6,9 +6,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
+
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -62,13 +64,15 @@ var (
 	targetCrn           = "crn:v1:bluemix:public:globalcatalog::::deployment:744bfc56-d12c-4866-88d5-dac9139e0e5d%3Aglobal"
 	rcType              = "service_instance"
 	url                 = "/v2/resource_instances/614566d9-7ae6-4755-a5ae-83a8dd806ee4"
+	createdBy           = "user0001"
 )
 
 func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceInstanceParameters {
 	p := &v1alpha1.ResourceInstanceParameters{
-		EntityLock:        ibmc.StringPtr(entityLock),
+		Name:              instName,
+		EntityLock:        reference.ToPtrValue(entityLock),
 		AllowCleanup:      ibmc.BoolPtr(allowCleanup),
-		Parameters:        ibmc.GenerateRawExtensionFromMap(parameters),
+		Parameters:        ibmc.MapToRawExtension(parameters),
 		ResourceGroupName: resourceGroupName,
 		ResourcePlanName:  resourcePlanName,
 		ServiceName:       serviceName,
@@ -85,21 +89,17 @@ func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceI
 func observation(m ...func(*v1alpha1.ResourceInstanceObservation)) *v1alpha1.ResourceInstanceObservation {
 	o := &v1alpha1.ResourceInstanceObservation{
 		AccountID:     accountID,
-		AllowCleanup:  allowCleanup,
-		CreatedAt:     GenerateMetaV1Time(&createdAt),
+		CreatedAt:     ibmc.DateTimeToMetaV1Time(&createdAt),
 		Crn:           crnRes,
 		DashboardURL:  dashboardURL,
 		GUID:          guid,
 		ID:            id,
-		LastOperation: ibmc.GenerateRawExtensionFromMap(lastOperation),
+		LastOperation: ibmc.MapToRawExtension(lastOperation),
 		DeletedAt:     nil,
-		Locked:        locked,
-		Name:          instName,
-		Parameters:    ibmc.GenerateRawExtensionFromMap(parameters),
 		PlanHistory: []v1alpha1.PlanHistoryItem{
 			{
 				ResourcePlanID: resourcePlanID,
-				StartDate:      GenerateMetaV1Time(&startDate),
+				StartDate:      ibmc.DateTimeToMetaV1Time(&startDate),
 			},
 		},
 		ResourceAliasesURL:  resourceAliasesURL,
@@ -111,12 +111,12 @@ func observation(m ...func(*v1alpha1.ResourceInstanceObservation)) *v1alpha1.Res
 		ResourcePlanID:      resourcePlanID,
 		State:               state,
 		SubType:             "",
-		Tags:                tags,
-		Target:              target,
 		TargetCrn:           targetCrn,
 		Type:                rcType,
 		URL:                 url,
-		UpdatedAt:           GenerateMetaV1Time(&createdAt),
+		UpdatedAt:           ibmc.DateTimeToMetaV1Time(&createdAt),
+		CreatedBy:           createdBy,
+		UpdatedBy:           createdBy,
 	}
 
 	for _, f := range m {
@@ -130,7 +130,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		AccountID:     &accountID,
 		AllowCleanup:  &allowCleanup,
 		CreatedAt:     &createdAt,
-		CreatedBy:     nil,
+		CreatedBy:     &createdBy,
 		Crn:           &crnRes,
 		DashboardURL:  &dashboardURL,
 		DeletedAt:     nil,
@@ -164,7 +164,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		Type:                &rcType,
 		URL:                 &url,
 		UpdatedAt:           &createdAt,
-		UpdatedBy:           nil,
+		UpdatedBy:           &createdBy,
 	}
 	for _, f := range m {
 		f(i)
@@ -210,7 +210,7 @@ var tagsHandler = func(w http.ResponseWriter, r *http.Request) {
 	tags := gtagv1.TagList{
 		Items: []gtagv1.Tag{
 			{
-				Name: ibmc.StringPtr("dev"),
+				Name: reference.ToPtrValue("dev"),
 			},
 		},
 	}
@@ -224,8 +224,8 @@ var rgHandler = func(w http.ResponseWriter, r *http.Request) {
 	rgl := rmgrv2.ResourceGroupList{
 		Resources: []rmgrv2.ResourceGroup{
 			{
-				ID:   ibmc.StringPtr(resourceGroupID),
-				Name: ibmc.StringPtr(resourceGroupName),
+				ID:   reference.ToPtrValue(resourceGroupID),
+				Name: reference.ToPtrValue(resourceGroupName),
 			},
 		},
 	}
@@ -239,8 +239,8 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 	planEntry := gcat.EntrySearchResult{
 		Resources: []gcat.CatalogEntry{
 			{
-				ID:   ibmc.StringPtr(resourcePlanID),
-				Name: ibmc.StringPtr(resourcePlanName),
+				ID:   reference.ToPtrValue(resourcePlanID),
+				Name: reference.ToPtrValue(resourcePlanName),
 			},
 		},
 	}
@@ -256,7 +256,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			{
 				Metadata: &gcat.CatalogEntryMetadata{
 					Ui: &gcat.UIMetaData{
-						PrimaryOfferingID: ibmc.StringPtr(serviceName),
+						PrimaryOfferingID: reference.ToPtrValue(serviceName),
 					},
 				},
 			},
@@ -267,7 +267,6 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 
 func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 	type args struct {
-		name   string
 		params v1alpha1.ResourceInstanceParameters
 	}
 	type want struct {
@@ -278,12 +277,11 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 		want want
 	}{
 		"FullConversion": {
-			args: args{name: instName, params: *params()},
+			args: args{params: *params()},
 			want: want{instance: instanceOpts()},
 		},
 		"MissingFields": {
 			args: args{
-				name: instName,
 				params: *params(func(p *v1alpha1.ResourceInstanceParameters) {
 					p.AllowCleanup = nil
 					p.EntityLock = nil
@@ -311,7 +309,7 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 			mClient, _ := ibmc.NewClient(opts)
 
 			r := &rcv2.CreateResourceInstanceOptions{}
-			GenerateCreateResourceInstanceOptions(mClient, tc.args.name, tc.args.params, r)
+			GenerateCreateResourceInstanceOptions(mClient, tc.args.params, r)
 			if diff := cmp.Diff(tc.want.instance, r); diff != "" {
 				t.Errorf("GenerateCreateResourceInstanceOptions(...): -want, +got:\n%s", diff)
 			}
@@ -321,7 +319,6 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 
 func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 	type args struct {
-		name   string
 		params v1alpha1.ResourceInstanceParameters
 	}
 	type want struct {
@@ -332,12 +329,11 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 		want want
 	}{
 		"FullConversion": {
-			args: args{name: instName, params: *params()},
+			args: args{params: *params()},
 			want: want{instance: instanceUpdOpts()},
 		},
 		"MissingFields": {
 			args: args{
-				name: instName,
 				params: *params(func(p *v1alpha1.ResourceInstanceParameters) {
 					p.AllowCleanup = nil
 				})},
@@ -361,7 +357,7 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 			mClient, _ := ibmc.NewClient(opts)
 
 			r := &rcv2.UpdateResourceInstanceOptions{}
-			GenerateUpdateResourceInstanceOptions(mClient, tc.args.name, id, tc.args.params, r)
+			GenerateUpdateResourceInstanceOptions(mClient, id, tc.args.params, r)
 			if diff := cmp.Diff(tc.want.instance, r); diff != "" {
 				t.Errorf("GenerateUpdateResourceInstanceOptions(...): -want, +got:\n%s", diff)
 			}
@@ -387,7 +383,6 @@ func TestLateInitializeSpecs(t *testing.T) {
 					p.EntityLock = nil
 					p.AllowCleanup = nil
 					p.Tags = nil
-					p.ResourceGroupName = ""
 				}),
 				instance: instance(func(i *rcv2.ResourceInstance) {
 					i.Locked = &locked
@@ -399,7 +394,6 @@ func TestLateInitializeSpecs(t *testing.T) {
 				params: params(func(p *v1alpha1.ResourceInstanceParameters) {
 					p.EntityLock = &entityLock
 					p.AllowCleanup = &allowCleanup
-					p.ResourceGroupName = resourceGroupName
 				})},
 		},
 		"AllFilledAlready": {
@@ -467,7 +461,7 @@ func TestGenerateObservation(t *testing.T) {
 
 			o, err := GenerateObservation(mClient, tc.args.instance)
 			if diff := cmp.Diff(nil, err); diff != "" {
-				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				t.Errorf("GenerateObservation(...): want error != got error:\n%s", diff)
 			}
 			if diff := cmp.Diff(tc.want.obs, o); diff != "" {
 				t.Errorf("GenerateObservation(...): -want, +got:\n%s", diff)
@@ -511,7 +505,7 @@ func TestIsUpToDate(t *testing.T) {
 			args: args{
 				params: params(),
 				instance: instance(func(i *rcv2.ResourceInstance) {
-					i.Name = ibmc.StringPtr("different-name")
+					i.Name = reference.ToPtrValue("different-name")
 				}),
 			},
 			want: want{upToDate: false, isErr: false},
@@ -532,7 +526,7 @@ func TestIsUpToDate(t *testing.T) {
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 
-			r, err := IsUpToDate(mClient, instName, tc.args.params, tc.args.instance, logging.NewNopLogger())
+			r, err := IsUpToDate(mClient, tc.args.params, tc.args.instance, logging.NewNopLogger())
 			if err != nil && !tc.want.isErr {
 				t.Error("IsUpToDate(...) unexpected error")
 			}
