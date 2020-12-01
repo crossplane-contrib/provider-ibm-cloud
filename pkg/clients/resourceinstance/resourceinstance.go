@@ -40,7 +40,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		spec.Parameters = ibmc.MapToRawExtension(in.Parameters)
 	}
 	if spec.Tags == nil {
-		tags, err := ibmc.GetResourceInstanceTags(client, reference.FromPtrValue(in.TargetCrn))
+		tags, err := ibmc.GetResourceInstanceTags(client, reference.FromPtrValue(in.ID))
 		if err != nil {
 			return err
 		}
