@@ -1,0 +1,16 @@
+apiVersion: example.org/v1alpha1
+kind: PostgreSQLInstance
+metadata:
+  namespace: default
+  name: example
+spec:
+  parameters:
+    location: us-west
+    storageGB: 32
+    version: "12"
+  resourceRef:
+    apiVersion: example.org/v1alpha1
+    kind: CompositePostgreSQLInstance
+    name: example-ibm-cloud
+  writeConnectionSecretToRef:
+    name: example-postgresqlinstance
