@@ -38,7 +38,7 @@ spec:
                   storageGB:
                     type: integer
                   location:
-                    description: Geographic location of this MySQL server.
+                    description: Geographic location of this PostgreSQL server.
                     type: string
                 required:
                 - version

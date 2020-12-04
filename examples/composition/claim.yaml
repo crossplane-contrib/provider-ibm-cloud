@@ -8,9 +8,8 @@ spec:
     location: us-west
     storageGB: 32
     version: "12"
-  resourceRef:
-    apiVersion: example.org/v1alpha1
-    kind: CompositePostgreSQLInstance
-    name: example-ibm-cloud
+  compositionSelector:
+    matchLabels:
+      provider: ibm-cloud 
   writeConnectionSecretToRef:
-    name: example-postgresqlinstance
+    name: db-conn

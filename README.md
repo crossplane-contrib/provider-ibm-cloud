@@ -28,12 +28,12 @@ Make sure you have a Kubernetes cluster and [installed Crossplane](https://cross
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1beta1
+apiVersion: pkg.crossplane.io/v1alpha1
 kind: Provider
 metadata:
   name: provider-ibm-cloud
 spec:
-  package: cloudoperators/provider-ibm-cloud:alpha
+  package: "crossplane/provider-ibm-cloud:alpha"
 EOF
 ```
 
