@@ -11,5 +11,7 @@ spec:
     resourcePlanName: standard
     tags:
       - dev
+    parameters:
+      members_disk_allocation_mb: 32768
   providerConfigRef:
     name: ibm-cloud

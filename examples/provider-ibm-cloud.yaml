@@ -4,4 +4,4 @@ kind: Provider
 metadata:
   name: provider-ibm-cloud
 spec:
-  package: "crossplane/provider-ibm-cloud:master"
+  package: "crossplane/provider-ibm-cloud:alpha"

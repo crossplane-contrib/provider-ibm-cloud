@@ -127,7 +127,8 @@ func (c *riExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetInstanceFailed)
 	}
 
-	if reference.FromPtrValue(instance.State) == rcv2c.StatePendingReclamation {
+	if reference.FromPtrValue(instance.State) == rcv2c.StatePendingReclamation ||
+		reference.FromPtrValue(instance.State) == rcv2c.StateRemoved {
 		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
@@ -222,7 +223,7 @@ func (c *riExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	_, err := c.client.ResourceControllerV2().DeleteResourceInstance(&rcv2.DeleteResourceInstanceOptions{ID: &cr.Status.AtProvider.ID})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourcePendingReclamation, err), errDeleteRes)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteRes)
 	}
 	return nil
 }

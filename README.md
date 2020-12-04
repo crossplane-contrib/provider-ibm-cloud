@@ -19,6 +19,65 @@ adds the following new functionality:
 For getting started guides, installation, deployment, and administration, see
 our [Documentation](https://crossplane.io/docs/latest).
 
+To use the IBM Cloud Provider you'll need an IBM Cloud account. You may sign up 
+for a [free IBM Cloud account](https://cloud.ibm.com/registration). You'll need also an IBM 
+Cloud CLI which needs to be [installed and configured](https://cloud.ibm.com/docs/cli).
+Make sure you have a Kubernetes cluster and [installed Crossplane](https://crossplane.io/docs/v0.14/getting-started/install-configure.html), then:
+
+### Install IBM Cloud Provider
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: pkg.crossplane.io/v1alpha1
+kind: Provider
+metadata:
+  name: provider-ibm-cloud
+spec:
+  package: "crossplane/provider-ibm-cloud:alpha"
+EOF
+```
+
+### Generate IBM Cloud API Key
+
+Using an IBM Cloud account with permissions to manage IBM Cloud Services:
+
+```shell
+if [[ -z "${IBMCLOUD_API_KEY}" ]]; then
+  echo "*** Generating new APIKey"
+  IBMCLOUD_API_KEY=$(ibmcloud iam api-key-create provider-ibm-cloud-key -d "Key for Crossplane Provider IBM Cloud" | grep "API Key" | awk '{ print $3 }')
+fi
+```
+
+### Create a Provider Secret
+
+```shell
+kubectl create secret generic provider-ibm-cloud-secret --from-literal=credentials=${IBMCLOUD_API_KEY} -n crossplane-system
+```
+
+### Configure the Provider
+
+We will create the following ProviderConfig object to configure credentials for IBM Cloud Provider:
+
+```shell
+cat <<EOF | kubectl apply -f -
+apiVersion: ibm-cloud.crossplane.io/v1beta1
+kind: ProviderConfig
+metadata:
+  name: ibm-cloud
+spec:
+  credentials:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: provider-ibm-cloud-secret
+      key: credentials
+  region: us-south
+EOF
+```
+### Next Steps
+
+Now that you have the IBM Cloud provider configured, you can [provision infrastructure](https://crossplane.io/docs/v0.14/getting-started/provision-infrastructure.html). See [examples](examples) for the IBM Cloud Provider.
+
 ## Contributing
 
 provider-ibm-cloud is a community driven project and we welcome contributions. See the
