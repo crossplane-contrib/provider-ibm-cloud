@@ -27,14 +27,7 @@ Make sure you have a Kubernetes cluster and [installed Crossplane](https://cross
 ### Install IBM Cloud Provider
 
 ```shell
-cat <<EOF | kubectl apply -f -
-apiVersion: pkg.crossplane.io/v1alpha1
-kind: Provider
-metadata:
-  name: provider-ibm-cloud
-spec:
-  package: "crossplane/provider-ibm-cloud:alpha"
-EOF
+kubectl crossplane install provider crossplane/provider-ibm-cloud:alpha
 ```
 
 ### Generate IBM Cloud API Key
