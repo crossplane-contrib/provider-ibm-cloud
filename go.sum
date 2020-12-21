@@ -20,8 +20,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb h1:ke+JASYimCuuAsmMWw2jmCRakGrKRQqVgIG30eiPI+Y=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb/go.mod h1:gPJbH1etcDj7qS/hBRiLuYW9CY0bRcostSKusa51xR0=
-github.com/IBM/experimental-go-sdk v0.0.0-20201217171549-fc1a6f324de2 h1:mINcEGnU3tooevcMhk6+/ckuRw8zyhWT8pquwGnahn0=
-github.com/IBM/experimental-go-sdk v0.0.0-20201217171549-fc1a6f324de2/go.mod h1:/e+iCOCLgHKgL8SJo2b9jt2QBYDl1sUv3KH4Ia0DIDE=
+github.com/IBM/experimental-go-sdk v0.0.0-20201221024540-26a12235f49d h1:row0PqHr7ORfEdkqpyOfcN3eQxSWFt0q7Qw8xC4qnfM=
+github.com/IBM/experimental-go-sdk v0.0.0-20201221024540-26a12235f49d/go.mod h1:/e+iCOCLgHKgL8SJo2b9jt2QBYDl1sUv3KH4Ia0DIDE=
 github.com/IBM/go-sdk-core v1.1.0 h1:pV73lZqr9r1xKb3h08c1uNG3AphwoV5KzUzhS+pfEqY=
 github.com/IBM/go-sdk-core v1.1.0/go.mod h1:2pcx9YWsIsZ3I7kH+1amiAkXvLTZtAq9kbxsfXilSoY=
 github.com/IBM/go-sdk-core/v4 v4.8.2 h1:QY5DL2MKctmnFdeWCSjKUEt41nOd6JrNJkrnjePt8tI=
@@ -498,8 +498,6 @@ github.com/xiang90/probing v0.0.0-20160813154853-07dd2e8dfe18/go.mod h1:UETIi67q
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2 h1:eY9dn8+vbi4tKz5Qo6v2eYzo7kUS51QINcR5jNpbZS8=
 github.com/xiang90/probing v0.0.0-20190116061207-43a291ad63a2/go.mod h1:UETIi67q53MR2AWcXfiuqkDkRtnGDLqkBTpCHuJHxtU=
 github.com/xordataexchange/crypt v0.0.3-0.20170626215501-b2862e3d0a77/go.mod h1:aYKd//L2LvnjZzWKhF00oedf4jCCReLcmhLdhm1A27Q=
-github.ibm.com/ibmcloud/databases-go-sdk v0.0.0-20201125155449-6e36d5cb805f h1:LnDs383akMMq5aTmDA82GbKzXYyBOUeGYuHBl3+FUxg=
-github.ibm.com/ibmcloud/databases-go-sdk v0.0.0-20201125155449-6e36d5cb805f/go.mod h1:TnXEkZ/VHdb5xbxpWlwnrHnZFvPDcVOMacHXiAqr1yk=
 go.etcd.io/bbolt v1.3.3 h1:MUGmc65QhB3pIlaQ5bB4LwqSj6GIonVJXpZiaKNyaKk=
 go.etcd.io/bbolt v1.3.3/go.mod h1:IbVyRI1SCnLcuJnV2u8VeU0CEYM7e686BmAb1XKL+uU=
 go.etcd.io/etcd v0.0.0-20191023171146-3cf2f69b5738 h1:VcrIfasaLFkyjk6KNlXQSzO+B0fZcnECiDrKJsfxka0=
