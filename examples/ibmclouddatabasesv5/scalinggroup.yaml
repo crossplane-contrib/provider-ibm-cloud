@@ -1,0 +1,17 @@
+apiVersion: ibmclouddatabasesv5.ibm-cloud.crossplane.io/v1alpha1
+kind: ScalingGroup
+metadata:
+  name: postgresql-sg
+spec:
+  forProvider:
+    idRef:
+      name: mypostgres
+    members:
+      allocationCount: 2
+    memberMemory:
+      allocationMb: 1024
+    memberCpu: {}
+    memberDisk:
+      allocationMb: 16384
+  providerConfigRef:
+    name: ibm-cloud

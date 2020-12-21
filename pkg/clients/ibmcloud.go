@@ -35,6 +35,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
@@ -49,6 +50,8 @@ const (
 	AccessTokenKey = "access_token"
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
+	// DefaultICDEndpoint is the default endpoint for the ICD service
+	DefaultICDEndpoint = "https://api.us-south.databases.cloud.ibm.com/v5/ibm"
 
 	errTokNotFound        = "IAM access token key not found in provider config secret"
 	errGetSecret          = "cannot get credentials secret"
@@ -62,6 +65,7 @@ const (
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
+	errUnprocEntity       = "Unprocessable Entity"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -171,6 +175,19 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 		return nil, errors.Wrap(err, errGetGtag)
 	}
 
+	icdOpts := &icdv5.IbmCloudDatabasesV5Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	if icdOpts.URL == "" {
+		icdOpts.URL = DefaultICDEndpoint
+	}
+	cs.ibmCloudDatabasesV5, err = icdv5.NewIbmCloudDatabasesV5(icdOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errGetGtag)
+	}
+
 	return &cs, err
 }
 
@@ -180,6 +197,7 @@ type ClientSession interface {
 	GlobalCatalogV1() *gcat.GlobalCatalogV1
 	ResourceManagerV2() *rmgrv2.ResourceManagerV2
 	GlobalTaggingV1() *gtagv1.GlobalTaggingV1
+	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
 }
 
 type clientSessionImpl struct {
@@ -187,6 +205,7 @@ type clientSessionImpl struct {
 	globalCatalogV1      *gcat.GlobalCatalogV1
 	resourceManagerV2    *rmgrv2.ResourceManagerV2
 	globalTaggingV1      *gtagv1.GlobalTaggingV1
+	ibmCloudDatabasesV5  *icdv5.IbmCloudDatabasesV5
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -203,6 +222,10 @@ func (c *clientSessionImpl) ResourceManagerV2() *rmgrv2.ResourceManagerV2 {
 
 func (c *clientSessionImpl) GlobalTaggingV1() *gtagv1.GlobalTaggingV1 {
 	return c.globalTaggingV1
+}
+
+func (c *clientSessionImpl) IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5 {
+	return c.ibmCloudDatabasesV5
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array
@@ -310,6 +333,11 @@ func ConvertStructToMap(in interface{}) (map[string]interface{}, error) {
 		return nil, err
 	}
 	return o, nil
+}
+
+// IsResourceUnprocessable returns true if resource is inactive
+func IsResourceUnprocessable(err error) bool {
+	return strings.Contains(err.Error(), errUnprocEntity)
 }
 
 // IsResourceGone returns true if resource is gone
