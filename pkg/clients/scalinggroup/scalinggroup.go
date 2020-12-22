@@ -49,7 +49,7 @@ func LateInitializeSpec(spec *v1alpha1.ScalingGroupParameters, in *icdv5.Groups)
 	return nil
 }
 
-//GenerateSetDeploymentScalingGroupOptions produces SetDeploymentScalingGroupOptions object from ScalingGroupParameters object.
+// GenerateSetDeploymentScalingGroupOptions produces SetDeploymentScalingGroupOptions object from ScalingGroupParameters object.
 func GenerateSetDeploymentScalingGroupOptions(id string, in v1alpha1.ScalingGroup, o *icdv5.SetDeploymentScalingGroupOptions) error {
 	pars := in.Spec.ForProvider
 	// the ICDv5 API allocates memory, disk and CPU based on the current number of members.

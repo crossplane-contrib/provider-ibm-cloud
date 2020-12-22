@@ -9,14 +9,13 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
-	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 
+	//  note that missing a  newline in between a built in package import and a github package import results in "File is not `goimports`-ed"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
+	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
 var (
-	role                   = "Manager"
-	role2                  = "Reader"
 	id                     = "crn:v1:bluemix:public:databases-for-postgresql:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:dda29288-c259-4dc9-859c-154eb7939cd0::"
 	membersUnits           = "count"
 	membersAllocationCount = 2

@@ -47,6 +47,25 @@ func (mg *ScalingGroup) ResolveReferences(ctx context.Context, c client.Reader) 
 	return nil
 }
 
+// ResolveReferences of this Whitelist
+func (mg *Whitelist) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPIResolver(c, mg)
+
+	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.ID),
+		Reference:    mg.Spec.ForProvider.IDRef,
+		Selector:     mg.Spec.ForProvider.IDSelector,
+		To:           reference.To{Managed: &rcv2.ResourceInstance{}, List: &rcv2.ResourceInstanceList{}},
+		Extract:      ID(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.id")
+	}
+	mg.Spec.ForProvider.ID = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.IDRef = rsp.ResolvedReference
+	return nil
+}
+
 // ID extracts the resolved ResourceInstance's ID
 func ID() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {

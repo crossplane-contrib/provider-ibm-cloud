@@ -43,10 +43,17 @@ var (
 	ScalingGroupGroupKind        = schema.GroupKind{Group: APIGroup, Kind: ScalingGroupKind}.String()
 	ScalingGroupKindAPIVersion   = ScalingGroupKind + "." + SchemeGroupVersion.String()
 	ScalingGroupGroupVersionKind = SchemeGroupVersion.WithKind(ScalingGroupKind)
+	WhitelistKind                = reflect.TypeOf(Whitelist{}).Name()
+	WhitelistGroupKind           = schema.GroupKind{Group: APIGroup, Kind: WhitelistKind}.String()
+	WhitelistKindAPIVersion      = WhitelistKind + "." + SchemeGroupVersion.String()
+	WhitelistGroupVersionKind    = SchemeGroupVersion.WithKind(WhitelistKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&ScalingGroup{},
-		&ScalingGroupList{})
+		&ScalingGroupList{},
+		&Whitelist{},
+		&WhitelistList{},
+	)
 }
