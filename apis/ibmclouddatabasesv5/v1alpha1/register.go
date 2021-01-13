@@ -39,14 +39,18 @@ var (
 
 // Ibmclouddatabasesv5 types metadata.
 var (
-	ScalingGroupKind             = reflect.TypeOf(ScalingGroup{}).Name()
-	ScalingGroupGroupKind        = schema.GroupKind{Group: APIGroup, Kind: ScalingGroupKind}.String()
-	ScalingGroupKindAPIVersion   = ScalingGroupKind + "." + SchemeGroupVersion.String()
-	ScalingGroupGroupVersionKind = SchemeGroupVersion.WithKind(ScalingGroupKind)
-	WhitelistKind                = reflect.TypeOf(Whitelist{}).Name()
-	WhitelistGroupKind           = schema.GroupKind{Group: APIGroup, Kind: WhitelistKind}.String()
-	WhitelistKindAPIVersion      = WhitelistKind + "." + SchemeGroupVersion.String()
-	WhitelistGroupVersionKind    = SchemeGroupVersion.WithKind(WhitelistKind)
+	ScalingGroupKind                 = reflect.TypeOf(ScalingGroup{}).Name()
+	ScalingGroupGroupKind            = schema.GroupKind{Group: APIGroup, Kind: ScalingGroupKind}.String()
+	ScalingGroupKindAPIVersion       = ScalingGroupKind + "." + SchemeGroupVersion.String()
+	ScalingGroupGroupVersionKind     = SchemeGroupVersion.WithKind(ScalingGroupKind)
+	WhitelistKind                    = reflect.TypeOf(Whitelist{}).Name()
+	WhitelistGroupKind               = schema.GroupKind{Group: APIGroup, Kind: WhitelistKind}.String()
+	WhitelistKindAPIVersion          = WhitelistKind + "." + SchemeGroupVersion.String()
+	WhitelistGroupVersionKind        = SchemeGroupVersion.WithKind(WhitelistKind)
+	AutoscalingGroupKind             = reflect.TypeOf(AutoscalingGroup{}).Name()
+	AutoscalingGroupGroupKind        = schema.GroupKind{Group: APIGroup, Kind: AutoscalingGroupKind}.String()
+	AutoscalingGroupKindAPIVersion   = AutoscalingGroupKind + "." + SchemeGroupVersion.String()
+	AutoscalingGroupGroupVersionKind = SchemeGroupVersion.WithKind(AutoscalingGroupKind)
 )
 
 func init() {
@@ -55,5 +59,7 @@ func init() {
 		&ScalingGroupList{},
 		&Whitelist{},
 		&WhitelistList{},
+		&AutoscalingGroup{},
+		&AutoscalingGroupList{},
 	)
 }

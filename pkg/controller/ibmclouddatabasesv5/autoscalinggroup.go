@@ -38,31 +38,21 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcsg "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/scalinggroup"
+	ibmcasg "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/autoscalinggroup"
 )
 
 const (
-	errNotScalingGroup = "managed resource is not a ScalingGroup custom resource"
-
-	errNewClient         = "cannot create new Client"
-	errGetAuth           = "error getting auth info"
-	errGetInstanceFailed = "error getting instance"
-	errLateInitSpec      = "error on late initilize specs"
-	errUpdateCR          = "eror updating CR"
-	errGenObservation    = "error generating observation"
-	errCheckUpToDate     = "cannot determine if instance is up to date"
-	errSetOpts           = "error setting scaling group options"
-	errResNotAvailable   = "Resource not found or not available"
+	errNotAutoscalingGroup = "managed resource is not an AutoscalingGroup custom resource"
 )
 
-// SetupScalingGroup adds a controller that reconciles ScalingGroup managed resources.
-func SetupScalingGroup(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha1.ScalingGroupGroupKind)
-	log := l.WithValues("ScalingGroup-controller", name)
+// SetupAutoscalingGroup adds a controller that reconciles AutoscalingGroup managed resources.
+func SetupAutoscalingGroup(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1alpha1.AutoscalingGroupKind)
+	log := l.WithValues("AutoscalingGroup-controller", name)
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.ScalingGroupGroupVersionKind),
-		managed.WithExternalConnecter(&sgConnector{
+		resource.ManagedKind(v1alpha1.AutoscalingGroupGroupVersionKind),
+		managed.WithExternalConnecter(&asgConnector{
 			kube:     mgr.GetClient(),
 			usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &v1beta1.ProviderConfigUsage{}),
 			clientFn: ibmc.NewClient,
@@ -74,13 +64,13 @@ func SetupScalingGroup(mgr ctrl.Manager, l logging.Logger) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1alpha1.ScalingGroup{}).
+		For(&v1alpha1.AutoscalingGroup{}).
 		Complete(r)
 }
 
-// A sgConnector is expected to produce an ExternalClient when its Connect method
+// A asgConnector is expected to produce an ExternalClient when its Connect method
 // is called.
-type sgConnector struct {
+type asgConnector struct {
 	kube     client.Client
 	usage    resource.Tracker
 	clientFn func(optd ibmc.ClientOptions) (ibmc.ClientSession, error)
@@ -88,7 +78,7 @@ type sgConnector struct {
 }
 
 // Connect produces an ExternalClient for IBM Cloud API
-func (c *sgConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+func (c *asgConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	opts, err := ibmc.GetAuthInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, errors.Wrap(err, errGetAuth)
@@ -99,21 +89,21 @@ func (c *sgConnector) Connect(ctx context.Context, mg resource.Managed) (managed
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	return &sgExternal{client: service, kube: c.kube, logger: c.logger}, nil
+	return &asgExternal{client: service, kube: c.kube, logger: c.logger}, nil
 }
 
-// An sgExternal observes, then either creates, updates, or deletes an
+// An asgExternal observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
-type sgExternal struct {
+type asgExternal struct {
 	client ibmc.ClientSession
 	kube   client.Client
 	logger logging.Logger
 }
 
-func (c *sgExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1alpha1.ScalingGroup)
+func (c *asgExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
+	cr, ok := mg.(*v1alpha1.AutoscalingGroup)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotScalingGroup)
+		return managed.ExternalObservation{}, errors.New(errNotAutoscalingGroup)
 	}
 
 	// since we do not really delete an external resource but rather we have a configuration on an existing service
@@ -124,13 +114,22 @@ func (c *sgExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		}, nil
 	}
 
-	instance, _, err := c.client.IbmCloudDatabasesV5().GetDeploymentScalingGroups(&icdv5.GetDeploymentScalingGroupsOptions{ID: reference.ToPtrValue(meta.GetExternalName(cr))})
+	instance, _, err := c.client.IbmCloudDatabasesV5().GetAutoscalingConditions(&icdv5.GetAutoscalingConditionsOptions{
+		ID:      reference.ToPtrValue(meta.GetExternalName(cr)),
+		GroupID: reference.ToPtrValue(ibmcasg.MemberGroupID),
+	})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetInstanceFailed)
 	}
 
+	if instance.Autoscaling == nil {
+		return managed.ExternalObservation{
+			ResourceExists: false,
+		}, nil
+	}
+
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	if err = ibmcsg.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
+	if err = ibmcasg.LateInitializeSpec(&cr.Spec.ForProvider, instance.Autoscaling); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errLateInitSpec)
 	}
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
@@ -139,20 +138,15 @@ func (c *sgExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 		}
 	}
 
-	cr.Status.AtProvider, err = ibmcsg.GenerateObservation(instance)
+	cr.Status.AtProvider, err = ibmcasg.GenerateObservation(instance.Autoscaling)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
 	}
 
-	if cr.Status.AtProvider.Groups != nil {
-		cr.Status.SetConditions(cpv1alpha1.Available())
-		cr.Status.AtProvider.State = string(cpv1alpha1.Available().Reason)
-	} else {
-		cr.Status.SetConditions(cpv1alpha1.Unavailable())
-		cr.Status.AtProvider.State = string(cpv1alpha1.Unavailable().Reason)
-	}
+	cr.Status.SetConditions(cpv1alpha1.Available())
+	cr.Status.AtProvider.State = string(cpv1alpha1.Available().Reason)
 
-	upToDate, err := ibmcsg.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance, c.logger)
+	upToDate, err := ibmcasg.IsUpToDate(meta.GetExternalName(cr), &cr.Spec.ForProvider, instance.Autoscaling, c.logger)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -164,10 +158,10 @@ func (c *sgExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	}, nil
 }
 
-func (c *sgExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.ScalingGroup)
+func (c *asgExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	cr, ok := mg.(*v1alpha1.AutoscalingGroup)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotScalingGroup)
+		return managed.ExternalCreation{}, errors.New(errNotAutoscalingGroup)
 	}
 
 	cr.SetConditions(cpv1alpha1.Creating())
@@ -179,19 +173,20 @@ func (c *sgExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
-func (c *sgExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.ScalingGroup)
+func (c *asgExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha1.AutoscalingGroup)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotScalingGroup)
+		return managed.ExternalUpdate{}, errors.New(errNotAutoscalingGroup)
 	}
 
-	opts := &icdv5.SetDeploymentScalingGroupOptions{}
-	err := ibmcsg.GenerateSetDeploymentScalingGroupOptions(meta.GetExternalName(cr), *cr, opts)
+	opts := &icdv5.SetAutoscalingConditionsOptions{}
+	err := ibmcasg.GenerateSetAutoscalingConditionsOptions(meta.GetExternalName(cr), cr.Spec.ForProvider, opts)
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errSetOpts)
 	}
 
-	_, resp, err := c.client.IbmCloudDatabasesV5().SetDeploymentScalingGroup(opts)
+	_, resp, err := c.client.IbmCloudDatabasesV5().SetAutoscalingConditions(opts)
+
 	if err != nil {
 		return managed.ExternalUpdate{}, ibmc.ExtractErrorMessage(resp, err)
 	}
@@ -199,10 +194,10 @@ func (c *sgExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 	return managed.ExternalUpdate{}, nil
 }
 
-func (c *sgExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.ScalingGroup)
+func (c *asgExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha1.AutoscalingGroup)
 	if !ok {
-		return errors.New(errNotScalingGroup)
+		return errors.New(errNotAutoscalingGroup)
 	}
 	cr.SetConditions(cpv1alpha1.Deleting())
 	return nil

@@ -20,12 +20,14 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb h1:ke+JASYimCuuAsmMWw2jmCRakGrKRQqVgIG30eiPI+Y=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb/go.mod h1:gPJbH1etcDj7qS/hBRiLuYW9CY0bRcostSKusa51xR0=
-github.com/IBM/experimental-go-sdk v0.0.0-20201221024540-26a12235f49d h1:row0PqHr7ORfEdkqpyOfcN3eQxSWFt0q7Qw8xC4qnfM=
-github.com/IBM/experimental-go-sdk v0.0.0-20201221024540-26a12235f49d/go.mod h1:/e+iCOCLgHKgL8SJo2b9jt2QBYDl1sUv3KH4Ia0DIDE=
+github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655 h1:mM8uCv5CO7MV3jFIwYxJEBqzuGqEVWIHzZWbNNm6e7c=
+github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655/go.mod h1:A4BohhxQR4Hj7h2hzESMDBkC+83bSidxbSMExFgqo/0=
 github.com/IBM/go-sdk-core v1.1.0 h1:pV73lZqr9r1xKb3h08c1uNG3AphwoV5KzUzhS+pfEqY=
 github.com/IBM/go-sdk-core v1.1.0/go.mod h1:2pcx9YWsIsZ3I7kH+1amiAkXvLTZtAq9kbxsfXilSoY=
 github.com/IBM/go-sdk-core/v4 v4.8.2 h1:QY5DL2MKctmnFdeWCSjKUEt41nOd6JrNJkrnjePt8tI=
 github.com/IBM/go-sdk-core/v4 v4.8.2/go.mod h1:DbQ+3pFoIjxGGTEiA9zQ2V0cemMNmFMkLBBnR729HKg=
+github.com/IBM/go-sdk-core/v4 v4.9.0 h1:OkSg5kaEfVoNuBA4IsIOz8Ur5rbGHbWxmWCZ7nK/oc0=
+github.com/IBM/go-sdk-core/v4 v4.9.0/go.mod h1:DbQ+3pFoIjxGGTEiA9zQ2V0cemMNmFMkLBBnR729HKg=
 github.com/IBM/platform-services-go-sdk v0.14.4 h1:rK+PhNaTp2Bb5+okvi2ecwC4sHyQxAxbNTPTeLSTz9k=
 github.com/IBM/platform-services-go-sdk v0.14.4/go.mod h1:tPxyWC+HYj9WCqCyPv3RpOeO9q27DXxxPriDl8e3z4U=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
@@ -672,6 +674,8 @@ google.golang.org/appengine v1.4.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7
 google.golang.org/appengine v1.5.0/go.mod h1:xpcJRLb0r/rnEns0DIKYYv+WjYCduHsrkT7/EB5XEv4=
 google.golang.org/appengine v1.6.1 h1:QzqyMA1tlu6CgqCDUtU9V+ZKhLFT2dkJuANu5QaxI3I=
 google.golang.org/appengine v1.6.1/go.mod h1:i06prIuMbXzDqacNJfV5OdTW448YApPu5ww/cMBSeb0=
+google.golang.org/appengine v1.6.5 h1:tycE03LOZYQNhDpS27tcQdAzLCVMaj7QT2SXxebnpCM=
+google.golang.org/appengine v1.6.5/go.mod h1:8WjMMxjGQR8xUklV/ARdw2HLXBOI7O7uCIDZVag1xfc=
 google.golang.org/genproto v0.0.0-20180817151627-c66870c02cf8/go.mod h1:JiN7NxoALGmiZfu7CAH4rXhgtRTLTxftemlI0sWmxmc=
 google.golang.org/genproto v0.0.0-20190307195333-5fe7a883aa19/go.mod h1:VzzqZJRnGkLBvHegQrXjBqPurQTc5/KpmUdxsrq26oE=
 google.golang.org/genproto v0.0.0-20190418145605-e7d98fc518a7/go.mod h1:VzzqZJRnGkLBvHegQrXjBqPurQTc5/KpmUdxsrq26oE=

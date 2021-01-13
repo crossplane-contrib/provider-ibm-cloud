@@ -559,7 +559,7 @@ func TestWhitelistUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  wl(wlWithSpec(*wlParams()), wlWithStatus(*wlObservation())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errWhiteListOpts),
+				err: errors.New(http.StatusText(http.StatusBadRequest)),
 			},
 		},
 	}

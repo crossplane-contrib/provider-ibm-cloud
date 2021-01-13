@@ -176,9 +176,9 @@ func (c *wlExternal) Create(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalCreation{}, errors.Wrap(err, errWhiteListOpts)
 	}
 
-	_, _, err = c.client.IbmCloudDatabasesV5().ReplaceWhitelist(opts)
+	_, resp, err := c.client.IbmCloudDatabasesV5().ReplaceWhitelist(opts)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errWhiteListOpts)
+		return managed.ExternalCreation{}, ibmc.ExtractErrorMessage(resp, err)
 	}
 
 	meta.SetExternalName(cr, reference.FromPtrValue(cr.Spec.ForProvider.ID))
@@ -197,9 +197,9 @@ func (c *wlExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalUpdate{}, errors.Wrap(err, errWhiteListOpts)
 	}
 
-	_, _, err = c.client.IbmCloudDatabasesV5().ReplaceWhitelist(opts)
+	_, resp, err := c.client.IbmCloudDatabasesV5().ReplaceWhitelist(opts)
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errWhiteListOpts)
+		return managed.ExternalUpdate{}, ibmc.ExtractErrorMessage(resp, err)
 	}
 
 	return managed.ExternalUpdate{}, nil

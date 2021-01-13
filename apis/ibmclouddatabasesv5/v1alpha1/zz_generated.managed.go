@@ -20,6 +20,62 @@ package v1alpha1
 
 import runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 
+// GetCondition of this AutoscalingGroup.
+func (mg *AutoscalingGroup) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
+}
+
+// GetDeletionPolicy of this AutoscalingGroup.
+func (mg *AutoscalingGroup) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this AutoscalingGroup.
+func (mg *AutoscalingGroup) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this AutoscalingGroup.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *AutoscalingGroup) GetProviderReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderReference
+}
+
+// GetWriteConnectionSecretToReference of this AutoscalingGroup.
+func (mg *AutoscalingGroup) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+	return mg.Spec.WriteConnectionSecretToReference
+}
+
+// SetConditions of this AutoscalingGroup.
+func (mg *AutoscalingGroup) SetConditions(c ...runtimev1alpha1.Condition) {
+	mg.Status.SetConditions(c...)
+}
+
+// SetDeletionPolicy of this AutoscalingGroup.
+func (mg *AutoscalingGroup) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this AutoscalingGroup.
+func (mg *AutoscalingGroup) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this AutoscalingGroup.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *AutoscalingGroup) SetProviderReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderReference = r
+}
+
+// SetWriteConnectionSecretToReference of this AutoscalingGroup.
+func (mg *AutoscalingGroup) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+	mg.Spec.WriteConnectionSecretToReference = r
+}
+
 // GetCondition of this ScalingGroup.
 func (mg *ScalingGroup) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
 	return mg.Status.GetCondition(ct)

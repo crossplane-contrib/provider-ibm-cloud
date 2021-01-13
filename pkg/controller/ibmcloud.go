@@ -36,6 +36,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		resourcecontrollerv2.SetupResourceKey,
 		ibmclouddatabasesv5.SetupScalingGroup,
 		ibmclouddatabasesv5.SetupWhitelist,
+		ibmclouddatabasesv5.SetupAutoscalingGroup,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

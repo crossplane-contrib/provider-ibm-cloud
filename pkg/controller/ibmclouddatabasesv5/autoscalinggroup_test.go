@@ -42,71 +42,47 @@ import (
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
-const (
-	bearerTok     = "mock-token"
-	errBadRequest = "error getting instance: Bad Request"
-	errForbidden  = "error getting instance: Forbidden"
-	wtfConst      = "crossplane.io/external-name"
-)
-
 var (
-	sgName                 = "postgres-sg"
-	id                     = "crn:v1:bluemix:public:databases-for-postgresql:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:dda29288-c259-4dc9-859c-154eb7939cd0::"
-	membersUnits           = "count"
-	membersAllocationCount = 2
-	membersMinimumCount    = 2
-	membersMaximumCount    = 20
-	membersStepSizeCount   = 1
-	membersIsAdjustable    = true
-	membersIsOptional      = false
-	membersCanScaleDown    = false
-	memoryUnits            = "mb"
-	memoryAllocationMb     = 25600
-	memoryMinimumMb        = 2048
-	memoryMaximumMb        = 229376
-	memoryStepSizeMb       = 256
-	memoryIsAdjustable     = true
-	memoryIsOptional       = false
-	memoryCanScaleDown     = true
-	cpuUnits               = "count"
-	cpuAllocationCount     = 6
-	cpuMinimumCount        = 6
-	cpuMaximumCount        = 56
-	cpuStepSizeCount       = 2
-	cpuIsAdjustable        = true
-	cpuIsOptional          = true
-	cpuCanScaleDown        = true
-	diskUnits              = "mb"
-	diskAllocationMb       = 35840
-	diskMinimumMb          = 35840
-	diskMaximumMb          = 7340032
-	diskStepSizeMb         = 1024
-	diskIsAdjustable       = true
-	diskIsOptional         = false
-	diskCanScaleDown       = false
+	asgName                                    = "postgres-asg"
+	diskScalerCapacityEnabled                  = true
+	diskScalerCapacityFreeSpaceLessThanPercent = 10
+	diskScalerIoUtilizationEnabled             = true
+	diskScalerIoUtilizationOverPeriod          = "30m"
+	diskScalerIoUtilizationAbovePercent        = 45
+	diskRateIncreasePercent                    = 20
+	diskRatePeriodSeconds                      = 900
+	diskRateLimitMbPerMember                   = 3670016
+	diskRateUnits                              = "mb"
+	memoryScalerIoUtilizationEnabled           = true
+	memoryScalerIoUtilizationOverPeriod        = "5m"
+	memoryScalerIoUtilizationAbovePercent      = 90
+	memoryRateIncreasePercent                  = 10
+	memoryRatePeriodSeconds                    = 300
+	memoryRateLimitMbPerMember                 = 125952
+	memoryRateUnits                            = "mb"
+	cpuRateIncreasePercent                     = 15
+	cpuRateIncreasePercent2                    = 20
+	cpuRatePeriodSeconds                       = 800
+	cpuRateLimitCountPerMember                 = 20
+	cpuRateUnits                               = "count"
 )
 
-var _ managed.ExternalConnecter = &sgConnector{}
-var _ managed.ExternalClient = &sgExternal{}
+var _ managed.ExternalConnecter = &asgConnector{}
+var _ managed.ExternalClient = &asgExternal{}
 
-type sgModifier func(*v1alpha1.ScalingGroup)
+type asgModifier func(*v1alpha1.AutoscalingGroup)
 
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
-
-func sg(im ...sgModifier) *v1alpha1.ScalingGroup {
-	i := &v1alpha1.ScalingGroup{
+func asg(im ...asgModifier) *v1alpha1.AutoscalingGroup {
+	i := &v1alpha1.AutoscalingGroup{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       sgName,
+			Name:       asgName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
 				meta.AnnotationKeyExternalName: id,
 			},
 		},
-		Spec: v1alpha1.ScalingGroupSpec{
-			ForProvider: v1alpha1.ScalingGroupParameters{},
+		Spec: v1alpha1.AutoscalingGroupSpec{
+			ForProvider: v1alpha1.AutoscalingGroupParameters{},
 		},
 	}
 	for _, m := range im {
@@ -115,8 +91,8 @@ func sg(im ...sgModifier) *v1alpha1.ScalingGroup {
 	return i
 }
 
-func sgWithExternalNameAnnotation(externalName string) sgModifier {
-	return func(i *v1alpha1.ScalingGroup) {
+func asgWithExternalNameAnnotation(externalName string) asgModifier {
+	return func(i *v1alpha1.AutoscalingGroup) {
 		if i.ObjectMeta.Annotations == nil {
 			i.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -124,32 +100,62 @@ func sgWithExternalNameAnnotation(externalName string) sgModifier {
 	}
 }
 
-func sgWithSpec(p v1alpha1.ScalingGroupParameters) sgModifier {
-	return func(r *v1alpha1.ScalingGroup) { r.Spec.ForProvider = p }
+func asgWithSpec(p v1alpha1.AutoscalingGroupParameters) asgModifier {
+	return func(r *v1alpha1.AutoscalingGroup) { r.Spec.ForProvider = p }
 }
 
-func sgWithConditions(c ...cpv1alpha1.Condition) sgModifier {
-	return func(i *v1alpha1.ScalingGroup) { i.Status.SetConditions(c...) }
+func asgWithConditions(c ...cpv1alpha1.Condition) asgModifier {
+	return func(i *v1alpha1.AutoscalingGroup) { i.Status.SetConditions(c...) }
 }
 
-func sgWithStatus(p v1alpha1.ScalingGroupObservation) sgModifier {
-	return func(r *v1alpha1.ScalingGroup) { r.Status.AtProvider = p }
+func asgWithStatus(p v1alpha1.AutoscalingGroupObservation) asgModifier {
+	return func(r *v1alpha1.AutoscalingGroup) { r.Status.AtProvider = p }
 }
 
-func params(m ...func(*v1alpha1.ScalingGroupParameters)) *v1alpha1.ScalingGroupParameters {
-	p := &v1alpha1.ScalingGroupParameters{
+func asgParams(m ...func(*v1alpha1.AutoscalingGroupParameters)) *v1alpha1.AutoscalingGroupParameters {
+	p := &v1alpha1.AutoscalingGroupParameters{
 		ID: &id,
-		Members: &v1alpha1.SetMembersGroupMembers{
-			AllocationCount: int64(membersAllocationCount),
+		Disk: &v1alpha1.AutoscalingDiskGroupDisk{
+			Scalers: &v1alpha1.AutoscalingDiskGroupDiskScalers{
+				Capacity: &v1alpha1.AutoscalingDiskGroupDiskScalersCapacity{
+					Enabled:                  &diskScalerCapacityEnabled,
+					FreeSpaceLessThanPercent: ibmc.Int64Ptr(int64(diskScalerCapacityFreeSpaceLessThanPercent)),
+				},
+				IoUtilization: &v1alpha1.AutoscalingDiskGroupDiskScalersIoUtilization{
+					Enabled:      &diskScalerIoUtilizationEnabled,
+					OverPeriod:   &diskScalerIoUtilizationOverPeriod,
+					AbovePercent: ibmc.Int64Ptr(int64(diskScalerIoUtilizationAbovePercent)),
+				},
+			},
+			Rate: &v1alpha1.AutoscalingDiskGroupDiskRate{
+				IncreasePercent:  ibmc.Int64Ptr(int64(diskRateIncreasePercent)),
+				PeriodSeconds:    ibmc.Int64Ptr(int64(diskRatePeriodSeconds)),
+				LimitMbPerMember: ibmc.Int64Ptr(int64(diskRateLimitMbPerMember)),
+				Units:            &diskRateUnits,
+			},
 		},
-		MemberMemory: &v1alpha1.SetMemoryGroupMemory{
-			AllocationMb: int64(memoryAllocationMb / membersAllocationCount),
+		Memory: &v1alpha1.AutoscalingMemoryGroupMemory{
+			Scalers: &v1alpha1.AutoscalingMemoryGroupMemoryScalers{
+				IoUtilization: &v1alpha1.AutoscalingMemoryGroupMemoryScalersIoUtilization{
+					Enabled:      &memoryScalerIoUtilizationEnabled,
+					OverPeriod:   &memoryScalerIoUtilizationOverPeriod,
+					AbovePercent: ibmc.Int64Ptr(int64(memoryScalerIoUtilizationAbovePercent)),
+				},
+			},
+			Rate: &v1alpha1.AutoscalingMemoryGroupMemoryRate{
+				IncreasePercent:  ibmc.Int64Ptr(int64(memoryRateIncreasePercent)),
+				PeriodSeconds:    ibmc.Int64Ptr(int64(memoryRatePeriodSeconds)),
+				LimitMbPerMember: ibmc.Int64Ptr(int64(memoryRateLimitMbPerMember)),
+				Units:            &memoryRateUnits,
+			},
 		},
-		MemberDisk: &v1alpha1.SetDiskGroupDisk{
-			AllocationMb: int64(diskAllocationMb / membersAllocationCount),
-		},
-		MemberCPU: &v1alpha1.SetCPUGroupCPU{
-			AllocationCount: int64(cpuAllocationCount / membersAllocationCount),
+		CPU: &v1alpha1.AutoscalingCPUGroupCPU{
+			Rate: &v1alpha1.AutoscalingCPUGroupCPURate{
+				IncreasePercent:     ibmc.Int64Ptr(int64(cpuRateIncreasePercent)),
+				PeriodSeconds:       ibmc.Int64Ptr(int64(cpuRatePeriodSeconds)),
+				LimitCountPerMember: ibmc.Int64Ptr(int64(cpuRateLimitCountPerMember)),
+				Units:               &cpuRateUnits,
+			},
 		},
 	}
 	for _, f := range m {
@@ -158,58 +164,9 @@ func params(m ...func(*v1alpha1.ScalingGroupParameters)) *v1alpha1.ScalingGroupP
 	return p
 }
 
-func observation(m ...func(*v1alpha1.ScalingGroupObservation)) *v1alpha1.ScalingGroupObservation {
-	o := &v1alpha1.ScalingGroupObservation{
+func asgObservation(m ...func(*v1alpha1.AutoscalingGroupObservation)) *v1alpha1.AutoscalingGroupObservation {
+	o := &v1alpha1.AutoscalingGroupObservation{
 		State: string(cpv1alpha1.Available().Reason),
-		Groups: []v1alpha1.Group{
-			{
-				ID:    id,
-				Count: int64(membersAllocationCount),
-				Members: v1alpha1.GroupMembers{
-					AllocationCount: int64(membersAllocationCount),
-					Units:           &membersUnits,
-					MinimumCount:    ibmc.Int64Ptr(int64(membersMinimumCount)),
-					MaximumCount:    ibmc.Int64Ptr(int64(membersMaximumCount)),
-					StepSizeCount:   ibmc.Int64Ptr(int64(membersStepSizeCount)),
-					IsAdjustable:    ibmc.BoolPtr(membersIsAdjustable),
-					IsOptional:      ibmc.BoolPtr(membersIsOptional),
-					CanScaleDown:    ibmc.BoolPtr(membersCanScaleDown),
-				},
-				Memory: v1alpha1.GroupMemory{
-					AllocationMb:       int64(memoryAllocationMb),
-					MemberAllocationMb: int64(memoryAllocationMb / membersAllocationCount),
-					Units:              &memoryUnits,
-					MinimumMb:          ibmc.Int64Ptr(int64(memoryMinimumMb)),
-					MaximumMb:          ibmc.Int64Ptr(int64(memoryMaximumMb)),
-					StepSizeMb:         ibmc.Int64Ptr(int64(memoryStepSizeMb)),
-					IsAdjustable:       ibmc.BoolPtr(memoryIsAdjustable),
-					IsOptional:         ibmc.BoolPtr(memoryIsOptional),
-					CanScaleDown:       ibmc.BoolPtr(memoryCanScaleDown),
-				},
-				Disk: v1alpha1.GroupDisk{
-					AllocationMb:       int64(diskAllocationMb),
-					MemberAllocationMb: int64(diskAllocationMb / membersAllocationCount),
-					Units:              &diskUnits,
-					MinimumMb:          ibmc.Int64Ptr(int64(diskMinimumMb)),
-					MaximumMb:          ibmc.Int64Ptr(int64(diskMaximumMb)),
-					StepSizeMb:         ibmc.Int64Ptr(int64(diskStepSizeMb)),
-					IsAdjustable:       ibmc.BoolPtr(diskIsAdjustable),
-					IsOptional:         ibmc.BoolPtr(diskIsOptional),
-					CanScaleDown:       ibmc.BoolPtr(diskCanScaleDown),
-				},
-				CPU: v1alpha1.GroupCPU{
-					AllocationCount:       int64(cpuAllocationCount),
-					MemberAllocationCount: int64(cpuAllocationCount / membersAllocationCount),
-					Units:                 &cpuUnits,
-					MinimumCount:          ibmc.Int64Ptr(int64(cpuMinimumCount)),
-					MaximumCount:          ibmc.Int64Ptr(int64(cpuMaximumCount)),
-					StepSizeCount:         ibmc.Int64Ptr(int64(cpuStepSizeCount)),
-					IsAdjustable:          ibmc.BoolPtr(cpuIsAdjustable),
-					IsOptional:            ibmc.BoolPtr(cpuIsOptional),
-					CanScaleDown:          ibmc.BoolPtr(cpuCanScaleDown),
-				},
-			},
-		},
 	}
 
 	for _, f := range m {
@@ -218,52 +175,48 @@ func observation(m ...func(*v1alpha1.ScalingGroupObservation)) *v1alpha1.Scaling
 	return o
 }
 
-func instance(m ...func(*icdv5.Groups)) *icdv5.Groups {
-	i := &icdv5.Groups{
-		Groups: []icdv5.Group{
-			{
-				ID:    &id,
-				Count: ibmc.Int64Ptr(int64(membersAllocationCount)),
-				Members: &icdv5.GroupMembers{
-					AllocationCount: ibmc.Int64Ptr(int64(membersAllocationCount)),
-					Units:           &membersUnits,
-					MinimumCount:    ibmc.Int64Ptr(int64(membersMinimumCount)),
-					MaximumCount:    ibmc.Int64Ptr(int64(membersMaximumCount)),
-					StepSizeCount:   ibmc.Int64Ptr(int64(membersStepSizeCount)),
-					IsAdjustable:    ibmc.BoolPtr(membersIsAdjustable),
-					IsOptional:      ibmc.BoolPtr(membersIsOptional),
-					CanScaleDown:    ibmc.BoolPtr(membersCanScaleDown),
+func asgInstance(m ...func(*icdv5.AutoscalingGroup)) *icdv5.AutoscalingGroup {
+	i := &icdv5.AutoscalingGroup{
+		Disk: &icdv5.AutoscalingDiskGroupDisk{
+			Scalers: &icdv5.AutoscalingDiskGroupDiskScalers{
+				Capacity: &icdv5.AutoscalingDiskGroupDiskScalersCapacity{
+					Enabled:                  &diskScalerCapacityEnabled,
+					FreeSpaceLessThanPercent: ibmc.Int64Ptr(int64(diskScalerCapacityFreeSpaceLessThanPercent)),
 				},
-				Memory: &icdv5.GroupMemory{
-					AllocationMb: ibmc.Int64Ptr(int64(memoryAllocationMb)),
-					Units:        &memoryUnits,
-					MinimumMb:    ibmc.Int64Ptr(int64(memoryMinimumMb)),
-					MaximumMb:    ibmc.Int64Ptr(int64(memoryMaximumMb)),
-					StepSizeMb:   ibmc.Int64Ptr(int64(memoryStepSizeMb)),
-					IsAdjustable: ibmc.BoolPtr(memoryIsAdjustable),
-					IsOptional:   ibmc.BoolPtr(memoryIsOptional),
-					CanScaleDown: ibmc.BoolPtr(memoryCanScaleDown),
+				IoUtilization: &icdv5.AutoscalingDiskGroupDiskScalersIoUtilization{
+					Enabled:      &diskScalerIoUtilizationEnabled,
+					OverPeriod:   &diskScalerIoUtilizationOverPeriod,
+					AbovePercent: ibmc.Int64Ptr(int64(diskScalerIoUtilizationAbovePercent)),
 				},
-				Disk: &icdv5.GroupDisk{
-					AllocationMb: ibmc.Int64Ptr(int64(diskAllocationMb)),
-					Units:        &diskUnits,
-					MinimumMb:    ibmc.Int64Ptr(int64(diskMinimumMb)),
-					MaximumMb:    ibmc.Int64Ptr(int64(diskMaximumMb)),
-					StepSizeMb:   ibmc.Int64Ptr(int64(diskStepSizeMb)),
-					IsAdjustable: ibmc.BoolPtr(diskIsAdjustable),
-					IsOptional:   ibmc.BoolPtr(diskIsOptional),
-					CanScaleDown: ibmc.BoolPtr(diskCanScaleDown),
+			},
+			Rate: &icdv5.AutoscalingDiskGroupDiskRate{
+				IncreasePercent:  ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(diskRateIncreasePercent))),
+				PeriodSeconds:    ibmc.Int64Ptr(int64(diskRatePeriodSeconds)),
+				LimitMbPerMember: ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(diskRateLimitMbPerMember))),
+				Units:            &diskRateUnits,
+			},
+		},
+		Memory: &icdv5.AutoscalingMemoryGroupMemory{
+			Scalers: &icdv5.AutoscalingMemoryGroupMemoryScalers{
+				IoUtilization: &icdv5.AutoscalingMemoryGroupMemoryScalersIoUtilization{
+					Enabled:      &memoryScalerIoUtilizationEnabled,
+					OverPeriod:   &memoryScalerIoUtilizationOverPeriod,
+					AbovePercent: ibmc.Int64Ptr(int64(memoryScalerIoUtilizationAbovePercent)),
 				},
-				Cpu: &icdv5.GroupCpu{
-					AllocationCount: ibmc.Int64Ptr(int64(cpuAllocationCount)),
-					Units:           &cpuUnits,
-					MinimumCount:    ibmc.Int64Ptr(int64(cpuMinimumCount)),
-					MaximumCount:    ibmc.Int64Ptr(int64(cpuMaximumCount)),
-					StepSizeCount:   ibmc.Int64Ptr(int64(cpuStepSizeCount)),
-					IsAdjustable:    ibmc.BoolPtr(cpuIsAdjustable),
-					IsOptional:      ibmc.BoolPtr(cpuIsOptional),
-					CanScaleDown:    ibmc.BoolPtr(cpuCanScaleDown),
-				},
+			},
+			Rate: &icdv5.AutoscalingMemoryGroupMemoryRate{
+				IncreasePercent:  ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(memoryRateIncreasePercent))),
+				PeriodSeconds:    ibmc.Int64Ptr(int64(memoryRatePeriodSeconds)),
+				LimitMbPerMember: ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(memoryRateLimitMbPerMember))),
+				Units:            &memoryRateUnits,
+			},
+		},
+		Cpu: &icdv5.AutoscalingCPUGroupCPU{
+			Rate: &icdv5.AutoscalingCPUGroupCPURate{
+				IncreasePercent:     ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(cpuRateIncreasePercent))),
+				PeriodSeconds:       ibmc.Int64Ptr(int64(cpuRatePeriodSeconds)),
+				LimitCountPerMember: ibmc.Int64Ptr(int64(cpuRateLimitCountPerMember)),
+				Units:               &cpuRateUnits,
 			},
 		},
 	}
@@ -274,7 +227,7 @@ func instance(m ...func(*icdv5.Groups)) *icdv5.Groups {
 	return i
 }
 
-func TestScalingGroupObserve(t *testing.T) {
+func TestAutoscalingGroupObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -301,15 +254,15 @@ func TestScalingGroupObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&icdv5.Groups{})
+						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
 					},
 				},
 			},
 			args: args{
-				mg: sg(),
+				mg: asg(),
 			},
 			want: want{
-				mg:  sg(),
+				mg:  asg(),
 				err: nil,
 			},
 		},
@@ -324,15 +277,15 @@ func TestScalingGroupObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&icdv5.Groups{})
+						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
 					},
 				},
 			},
 			args: args{
-				mg: sg(),
+				mg: asg(),
 			},
 			want: want{
-				mg:  sg(),
+				mg:  asg(),
 				err: errors.New(errBadRequest),
 			},
 		},
@@ -347,15 +300,15 @@ func TestScalingGroupObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&icdv5.Groups{})
+						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
 					},
 				},
 			},
 			args: args{
-				mg: sg(),
+				mg: asg(),
 			},
 			want: want{
-				mg:  sg(),
+				mg:  asg(),
 				err: errors.New(errForbidden),
 			},
 		},
@@ -369,8 +322,7 @@ func TestScalingGroupObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						sg := instance()
-						_ = json.NewEncoder(w).Encode(sg)
+						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{Autoscaling: asgInstance()})
 					},
 				},
 			},
@@ -378,15 +330,15 @@ func TestScalingGroupObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: sg(
-					sgWithExternalNameAnnotation(id),
-					sgWithSpec(*params()),
+				mg: asg(
+					asgWithExternalNameAnnotation(id),
+					asgWithSpec(*asgParams()),
 				),
 			},
 			want: want{
-				mg: sg(sgWithSpec(*params()),
-					sgWithConditions(cpv1alpha1.Available()),
-					sgWithStatus(*observation())),
+				mg: asg(asgWithSpec(*asgParams()),
+					asgWithConditions(cpv1alpha1.Available()),
+					asgWithStatus(*asgObservation())),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -404,11 +356,12 @@ func TestScalingGroupObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						sg := instance(func(p *icdv5.Groups) {
-							p.Groups = instance().Groups
-							p.Groups[0].Disk.AllocationMb = ibmc.Int64Ptr(int64(diskAllocationMb * 2))
-						})
-						_ = json.NewEncoder(w).Encode(sg)
+						asg := &icdv5.GetAutoscalingConditionsResponse{Autoscaling: asgInstance(
+							func(ag *icdv5.AutoscalingGroup) {
+								ag.Cpu.Rate.IncreasePercent = ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(cpuRateIncreasePercent2)))
+							},
+						)}
+						_ = json.NewEncoder(w).Encode(asg)
 					},
 				},
 			},
@@ -416,18 +369,15 @@ func TestScalingGroupObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: sg(
-					sgWithExternalNameAnnotation(id),
-					sgWithSpec(*params()),
+				mg: asg(
+					asgWithExternalNameAnnotation(id),
+					asgWithSpec(*asgParams()),
 				),
 			},
 			want: want{
-				mg: sg(sgWithSpec(*params()),
-					sgWithConditions(cpv1alpha1.Available()),
-					sgWithStatus(*observation(func(p *v1alpha1.ScalingGroupObservation) {
-						p.Groups = observation().Groups
-						p.Groups[0].Disk.AllocationMb = int64(diskAllocationMb * 2)
-						p.Groups[0].Disk.MemberAllocationMb = int64(diskAllocationMb)
+				mg: asg(asgWithSpec(*asgParams()),
+					asgWithConditions(cpv1alpha1.Available()),
+					asgWithStatus(*asgObservation(func(p *v1alpha1.AutoscalingGroupObservation) {
 					}))),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
@@ -451,7 +401,7 @@ func TestScalingGroupObserve(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
+			e := asgExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -477,7 +427,7 @@ func TestScalingGroupObserve(t *testing.T) {
 	}
 }
 
-func TestScalingGroupCreate(t *testing.T) {
+func TestAutoscalingGroupCreate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -503,18 +453,18 @@ func TestScalingGroupCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
-						sg := instance()
-						_ = json.NewEncoder(w).Encode(sg)
+						resp := icdv5.SetAutoscalingConditionsResponse{Task: &icdv5.Task{}}
+						_ = json.NewEncoder(w).Encode(resp)
 					},
 				},
 			},
 			args: args{
-				mg: sg(sgWithSpec(*params())),
+				mg: asg(asgWithSpec(*asgParams())),
 			},
 			want: want{
-				mg: sg(sgWithSpec(*params()),
-					sgWithConditions(cpv1alpha1.Creating()),
-					sgWithExternalNameAnnotation(id)),
+				mg: asg(asgWithSpec(*asgParams()),
+					asgWithConditions(cpv1alpha1.Creating()),
+					asgWithExternalNameAnnotation(id)),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
@@ -534,7 +484,7 @@ func TestScalingGroupCreate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
+			e := asgExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -560,7 +510,7 @@ func TestScalingGroupCreate(t *testing.T) {
 	}
 }
 
-func TestScalingGroupDelete(t *testing.T) {
+func TestAutoscalingGroupDelete(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -589,10 +539,10 @@ func TestScalingGroupDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: sg(sgWithStatus(*observation())),
+				mg: asg(asgWithStatus(*asgObservation())),
 			},
 			want: want{
-				mg:  sg(sgWithStatus(*observation()), sgWithConditions(cpv1alpha1.Deleting())),
+				mg:  asg(asgWithStatus(*asgObservation()), asgWithConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -611,7 +561,7 @@ func TestScalingGroupDelete(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
+			e := asgExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -634,7 +584,7 @@ func TestScalingGroupDelete(t *testing.T) {
 	}
 }
 
-func TestScalingGroupUpdate(t *testing.T) {
+func TestAutoscalingGroupUpdate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -660,16 +610,16 @@ func TestScalingGroupUpdate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
-						sg := instance()
-						_ = json.NewEncoder(w).Encode(sg)
+						resp := icdv5.SetAutoscalingConditionsResponse{Task: &icdv5.Task{}}
+						_ = json.NewEncoder(w).Encode(resp)
 					},
 				},
 			},
 			args: args{
-				mg: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+				mg: asg(asgWithSpec(*asgParams()), asgWithStatus(*asgObservation())),
 			},
 			want: want{
-				mg:  sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+				mg:  asg(asgWithSpec(*asgParams()), asgWithStatus(*asgObservation())),
 				upd: managed.ExternalUpdate{},
 				err: nil,
 			},
@@ -689,10 +639,10 @@ func TestScalingGroupUpdate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+				mg: asg(asgWithSpec(*asgParams()), asgWithStatus(*asgObservation())),
 			},
 			want: want{
-				mg:  sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+				mg:  asg(asgWithSpec(*asgParams()), asgWithStatus(*asgObservation())),
 				err: errors.New(http.StatusText(http.StatusBadRequest)),
 			},
 		},
@@ -711,7 +661,7 @@ func TestScalingGroupUpdate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
+			e := asgExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
