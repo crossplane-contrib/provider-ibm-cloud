@@ -1,8 +1,8 @@
 /*
-Copyright 2019 The Crossplane Authors.
+Copyright 2020 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
-you may not use this file except in compliance rkWith the License.
+you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
     http://www.apache.org/licenses/LICENSE-2.0
@@ -14,20 +14,17 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package resourcecontrollerv2
+package ibmclouddatabasesv5
 
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -35,91 +32,50 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
+	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
-	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 
-	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
+	"github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcrk "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourcekey"
 )
 
 var (
-	role          = "Manager"
-	role2         = "Viewer"
-	rkName        = "cos-creds"
-	rkID          = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:f931e669-6c11-4d4d-b720-8b2f844a6d9e:resource-key:bbeca5fe-283f-443c-9aca-cd3f72c6f493"
-	createdBy     = "user00001"
-	iamCompatible = true
-	resInstURL    = "/v2/resource_keys/614566d9-7ae6-4755-a5ae-83a8dd806ee4"
-	sourceCrn     = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
-	rkCrn         = "crn:v1:bluemix:public:key:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
-	accountID     = "fake-account-id"
-	url           = "/v2/resource_keys/614566d9-7ae6-4755-a5ae-83a8dd806ee4"
-	wrongGUID     = "wrong-guid"
-	errWrongGUID  = fmt.Sprintf("Failed to retrieve an alias with guid: %s", wrongGUID)
+	ip1  = "195.212.0.0/16"
+	ip1d = "Dev IP space 1"
+	ip2  = "195.0.0.0/8"
+	ip2d = "Dev IP space 2"
+	ip3  = "46.5.0.0/16"
 )
 
-var _ managed.ExternalConnecter = &riConnector{}
-var _ managed.ExternalClient = &riExternal{}
+var _ managed.ExternalConnecter = &sgConnector{}
+var _ managed.ExternalClient = &sgExternal{}
 
-type keyModifier func(*v1alpha1.ResourceKey)
+type wlModifier func(*v1alpha1.Whitelist)
 
-func rkWithConditions(c ...cpv1alpha1.Condition) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.SetConditions(c...) }
-}
-
-func rkWithState(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.State = s }
-}
-
-func rkWithID(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.ID = s }
-}
-
-func rkWithGUID(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.GUID = s }
-}
-
-func rkWithCrn(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.Crn = s }
-}
-
-func rkWithURL(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.URL = s }
-}
-
-func rkWithAccountID(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.AccountID = s }
-}
-
-func rkWihIAMCompatible(b bool) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.IamCompatible = b }
-}
-
-func rkWithCreatedBy(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.CreatedBy = s }
-}
-
-func rkWithResourceGroupID(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.ResourceGroupID = s }
-}
-
-func rkWithResourceInstanceURL(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.ResourceInstanceURL = s }
-}
-
-func rkWithCreatedAt(t strfmt.DateTime) keyModifier {
-	return func(i *v1alpha1.ResourceKey) {
-		i.Status.AtProvider.CreatedAt = ibmcrk.GenerateMetaV1Time(&t)
+func wl(im ...wlModifier) *v1alpha1.Whitelist {
+	i := &v1alpha1.Whitelist{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:       sgName,
+			Finalizers: []string{},
+			Annotations: map[string]string{
+				meta.AnnotationKeyExternalName: id,
+			},
+		},
+		Spec: v1alpha1.WhitelistSpec{
+			ForProvider: v1alpha1.WhitelistParameters{},
+		},
 	}
+	for _, m := range im {
+		m(i)
+	}
+	return i
 }
 
-func rkWithExternalNameAnnotation(externalName string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) {
+func wlWithExternalNameAnnotation(externalName string) wlModifier {
+	return func(i *v1alpha1.Whitelist) {
 		if i.ObjectMeta.Annotations == nil {
 			i.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -127,92 +83,70 @@ func rkWithExternalNameAnnotation(externalName string) keyModifier {
 	}
 }
 
-func rkWithSpec(p v1alpha1.ResourceKeyParameters) keyModifier {
-	return func(r *v1alpha1.ResourceKey) { r.Spec.ForProvider = p }
+func wlWithSpec(p v1alpha1.WhitelistParameters) wlModifier {
+	return func(r *v1alpha1.Whitelist) { r.Spec.ForProvider = p }
 }
 
-func key(im ...keyModifier) *v1alpha1.ResourceKey {
-	i := &v1alpha1.ResourceKey{
-		ObjectMeta: metav1.ObjectMeta{
-			Name:       rkName,
-			Finalizers: []string{},
-			Annotations: map[string]string{
-				meta.AnnotationKeyExternalName: rkName,
+func wlWithConditions(c ...cpv1alpha1.Condition) wlModifier {
+	return func(i *v1alpha1.Whitelist) { i.Status.SetConditions(c...) }
+}
+
+func wlWithStatus(p v1alpha1.WhitelistObservation) wlModifier {
+	return func(r *v1alpha1.Whitelist) { r.Status.AtProvider = p }
+}
+
+func wlParams(m ...func(*v1alpha1.WhitelistParameters)) *v1alpha1.WhitelistParameters {
+	p := &v1alpha1.WhitelistParameters{
+		ID: &id,
+		IPAddresses: []v1alpha1.WhitelistEntry{
+			{
+				Address:     ip1,
+				Description: &ip1d,
+			},
+			{
+				Address:     ip2,
+				Description: &ip2d,
 			},
 		},
-		Spec: v1alpha1.ResourceKeySpec{
-			ForProvider: v1alpha1.ResourceKeyParameters{},
-		},
 	}
-	for _, m := range im {
-		m(i)
+	for _, f := range m {
+		f(p)
 	}
-	return i
+	return p
 }
 
-func resourceKeySpec() v1alpha1.ResourceKeyParameters {
-	o := v1alpha1.ResourceKeyParameters{
-		Name:   rkName,
-		Role:   &role,
-		Source: &crn,
+func wlObservation(m ...func(*v1alpha1.WhitelistObservation)) *v1alpha1.WhitelistObservation {
+	o := &v1alpha1.WhitelistObservation{
+		State: string(cpv1alpha1.Available().Reason),
+	}
+
+	for _, f := range m {
+		f(o)
 	}
 	return o
 }
 
-func genTestSDKResourceKey() *rcv2.ResourceKey {
-	i := &rcv2.ResourceKey{
-		CreatedAt:           &createdAt,
-		Crn:                 &rkCrn,
-		Guid:                &guid,
-		ID:                  &rkID,
-		Name:                &rkName,
-		ResourceGroupID:     &resourceGroupID,
-		State:               &state,
-		AccountID:           &accountID,
-		CreatedBy:           &createdBy,
-		IamCompatible:       &iamCompatible,
-		Role:                &role,
-		ResourceInstanceURL: &resInstURL,
-		SourceCrn:           &sourceCrn,
-		URL:                 &url,
+func wlInstance(m ...func(*icdv5.Whitelist)) *icdv5.Whitelist {
+	i := &icdv5.Whitelist{
+		IpAddresses: []icdv5.WhitelistEntry{
+			{
+				Address:     &ip1,
+				Description: &ip1d,
+			},
+			{
+				Address:     &ip2,
+				Description: &ip2d,
+			},
+		},
+	}
+
+	for _, f := range m {
+		f(i)
 	}
 	return i
 }
 
-func genTestCRResourceKey(im ...keyModifier) *v1alpha1.ResourceKey {
-	i := key(
-		rkWithAccountID(accountID),
-		rkWithCreatedAt(createdAt),
-		rkWithCrn(rkCrn),
-		rkWithGUID(guid),
-		rkWithID(rkID),
-		rkWithResourceGroupID(resourceGroupID),
-		rkWithState(state),
-		rkWithURL(url),
-		rkWihIAMCompatible(iamCompatible),
-		rkWithResourceInstanceURL(resInstURL),
-		rkWithCreatedBy(createdBy),
-		rkWithConditions(cpv1alpha1.Available()),
-		rkWithSpec(resourceKeySpec()),
-	)
-	for _, m := range im {
-		m(i)
-	}
-	return i
-}
-
-func listResourceKeysNoItems(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	_ = r.Body.Close()
-	list := &rcv2.ResourceKeysList{
-		RowsCount: ibmc.Int64Ptr(0),
-		Resources: []rcv2.ResourceKey{},
-	}
-	_ = json.NewEncoder(w).Encode(list)
-}
-
-func TestResourceKeyObserve(t *testing.T) {
+func TestWhitelistObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -239,15 +173,15 @@ func TestResourceKeyObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&rcv2.ResourceKey{})
+						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
 					},
 				},
 			},
 			args: args{
-				mg: key(),
+				mg: wl(),
 			},
 			want: want{
-				mg:  key(),
+				mg:  wl(),
 				err: nil,
 			},
 		},
@@ -262,19 +196,19 @@ func TestResourceKeyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&rcv2.ResourceKey{})
+						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
 					},
 				},
 			},
 			args: args{
-				mg: key(),
+				mg: wl(),
 			},
 			want: want{
-				mg:  key(),
+				mg:  wl(),
 				err: errors.New(errBadRequest),
 			},
 		},
-		"ObservedResourceKeyUpToDate": {
+		"GetForbidden": {
 			handlers: []handler{
 				{
 					path: "/",
@@ -284,8 +218,30 @@ func TestResourceKeyObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						rk := genTestSDKResourceKey()
-						_ = json.NewEncoder(w).Encode(rk)
+						w.WriteHeader(http.StatusForbidden)
+						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+					},
+				},
+			},
+			args: args{
+				mg: wl(),
+			},
+			want: want{
+				mg:  wl(),
+				err: errors.New(errForbidden),
+			},
+		},
+		"UpToDate": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						_ = json.NewEncoder(w).Encode(wlInstance())
 					},
 				},
 			},
@@ -293,22 +249,23 @@ func TestResourceKeyObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: key(
-					rkWithExternalNameAnnotation(rkName),
-					rkWithID(rkID),
-					rkWithSpec(resourceKeySpec()),
+				mg: wl(
+					wlWithExternalNameAnnotation(id),
+					wlWithSpec(*wlParams()),
 				),
 			},
 			want: want{
-				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec())),
+				mg: wl(wlWithSpec(*wlParams()),
+					wlWithConditions(cpv1alpha1.Available()),
+					wlWithStatus(*wlObservation())),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
-					ConnectionDetails: managed.ConnectionDetails{},
+					ConnectionDetails: nil,
 				},
 			},
 		},
-		"ObservedResourceKeyNotUpToDate": {
+		"NotUpToDate": {
 			handlers: []handler{
 				{
 					path: "/",
@@ -318,9 +275,10 @@ func TestResourceKeyObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						rk := genTestSDKResourceKey()
-						rk.Role = &role2
-						_ = json.NewEncoder(w).Encode(rk)
+						sg := wlInstance(func(p *icdv5.Whitelist) {
+							p.IpAddresses[0].Address = &ip3
+						})
+						_ = json.NewEncoder(w).Encode(sg)
 					},
 				},
 			},
@@ -328,45 +286,18 @@ func TestResourceKeyObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: key(
-					rkWithExternalNameAnnotation(rkID),
-					rkWithID(rkID),
-					rkWithSpec(resourceKeySpec()),
+				mg: wl(
+					wlWithExternalNameAnnotation(id),
+					wlWithSpec(*wlParams()),
 				),
 			},
 			want: want{
-				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec()),
-					rkWithExternalNameAnnotation(rkID)),
+				mg: wl(wlWithSpec(*wlParams()),
+					wlWithConditions(cpv1alpha1.Available()),
+					wlWithStatus(*wlObservation(func(p *v1alpha1.WhitelistObservation) {
+					}))),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
-					ResourceUpToDate:  false,
-					ConnectionDetails: managed.ConnectionDetails{},
-				},
-			},
-		},
-		"ObservedResourceKeyRemoved": {
-			handlers: []handler{
-				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						_ = r.Body.Close()
-						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-						w.Header().Set("Content-Type", "application/json")
-						rk := genTestSDKResourceKey()
-						rk.State = reference.ToPtrValue(ibmcrk.StateRemoved)
-						_ = json.NewEncoder(w).Encode(rk)
-					},
-				},
-			},
-			args: args{
-				mg: key(),
-			},
-			want: want{
-				mg: key(),
-				obs: managed.ExternalObservation{
-					ResourceExists:    false,
 					ResourceUpToDate:  false,
 					ConnectionDetails: nil,
 				},
@@ -387,7 +318,7 @@ func TestResourceKeyObserve(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := wlExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -413,7 +344,7 @@ func TestResourceKeyObserve(t *testing.T) {
 	}
 }
 
-func TestResourceKeyCreate(t *testing.T) {
+func TestWhitelistCreate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -433,63 +364,25 @@ func TestResourceKeyCreate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							listResourceKeysNoItems(w, r)
-							return
-						}
-						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
-						ri := genTestSDKResourceKey()
-						_ = json.NewEncoder(w).Encode(ri)
+						_ = json.NewEncoder(w).Encode(wlInstance())
 					},
 				},
 			},
 			args: args{
-				mg: key(rkWithSpec(resourceKeySpec())),
+				mg: wl(wlWithSpec(*wlParams())),
 			},
 			want: want{
-				mg: key(rkWithSpec(resourceKeySpec()),
-					rkWithConditions(cpv1alpha1.Creating()),
-					rkWithExternalNameAnnotation(rkID)),
+				mg: wl(wlWithSpec(*wlParams()),
+					wlWithConditions(cpv1alpha1.Creating()),
+					wlWithExternalNameAnnotation(id)),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
-			},
-		},
-		"Failed": {
-			handlers: []handler{
-				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if r.Method == http.MethodGet {
-							listResourceKeysNoItems(w, r)
-							return
-						}
-
-						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusBadRequest)
-						_ = r.Body.Close()
-
-						b := map[string]interface{}{
-							"message":     errWrongGUID,
-							"status_code": 400,
-						}
-						_ = json.NewEncoder(w).Encode(&b)
-					},
-				},
-			},
-			args: args{
-				mg: key(rkWithSpec(resourceKeySpec())),
-			},
-			want: want{
-				mg:  key(rkWithSpec(resourceKeySpec()), rkWithConditions(cpv1alpha1.Creating())),
-				err: errors.Wrap(errors.New(errWrongGUID), errCreateRes),
 			},
 		},
 	}
@@ -507,7 +400,7 @@ func TestResourceKeyCreate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := wlExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -533,7 +426,7 @@ func TestResourceKeyCreate(t *testing.T) {
 	}
 }
 
-func TestResourceKeyDelete(t *testing.T) {
+func TestWhitelistDelete(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -552,65 +445,22 @@ func TestResourceKeyDelete(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusAccepted)
 						_ = r.Body.Close()
+						_ = json.NewEncoder(w).Encode(wlInstance())
 					},
 				},
 			},
 			args: args{
-				mg: key(rkWithID(id)),
+				mg: wl(wlWithStatus(*wlObservation())),
 			},
 			want: want{
-				mg:  key(rkWithID(id), rkWithConditions(cpv1alpha1.Deleting())),
+				mg:  wl(wlWithStatus(*wlObservation()), wlWithConditions(cpv1alpha1.Deleting())),
 				err: nil,
-			},
-		},
-		"AlreadyGone": {
-			handlers: []handler{
-				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusNotFound)
-						_ = r.Body.Close()
-					},
-				},
-			},
-			args: args{
-				mg: key(rkWithID(id)),
-			},
-			want: want{
-				mg:  key(rkWithID(id), rkWithConditions(cpv1alpha1.Deleting())),
-				err: nil,
-			},
-		},
-		"Failed": {
-			handlers: []handler{
-				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusBadRequest)
-						_ = r.Body.Close()
-					},
-				},
-			},
-			args: args{
-				mg: key(rkWithID(id)),
-			},
-			want: want{
-				mg:  key(rkWithID(id), rkWithConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteRes),
 			},
 		},
 	}
@@ -628,7 +478,7 @@ func TestResourceKeyDelete(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := wlExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -651,7 +501,7 @@ func TestResourceKeyDelete(t *testing.T) {
 	}
 }
 
-func TestResourceKeyUpdate(t *testing.T) {
+func TestWhitelistUpdate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -671,22 +521,21 @@ func TestResourceKeyUpdate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
-						ri := genTestSDKResourceKey()
-						_ = json.NewEncoder(w).Encode(ri)
+						_ = json.NewEncoder(w).Encode(wlInstance())
 					},
 				},
 			},
 			args: args{
-				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec())),
+				mg: wl(wlWithSpec(*wlParams()), wlWithStatus(*wlObservation())),
 			},
 			want: want{
-				mg:  genTestCRResourceKey(),
+				mg:  wl(wlWithSpec(*wlParams()), wlWithStatus(*wlObservation())),
 				upd: managed.ExternalUpdate{},
 				err: nil,
 			},
@@ -696,7 +545,7 @@ func TestResourceKeyUpdate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
@@ -706,11 +555,11 @@ func TestResourceKeyUpdate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec())),
+				mg: wl(wlWithSpec(*wlParams()), wlWithStatus(*wlObservation())),
 			},
 			want: want{
-				mg:  genTestCRResourceKey(),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdRes),
+				mg:  wl(wlWithSpec(*wlParams()), wlWithStatus(*wlObservation())),
+				err: errors.New(http.StatusText(http.StatusBadRequest)),
 			},
 		},
 	}
@@ -728,7 +577,7 @@ func TestResourceKeyUpdate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := wlExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),

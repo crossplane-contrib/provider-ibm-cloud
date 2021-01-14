@@ -22,6 +22,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/ibmclouddatabasesv5"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/resourcecontrollerv2"
 )
 
@@ -33,6 +34,9 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		config.SetupToken,
 		resourcecontrollerv2.SetupResourceInstance,
 		resourcecontrollerv2.SetupResourceKey,
+		ibmclouddatabasesv5.SetupScalingGroup,
+		ibmclouddatabasesv5.SetupWhitelist,
+		ibmclouddatabasesv5.SetupAutoscalingGroup,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

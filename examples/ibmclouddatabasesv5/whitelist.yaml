@@ -1,0 +1,17 @@
+apiVersion: ibmclouddatabasesv5.ibm-cloud.crossplane.io/v1alpha1
+kind: Whitelist
+metadata:
+  name: postgresql-wl
+spec:
+  forProvider:
+    idRef:
+      name: mypostgres
+    ipAddresses:
+      - address: "195.212.0.0/16"
+        description: "Dev IP space 1"
+      - address: "195.0.0.0/8"
+        description: "Dev IP space 2" 
+      - address: "46.5.0.0/16"
+        description: "Dev IP space 3"    
+  providerConfigRef:
+    name: ibm-cloud

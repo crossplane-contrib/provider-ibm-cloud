@@ -53,7 +53,7 @@ const (
 	errGenObservation        = "error generating observation"
 	errCreateResInstanceOpts = "error creating resource instance options"
 	errUpdRes                = "error updating instance"
-	errBadRequwst            = "error getting instance: Bad Request"
+	errBadRequest            = "error getting instance: Bad Request"
 )
 
 // SetupResourceInstance adds a controller that reconciles ResourceInstance managed resources.

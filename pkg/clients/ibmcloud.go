@@ -35,7 +35,9 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
+	corev4 "github.com/IBM/go-sdk-core/v4/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
@@ -49,6 +51,8 @@ const (
 	AccessTokenKey = "access_token"
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
+	// DefaultICDEndpoint is the default endpoint for the ICD service
+	DefaultICDEndpoint = "https://api.us-south.databases.cloud.ibm.com/v5/ibm"
 
 	errTokNotFound        = "IAM access token key not found in provider config secret"
 	errGetSecret          = "cannot get credentials secret"
@@ -62,6 +66,7 @@ const (
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
+	errUnprocEntity       = "Unprocessable Entity"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -171,6 +176,19 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 		return nil, errors.Wrap(err, errGetGtag)
 	}
 
+	icdOpts := &icdv5.IbmCloudDatabasesV5Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	if icdOpts.URL == "" {
+		icdOpts.URL = DefaultICDEndpoint
+	}
+	cs.ibmCloudDatabasesV5, err = icdv5.NewIbmCloudDatabasesV5(icdOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errGetGtag)
+	}
+
 	return &cs, err
 }
 
@@ -180,6 +198,7 @@ type ClientSession interface {
 	GlobalCatalogV1() *gcat.GlobalCatalogV1
 	ResourceManagerV2() *rmgrv2.ResourceManagerV2
 	GlobalTaggingV1() *gtagv1.GlobalTaggingV1
+	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
 }
 
 type clientSessionImpl struct {
@@ -187,6 +206,7 @@ type clientSessionImpl struct {
 	globalCatalogV1      *gcat.GlobalCatalogV1
 	resourceManagerV2    *rmgrv2.ResourceManagerV2
 	globalTaggingV1      *gtagv1.GlobalTaggingV1
+	ibmCloudDatabasesV5  *icdv5.IbmCloudDatabasesV5
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -203,6 +223,10 @@ func (c *clientSessionImpl) ResourceManagerV2() *rmgrv2.ResourceManagerV2 {
 
 func (c *clientSessionImpl) GlobalTaggingV1() *gtagv1.GlobalTaggingV1 {
 	return c.globalTaggingV1
+}
+
+func (c *clientSessionImpl) IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5 {
+	return c.ibmCloudDatabasesV5
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array
@@ -229,7 +253,47 @@ func Int64Ptr(p int64) *int64 { return &p }
 // BoolPtr converts the supplied bool to a pointer to that bool
 func BoolPtr(p bool) *bool { return &p }
 
-// MapToRawExtension - create a Map from a RawExtension
+// Float64PtrToInt64Ptr converts a float64 pointer to an int64 pointer
+func Float64PtrToInt64Ptr(p *float64) *int64 {
+	if p == nil {
+		return nil
+	}
+	i := int64(*p)
+	return &i
+}
+
+// Int64PtrToFloat64Ptr converts a int64 pointer to an float64 pointer
+func Int64PtrToFloat64Ptr(p *int64) *float64 {
+	if p == nil {
+		return nil
+	}
+	f := float64(*p)
+	return &f
+}
+
+// InterfaceToRawExtension - create a RawExtension from an Interface
+func InterfaceToRawExtension(in interface{}) *runtime.RawExtension {
+	if in == nil {
+		return nil
+	}
+	js, _ := json.Marshal(in)
+	o := &runtime.RawExtension{
+		Raw: js,
+	}
+	return o
+}
+
+// RawExtensionToInterface - create an Interface from a RawExtension
+func RawExtensionToInterface(in *runtime.RawExtension) interface{} {
+	if in == nil {
+		return nil
+	}
+	o := make(map[string]interface{})
+	_ = json.Unmarshal(in.Raw, &o)
+	return o
+}
+
+// MapToRawExtension - create a RawExtension from a Map
 func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
 	if len(in) == 0 {
 		return nil
@@ -241,7 +305,7 @@ func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
 	return o
 }
 
-// RawExtensionToMap - create a RawExtension from a Map
+// RawExtensionToMap - create a Map from a RawExtension
 func RawExtensionToMap(in *runtime.RawExtension) map[string]interface{} {
 	if in == nil {
 		return nil
@@ -312,6 +376,11 @@ func ConvertStructToMap(in interface{}) (map[string]interface{}, error) {
 	return o, nil
 }
 
+// IsResourceUnprocessable returns true if resource is inactive
+func IsResourceUnprocessable(err error) bool {
+	return strings.Contains(err.Error(), errUnprocEntity)
+}
+
 // IsResourceGone returns true if resource is gone
 func IsResourceGone(err error) bool {
 	return strings.Contains(err.Error(), errGone) ||
@@ -332,4 +401,22 @@ func IsResourceNotFound(err error) bool {
 func IsResourcePendingReclamation(err error) bool {
 	return strings.Contains(err.Error(), errPendingReclamation) ||
 		strings.Contains(err.Error(), http.StatusText(http.StatusNotFound))
+}
+
+// ExtractErrorMessage extracts the content of an error message from the detailed response (if any)
+// and appends it to the error returned by the SDK
+func ExtractErrorMessage(resp *corev4.DetailedResponse, err error) error {
+	if resp == nil || resp != nil && resp.Result == nil {
+		return err
+	}
+	if resMap, ok := resp.Result.(map[string]interface{}); ok {
+		if errs, ok := resMap["errors"]; ok {
+			jErr, e := json.Marshal(errs)
+			if e != nil {
+				return errors.Wrap(err, e.Error())
+			}
+			return errors.Wrap(err, string(jErr))
+		}
+	}
+	return err
 }

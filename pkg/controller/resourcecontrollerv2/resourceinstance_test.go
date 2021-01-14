@@ -337,7 +337,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(),
-				err: errors.New(errBadRequwst),
+				err: errors.New(errBadRequest),
 			},
 		},
 		"ObservedResourceInstanceUpToDate": {

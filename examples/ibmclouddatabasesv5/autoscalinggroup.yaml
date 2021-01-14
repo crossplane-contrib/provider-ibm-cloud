@@ -1,0 +1,41 @@
+apiVersion: ibmclouddatabasesv5.ibm-cloud.crossplane.io/v1alpha1
+kind: AutoscalingGroup
+metadata:
+  name: postgresql-asg
+spec:
+  forProvider:
+    idRef:
+      name: mypostgres
+    disk:
+      scalers:
+        capacity:
+          enabled: true
+          freeSpaceLessThanPercent: 15
+        ioUtilization:
+          enabled: true
+          overPeriod: 30m
+          abovePercent: 85
+      rate:
+        increasePercent: 20
+        periodSeconds: 900
+        limitMbPerMember: 3670016
+        units: mb
+    memory:
+      scalers:
+        ioUtilization:
+          enabled: true
+          overPeriod: 5m
+          abovePercent: 85
+      rate:
+        increasePercent: 20
+        periodSeconds: 300
+        limitMbPerMember: 114688
+        units: mb
+    cpu:
+      rate:
+        increasePercent: 15
+        periodSeconds: 800
+        limitCountPerMember: 20
+        units: count    
+  providerConfigRef:
+    name: ibm-cloud
