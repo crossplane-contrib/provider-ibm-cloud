@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
@@ -67,6 +68,8 @@ const (
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
 	errUnprocEntity       = "Unprocessable Entity"
+	// ETagAnnotation annotation name for ETag
+	ETagAnnotation = "Etag"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -410,7 +413,7 @@ func IsResourceInactive(err error) bool {
 
 // IsResourceNotFound returns true if the SDK returns a not found error
 func IsResourceNotFound(err error) bool {
-	return strings.Contains(err.Error(), errNotFound)
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted
@@ -435,4 +438,22 @@ func ExtractErrorMessage(resp *corev4.DetailedResponse, err error) error {
 		}
 	}
 	return err
+}
+
+// GetEtag gets the Etag from a detailed response
+func GetEtag(resp *corev4.DetailedResponse) string {
+	if resp.Headers == nil {
+		return ""
+	}
+	return resp.Headers.Get("Etag")
+}
+
+// GetEtagAnnotation returns the etag annotation value on the resource.
+func GetEtagAnnotation(o metav1.Object) string {
+	return o.GetAnnotations()[ETagAnnotation]
+}
+
+// SetEtagAnnotation sets the etag annotation of the resource.
+func SetEtagAnnotation(o metav1.Object, name string) {
+	meta.AddAnnotations(o, map[string]string{ETagAnnotation: name})
 }
