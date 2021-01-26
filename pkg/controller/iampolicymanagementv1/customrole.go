@@ -38,31 +38,26 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iampolicymanagementv1/v1alpha1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcp "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/policy"
+	ibmccr "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/customrole"
 )
 
 const (
-	errNotPolicy           = "managed resource is not a Policy custom resource"
-	errNewClient           = "cannot create new Client"
-	errCreatePolicy        = "could not create policy"
-	errDeletePolicy        = "could not delete policy"
-	errGetPolicyFailed     = "error getting policy"
-	errCheckUpToDate       = "cannot determine if instance is up to date"
-	errGetAuth             = "error getting auth info"
-	errManagedUpdateFailed = "cannot update ResourceInstance custom resource"
-	errGenObservation      = "error generating observation"
-	errCreatePolicyOpts    = "error creating policy options"
-	errUpdPolicy           = "error updating policy"
+	errNotCustomRole        = "managed resource is not a CustomRole custom resource"
+	errCreateCustomRole     = "could not create role"
+	errDeleteCustomRole     = "could not delete role"
+	errGetCustomRoleFailed  = "error getting role"
+	errCreateCustomRoleOpts = "error creating role options"
+	errUpdCustomRole        = "error updating role"
 )
 
-// SetupPolicy adds a controller that reconciles Policy managed resources.
-func SetupPolicy(mgr ctrl.Manager, l logging.Logger) error {
-	name := managed.ControllerName(v1alpha1.PolicyGroupKind)
-	log := l.WithValues("Policy-controller", name)
+// SetupCustomRole adds a controller that reconciles CustomRole managed resources.
+func SetupCustomRole(mgr ctrl.Manager, l logging.Logger) error {
+	name := managed.ControllerName(v1alpha1.CustomRoleGroupKind)
+	log := l.WithValues("CustomRole-controller", name)
 
 	r := managed.NewReconciler(mgr,
-		resource.ManagedKind(v1alpha1.PolicyGroupVersionKind),
-		managed.WithExternalConnecter(&pConnector{
+		resource.ManagedKind(v1alpha1.CustomRoleGroupVersionKind),
+		managed.WithExternalConnecter(&crConnector{
 			kube:     mgr.GetClient(),
 			usage:    resource.NewProviderConfigUsageTracker(mgr.GetClient(), &v1beta1.ProviderConfigUsage{}),
 			clientFn: ibmc.NewClient,
@@ -74,13 +69,13 @@ func SetupPolicy(mgr ctrl.Manager, l logging.Logger) error {
 
 	return ctrl.NewControllerManagedBy(mgr).
 		Named(name).
-		For(&v1alpha1.Policy{}).
+		For(&v1alpha1.CustomRole{}).
 		Complete(r)
 }
 
-// A pConnector is expected to produce an ExternalClient when its Connect method
+// A crConnector is expected to produce an ExternalClient when its Connect method
 // is called.
-type pConnector struct {
+type crConnector struct {
 	kube     client.Client
 	usage    resource.Tracker
 	clientFn func(optd ibmc.ClientOptions) (ibmc.ClientSession, error)
@@ -88,7 +83,7 @@ type pConnector struct {
 }
 
 // Connect produces an ExternalClient for IBM Cloud API
-func (c *pConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
+func (c *crConnector) Connect(ctx context.Context, mg resource.Managed) (managed.ExternalClient, error) {
 	opts, err := ibmc.GetAuthInfo(ctx, c.kube, mg)
 	if err != nil {
 		return nil, errors.Wrap(err, errGetAuth)
@@ -99,21 +94,21 @@ func (c *pConnector) Connect(ctx context.Context, mg resource.Managed) (managed.
 		return nil, errors.Wrap(err, errNewClient)
 	}
 
-	return &pExternal{client: service, kube: c.kube, logger: c.logger}, nil
+	return &crExternal{client: service, kube: c.kube, logger: c.logger}, nil
 }
 
-// An pExternal observes, then either creates, updates, or deletes an
+// An crExternal observes, then either creates, updates, or deletes an
 // external resource to ensure it reflects the managed resource's desired state.
-type pExternal struct {
+type crExternal struct {
 	client ibmc.ClientSession
 	kube   client.Client
 	logger logging.Logger
 }
 
-func (c *pExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	cr, ok := mg.(*v1alpha1.Policy)
+func (c *crExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
+	cr, ok := mg.(*v1alpha1.CustomRole)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errNotPolicy)
+		return managed.ExternalObservation{}, errors.New(errNotCustomRole)
 	}
 
 	if meta.GetExternalName(cr) == "" {
@@ -122,14 +117,14 @@ func (c *pExternal) Observe(ctx context.Context, mg resource.Managed) (managed.E
 		}, nil
 	}
 
-	instance, resp, err := c.client.IamPolicyManagementV1().GetPolicy(&iampmv1.GetPolicyOptions{PolicyID: reference.ToPtrValue(meta.GetExternalName(cr))})
+	instance, resp, err := c.client.IamPolicyManagementV1().GetRole(&iampmv1.GetRoleOptions{RoleID: reference.ToPtrValue(meta.GetExternalName(cr))})
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetPolicyFailed)
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetCustomRoleFailed)
 	}
 	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp))
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
-	if err = ibmcp.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
+	if err = ibmccr.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errManagedUpdateFailed)
 	}
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
@@ -138,15 +133,15 @@ func (c *pExternal) Observe(ctx context.Context, mg resource.Managed) (managed.E
 		}
 	}
 
-	cr.Status.AtProvider, err = ibmcp.GenerateObservation(instance)
+	cr.Status.AtProvider, err = ibmccr.GenerateObservation(instance)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGenObservation)
 	}
 
 	cr.Status.SetConditions(cpv1alpha1.Available())
-	cr.Status.AtProvider.State = ibmcp.StateActive
+	cr.Status.AtProvider.State = ibmccr.StateActive
 
-	upToDate, err := ibmcp.IsUpToDate(&cr.Spec.ForProvider, instance, c.logger)
+	upToDate, err := ibmccr.IsUpToDate(&cr.Spec.ForProvider, instance, c.logger)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errCheckUpToDate)
 	}
@@ -158,59 +153,59 @@ func (c *pExternal) Observe(ctx context.Context, mg resource.Managed) (managed.E
 	}, nil
 }
 
-func (c *pExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	cr, ok := mg.(*v1alpha1.Policy)
+func (c *crExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	cr, ok := mg.(*v1alpha1.CustomRole)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errNotPolicy)
+		return managed.ExternalCreation{}, errors.New(errNotCustomRole)
 	}
 
 	cr.SetConditions(cpv1alpha1.Creating())
-	resInstanceOptions := &iampmv1.CreatePolicyOptions{}
-	if err := ibmcp.GenerateCreatePolicyOptions(cr.Spec.ForProvider, resInstanceOptions); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreatePolicyOpts)
+	resInstanceOptions := &iampmv1.CreateRoleOptions{}
+	if err := ibmccr.GenerateCreateCustomRoleOptions(cr.Spec.ForProvider, resInstanceOptions); err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCustomRoleOpts)
 	}
 
-	instance, _, err := c.client.IamPolicyManagementV1().CreatePolicy(resInstanceOptions)
+	instance, _, err := c.client.IamPolicyManagementV1().CreateRole(resInstanceOptions)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceInactive, err), errCreatePolicy)
+		return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceInactive, err), errCreateCustomRole)
 	}
 
 	meta.SetExternalName(cr, reference.FromPtrValue(instance.ID))
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
-func (c *pExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	cr, ok := mg.(*v1alpha1.Policy)
+func (c *crExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	cr, ok := mg.(*v1alpha1.CustomRole)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errNotPolicy)
+		return managed.ExternalUpdate{}, errors.New(errNotCustomRole)
 	}
 
 	id := cr.Status.AtProvider.ID
 	eTag := ibmc.GetEtagAnnotation(cr)
-	updInstanceOpts := &iampmv1.UpdatePolicyOptions{}
-	if err := ibmcp.GenerateUpdatePolicyOptions(id, eTag, cr.Spec.ForProvider, updInstanceOpts); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdPolicy)
+	updInstanceOpts := &iampmv1.UpdateRoleOptions{}
+	if err := ibmccr.GenerateUpdateCustomRoleOptions(id, eTag, cr.Spec.ForProvider, updInstanceOpts); err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdCustomRole)
 	}
 
-	_, _, err := c.client.IamPolicyManagementV1().UpdatePolicy(updInstanceOpts)
+	_, _, err := c.client.IamPolicyManagementV1().UpdateRole(updInstanceOpts)
 	if err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdPolicy)
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdCustomRole)
 	}
 
 	return managed.ExternalUpdate{}, nil
 }
 
-func (c *pExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	cr, ok := mg.(*v1alpha1.Policy)
+func (c *crExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	cr, ok := mg.(*v1alpha1.CustomRole)
 	if !ok {
-		return errors.New(errNotPolicy)
+		return errors.New(errNotCustomRole)
 	}
 
 	cr.SetConditions(cpv1alpha1.Deleting())
 
-	_, err := c.client.IamPolicyManagementV1().DeletePolicy(&iampmv1.DeletePolicyOptions{PolicyID: &cr.Status.AtProvider.ID})
+	_, err := c.client.IamPolicyManagementV1().DeleteRole(&iampmv1.DeleteRoleOptions{RoleID: &cr.Status.AtProvider.ID})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeletePolicy)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteCustomRole)
 	}
 	return nil
 }

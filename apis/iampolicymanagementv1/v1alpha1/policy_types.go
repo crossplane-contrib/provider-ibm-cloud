@@ -114,7 +114,7 @@ type PolicyObservation struct {
 	// The iam ID of the entity that last modified the policy.
 	LastModifiedByID string `json:"lastModifiedById,omitempty"`
 
-	// The current state of the autoscaling group
+	// The current state of the policy
 	State string `json:"state,omitempty"`
 }
 

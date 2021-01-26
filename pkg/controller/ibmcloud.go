@@ -39,6 +39,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		ibmclouddatabasesv5.SetupWhitelist,
 		ibmclouddatabasesv5.SetupAutoscalingGroup,
 		iampolicymanagementv1.SetupPolicy,
+		iampolicymanagementv1.SetupCustomRole,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

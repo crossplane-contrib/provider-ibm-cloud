@@ -17,6 +17,6 @@ spec:
         value: 0b5a00334eaf9eb9339d2ab48f20d7f5
         operator: stringEquals
       - name: serviceName
-        value: mycos
+        value: postgres
   providerConfigRef:
     name: ibm-cloud

@@ -23,11 +23,11 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
-	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"sigs.k8s.io/controller-runtime/pkg/client"
+
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -41,61 +41,43 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iampolicymanagementv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcp "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/policy"
+	ibmccr "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/customrole"
 )
 
 const (
-	bearerTok     = "mock-token"
-	errBadRequest = "error getting policy: Bad Request"
-	errForbidden  = "error getting policy: Forbidden"
+	errCrBadRequest = "error getting role: Bad Request"
+	errCrForbidden  = "error getting role: Forbidden"
 )
 
 var (
-	pName                = "myPolicy"
-	policyTypeAccess     = "access"
-	policyTypeAuth       = "authorization"
-	policyAttributeName  = "iam_id"
-	policyAttributeValue = "IBMid-123453user"
-	createdByID          = "IBMid-123453user"
-	roleID               = "crn:v1:bluemix:public:iam::::role:Editor"
-	displayName          = "editor"
-	roleDescription      = "role for editor"
-	resAttr1Name         = "accountId"
-	resAttr1Value        = "my-account-id"
-	resAttr2Name         = "serviceName"
-	resAttr2Value        = "cos"
-	resAttr3Name         = "resource"
-	resAttr3Value        = "mycos"
-	resAttr3Operator     = "stringEquals"
-	policyDescription    = "this is my policy 1"
-	policyID             = "12345678-abcd-1a2b-a1b2-1234567890ab"
-	createdAt, _         = strfmt.ParseDateTime("2020-10-31T02:33:06Z")
-	lastModifiedAt, _    = strfmt.ParseDateTime("2020-10-31T03:33:06Z")
-	hRef                 = "https://iam.cloud.ibm.com/v1/policies/12345678-abcd-1a2b-a1b2-1234567890ab"
-	eTag                 = "1-eb832c7ff8c8016a542974b9f880b55e"
+	roleName         = "myCustomRole"
+	croleDescription = "role for my service"
+	accountID        = "aa5a00334eaf9eb9339d2ab48f20d7ff"
+	croleDisplayName = "MyCustomRole"
+	serviceName      = "mypostgres"
+	action1          = "iam.policy.create"
+	action2          = "iam.policy.update"
+	cRoleID          = "12345678-abcd-1a2b-a1b2-1234567890ab"
+	crHRef           = "https://iam.cloud.ibm.com/v1/roles/12345678-abcd-1a2b-a1b2-1234567890ab"
+	crCrn            = "crn:v1:bluemix:public:iam::::role:" + roleName
 )
 
 var _ managed.ExternalConnecter = &pConnector{}
 var _ managed.ExternalClient = &pExternal{}
 
-type pModifier func(*v1alpha1.Policy)
+type crModifier func(*v1alpha1.CustomRole)
 
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
-
-func p(im ...pModifier) *v1alpha1.Policy {
-	i := &v1alpha1.Policy{
+func cr(im ...crModifier) *v1alpha1.CustomRole {
+	i := &v1alpha1.CustomRole{
 		ObjectMeta: metav1.ObjectMeta{
-			Name:       pName,
+			Name:       roleName,
 			Finalizers: []string{},
 			Annotations: map[string]string{
-				meta.AnnotationKeyExternalName: policyID,
+				meta.AnnotationKeyExternalName: cRoleID,
 			},
 		},
-		Spec: v1alpha1.PolicySpec{
-			ForProvider: v1alpha1.PolicyParameters{},
+		Spec: v1alpha1.CustomRoleSpec{
+			ForProvider: v1alpha1.CustomRoleParameters{},
 		},
 	}
 	for _, m := range im {
@@ -104,8 +86,8 @@ func p(im ...pModifier) *v1alpha1.Policy {
 	return i
 }
 
-func pWithExternalNameAnnotation(externalName string) pModifier {
-	return func(i *v1alpha1.Policy) {
+func crWithExternalNameAnnotation(externalName string) crModifier {
+	return func(i *v1alpha1.CustomRole) {
 		if i.ObjectMeta.Annotations == nil {
 			i.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -113,8 +95,8 @@ func pWithExternalNameAnnotation(externalName string) pModifier {
 	}
 }
 
-func pWithEtagAnnotation(eTag string) pModifier {
-	return func(i *v1alpha1.Policy) {
+func crWithEtagAnnotation(eTag string) crModifier {
+	return func(i *v1alpha1.CustomRole) {
 		if i.ObjectMeta.Annotations == nil {
 			i.ObjectMeta.Annotations = make(map[string]string)
 		}
@@ -122,56 +104,26 @@ func pWithEtagAnnotation(eTag string) pModifier {
 	}
 }
 
-func pWithSpec(p v1alpha1.PolicyParameters) pModifier {
-	return func(r *v1alpha1.Policy) { r.Spec.ForProvider = p }
+func crWithSpec(p v1alpha1.CustomRoleParameters) crModifier {
+	return func(r *v1alpha1.CustomRole) { r.Spec.ForProvider = p }
 }
 
-func pWithConditions(c ...cpv1alpha1.Condition) pModifier {
-	return func(i *v1alpha1.Policy) { i.Status.SetConditions(c...) }
+func crWithConditions(c ...cpv1alpha1.Condition) crModifier {
+	return func(i *v1alpha1.CustomRole) { i.Status.SetConditions(c...) }
 }
 
-func pWithStatus(p v1alpha1.PolicyObservation) pModifier {
-	return func(r *v1alpha1.Policy) { r.Status.AtProvider = p }
+func crWithStatus(p v1alpha1.CustomRoleObservation) crModifier {
+	return func(r *v1alpha1.CustomRole) { r.Status.AtProvider = p }
 }
 
-func params(m ...func(*v1alpha1.PolicyParameters)) *v1alpha1.PolicyParameters {
-	p := &v1alpha1.PolicyParameters{
-		Type: policyTypeAccess,
-		Subjects: []v1alpha1.PolicySubject{
-			{
-				Attributes: []v1alpha1.SubjectAttribute{
-					{
-						Name:  &policyAttributeName,
-						Value: &policyAttributeValue,
-					},
-				},
-			},
-		},
-		Roles: []v1alpha1.PolicyRole{
-			{
-				RoleID: roleID,
-			},
-		},
-		Resources: []v1alpha1.PolicyResource{
-			{
-				Attributes: []v1alpha1.ResourceAttribute{
-					{
-						Name:  &resAttr1Name,
-						Value: &resAttr1Value,
-					},
-					{
-						Name:  &resAttr2Name,
-						Value: &resAttr2Value,
-					},
-					{
-						Name:     &resAttr3Name,
-						Value:    &resAttr3Value,
-						Operator: &resAttr3Operator,
-					},
-				},
-			},
-		},
-		Description: &policyDescription,
+func crParams(m ...func(*v1alpha1.CustomRoleParameters)) *v1alpha1.CustomRoleParameters {
+	p := &v1alpha1.CustomRoleParameters{
+		DisplayName: croleDisplayName,
+		Actions:     []string{action1, action2},
+		Name:        roleName,
+		AccountID:   accountID,
+		ServiceName: serviceName,
+		Description: &croleDescription,
 	}
 	for _, f := range m {
 		f(p)
@@ -179,14 +131,15 @@ func params(m ...func(*v1alpha1.PolicyParameters)) *v1alpha1.PolicyParameters {
 	return p
 }
 
-func observation(m ...func(*v1alpha1.PolicyObservation)) *v1alpha1.PolicyObservation {
-	o := &v1alpha1.PolicyObservation{
-		ID:               policyID,
+func crObservation(m ...func(*v1alpha1.CustomRoleObservation)) *v1alpha1.CustomRoleObservation {
+	o := &v1alpha1.CustomRoleObservation{
+		ID:               cRoleID,
+		CRN:              crCrn,
 		CreatedAt:        ibmc.DateTimeToMetaV1Time(&createdAt),
 		LastModifiedAt:   ibmc.DateTimeToMetaV1Time(&lastModifiedAt),
-		CreatedByID:      policyAttributeValue,
-		LastModifiedByID: policyAttributeValue,
-		Href:             hRef,
+		CreatedByID:      createdByID,
+		LastModifiedByID: createdByID,
+		Href:             crHRef,
 	}
 
 	for _, f := range m {
@@ -195,52 +148,21 @@ func observation(m ...func(*v1alpha1.PolicyObservation)) *v1alpha1.PolicyObserva
 	return o
 }
 
-func instance(m ...func(*iampmv1.Policy)) *iampmv1.Policy {
-	i := &iampmv1.Policy{
-		ID:          &policyID,
-		Type:        &policyTypeAccess,
-		Description: &policyDescription,
-		Subjects: []iampmv1.PolicySubject{
-			{
-				Attributes: []iampmv1.SubjectAttribute{
-					{
-						Name:  &policyAttributeName,
-						Value: &policyAttributeValue,
-					},
-				},
-			},
-		},
-		Roles: []iampmv1.PolicyRole{
-			{
-				RoleID:      &roleID,
-				DisplayName: &displayName,
-				Description: &roleDescription,
-			},
-		},
-		Resources: []iampmv1.PolicyResource{
-			{
-				Attributes: []iampmv1.ResourceAttribute{
-					{
-						Name:  &resAttr1Name,
-						Value: &resAttr1Value,
-					},
-					{
-						Name:  &resAttr2Name,
-						Value: &resAttr2Value,
-					},
-					{
-						Name:     &resAttr3Name,
-						Value:    &resAttr3Value,
-						Operator: &resAttr3Operator,
-					},
-				},
-			},
-		},
-		Href:             &hRef,
+func crInstance(m ...func(*iampmv1.CustomRole)) *iampmv1.CustomRole {
+	i := &iampmv1.CustomRole{
+		ID:               &cRoleID,
+		Name:             &roleName,
+		AccountID:        &accountID,
+		ServiceName:      &serviceName,
 		CreatedAt:        &createdAt,
 		CreatedByID:      &createdByID,
 		LastModifiedAt:   &lastModifiedAt,
 		LastModifiedByID: &createdByID,
+		DisplayName:      &croleDisplayName,
+		Description:      &croleDescription,
+		Actions:          []string{action1, action2},
+		CRN:              &crCrn,
+		Href:             &crHRef,
 	}
 
 	for _, f := range m {
@@ -249,7 +171,7 @@ func instance(m ...func(*iampmv1.Policy)) *iampmv1.Policy {
 	return i
 }
 
-func TestPolicyObserve(t *testing.T) {
+func TestCustomRoleObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -276,15 +198,15 @@ func TestPolicyObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
 					},
 				},
 			},
 			args: args{
-				mg: p(),
+				mg: cr(),
 			},
 			want: want{
-				mg:  p(),
+				mg:  cr(),
 				err: nil,
 			},
 		},
@@ -299,18 +221,19 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
 					},
 				},
 			},
 			args: args{
-				mg: p(),
+				mg: cr(),
 			},
 			want: want{
-				mg:  p(),
-				err: errors.New(errBadRequest),
+				mg:  cr(),
+				err: errors.New(errCrBadRequest),
 			},
 		},
+
 		"GetForbidden": {
 			handlers: []handler{
 				{
@@ -322,16 +245,16 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
 					},
 				},
 			},
 			args: args{
-				mg: p(),
+				mg: cr(),
 			},
 			want: want{
-				mg:  p(),
-				err: errors.New(errForbidden),
+				mg:  cr(),
+				err: errors.New(errCrForbidden),
 			},
 		},
 		"UpToDate": {
@@ -345,8 +268,8 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.Header().Set("ETag", eTag)
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
@@ -354,18 +277,18 @@ func TestPolicyObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: p(
-					pWithExternalNameAnnotation(policyID),
-					pWithSpec(*params()),
+				mg: cr(
+					crWithExternalNameAnnotation(policyID),
+					crWithSpec(*crParams()),
 				),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithConditions(cpv1alpha1.Available()),
-					pWithStatus(*observation(func(po *v1alpha1.PolicyObservation) {
-						po.State = ibmcp.StateActive
+				mg: cr(crWithSpec(*crParams()),
+					crWithConditions(cpv1alpha1.Available()),
+					crWithStatus(*crObservation(func(cro *v1alpha1.CustomRoleObservation) {
+						cro.State = ibmccr.StateActive
 					})),
-					pWithEtagAnnotation(eTag)),
+					crWithEtagAnnotation(eTag)),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -373,7 +296,6 @@ func TestPolicyObserve(t *testing.T) {
 				},
 			},
 		},
-
 		"NotUpToDate": {
 			handlers: []handler{
 				{
@@ -385,10 +307,10 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.Header().Set("ETag", eTag)
-						p := instance(func(p *iampmv1.Policy) {
-							p.Type = &policyTypeAuth
+						cr := crInstance(func(p *iampmv1.CustomRole) {
+							p.Actions = []string{action1}
 						})
-						_ = json.NewEncoder(w).Encode(p)
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
@@ -396,17 +318,17 @@ func TestPolicyObserve(t *testing.T) {
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 			args: args{
-				mg: p(
-					pWithExternalNameAnnotation(policyID),
-					pWithSpec(*params()),
+				mg: cr(
+					crWithExternalNameAnnotation(policyID),
+					crWithSpec(*crParams()),
 				),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithEtagAnnotation(eTag),
-					pWithConditions(cpv1alpha1.Available()),
-					pWithStatus(*observation(func(p *v1alpha1.PolicyObservation) {
-						p.State = ibmcp.StateActive
+				mg: cr(crWithSpec(*crParams()),
+					crWithEtagAnnotation(eTag),
+					crWithConditions(cpv1alpha1.Available()),
+					crWithStatus(*crObservation(func(cro *v1alpha1.CustomRoleObservation) {
+						cro.State = ibmccr.StateActive
 					}))),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
@@ -430,7 +352,7 @@ func TestPolicyObserve(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
+			e := crExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -456,7 +378,7 @@ func TestPolicyObserve(t *testing.T) {
 	}
 }
 
-func TestPolicyCreate(t *testing.T) {
+func TestCustomRoleCreate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -482,18 +404,18 @@ func TestPolicyCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params())),
+				mg: cr(crWithSpec(*crParams())),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithConditions(cpv1alpha1.Creating()),
-					pWithExternalNameAnnotation(policyID)),
+				mg: cr(crWithSpec(*crParams()),
+					crWithConditions(cpv1alpha1.Creating()),
+					crWithExternalNameAnnotation(policyID)),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
@@ -509,19 +431,19 @@ func TestPolicyCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params())),
+				mg: cr(crWithSpec(*crParams())),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithConditions(cpv1alpha1.Creating())),
+				mg: cr(crWithSpec(*crParams()),
+					crWithConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreatePolicy),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateCustomRole),
 			},
 		},
 		"Conflict": {
@@ -535,19 +457,19 @@ func TestPolicyCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusConflict)
 						_ = r.Body.Close()
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params())),
+				mg: cr(crWithSpec(*crParams())),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithConditions(cpv1alpha1.Creating())),
+				mg: cr(crWithSpec(*crParams()),
+					crWithConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusConflict)), errCreatePolicy),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusConflict)), errCreateCustomRole),
 			},
 		},
 		"Forbidden": {
@@ -561,19 +483,19 @@ func TestPolicyCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
 						_ = r.Body.Close()
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params())),
+				mg: cr(crWithSpec(*crParams())),
 			},
 			want: want{
-				mg: p(pWithSpec(*params()),
-					pWithConditions(cpv1alpha1.Creating())),
+				mg: cr(crWithSpec(*crParams()),
+					crWithConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errCreatePolicy),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errCreateCustomRole),
 			},
 		},
 	}
@@ -591,7 +513,7 @@ func TestPolicyCreate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
+			e := crExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -617,7 +539,7 @@ func TestPolicyCreate(t *testing.T) {
 	}
 }
 
-func TestPolicyDelete(t *testing.T) {
+func TestCustomRoleDelete(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -646,10 +568,10 @@ func TestPolicyDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithStatus(*observation())),
+				mg: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
+				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -668,11 +590,11 @@ func TestPolicyDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithStatus(*observation())),
+				mg: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeletePolicy),
+				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteCustomRole),
 			},
 		},
 		"InvalidToken": {
@@ -690,11 +612,11 @@ func TestPolicyDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithStatus(*observation())),
+				mg: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusUnauthorized)), errDeletePolicy),
+				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusUnauthorized)), errDeleteCustomRole),
 			},
 		},
 		"Forbidden": {
@@ -712,11 +634,11 @@ func TestPolicyDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithStatus(*observation())),
+				mg: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errDeletePolicy),
+				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errDeleteCustomRole),
 			},
 		},
 	}
@@ -734,7 +656,7 @@ func TestPolicyDelete(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
+			e := crExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -757,7 +679,7 @@ func TestPolicyDelete(t *testing.T) {
 	}
 }
 
-func TestPolicyUpdate(t *testing.T) {
+func TestCustomRoleUpdate(t *testing.T) {
 	type args struct {
 		mg resource.Managed
 	}
@@ -783,16 +705,16 @@ func TestPolicyUpdate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
-						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						cr := crInstance()
+						_ = json.NewEncoder(w).Encode(cr)
 					},
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation()), pWithEtagAnnotation(eTag)),
+				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation()), crWithEtagAnnotation(eTag)),
 			},
 			want: want{
-				mg:  p(pWithSpec(*params()), pWithStatus(*observation()), pWithEtagAnnotation(eTag)),
+				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation()), crWithEtagAnnotation(eTag)),
 				upd: managed.ExternalUpdate{},
 				err: nil,
 			},
@@ -812,11 +734,11 @@ func TestPolicyUpdate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation())),
+				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithSpec(*params()), pWithStatus(*observation())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdPolicy),
+				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdCustomRole),
 			},
 		},
 		"NotFound": {
@@ -834,11 +756,11 @@ func TestPolicyUpdate(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation())),
+				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
 			},
 			want: want{
-				mg:  p(pWithSpec(*params()), pWithStatus(*observation())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errUpdPolicy),
+				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errUpdCustomRole),
 			},
 		},
 	}
@@ -856,7 +778,7 @@ func TestPolicyUpdate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
+			e := crExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),

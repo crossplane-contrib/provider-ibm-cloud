@@ -39,14 +39,20 @@ var (
 
 // Resourcecontrollerv2 types metadata.
 var (
-	PolicyKind             = reflect.TypeOf(Policy{}).Name()
-	PolicyGroupKind        = schema.GroupKind{Group: Group, Kind: PolicyKind}.String()
-	PolicyKindAPIVersion   = PolicyKind + "." + SchemeGroupVersion.String()
-	PolicyGroupVersionKind = SchemeGroupVersion.WithKind(PolicyKind)
+	PolicyKind                 = reflect.TypeOf(Policy{}).Name()
+	PolicyGroupKind            = schema.GroupKind{Group: Group, Kind: PolicyKind}.String()
+	PolicyKindAPIVersion       = PolicyKind + "." + SchemeGroupVersion.String()
+	PolicyGroupVersionKind     = SchemeGroupVersion.WithKind(PolicyKind)
+	CustomRoleKind             = reflect.TypeOf(CustomRole{}).Name()
+	CustomRoleGroupKind        = schema.GroupKind{Group: Group, Kind: CustomRoleKind}.String()
+	CustomRoleKindAPIVersion   = CustomRoleKind + "." + SchemeGroupVersion.String()
+	CustomRoleGroupVersionKind = SchemeGroupVersion.WithKind(CustomRoleKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&Policy{},
-		&PolicyList{})
+		&PolicyList{},
+		&CustomRole{},
+		&CustomRoleList{})
 }
