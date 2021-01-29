@@ -41,6 +41,7 @@ import (
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
+	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
@@ -64,6 +65,7 @@ const (
 	errInitClient         = "error initializing client"
 	errParseTok           = "error parsig IAM access token"
 	errNotFound           = "Not Found"
+	errFailedToFind       = "Failed to find"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -202,6 +204,16 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	iamagOpts := &iamagv2.IamAccessGroupsV2Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	cs.iamAccessGroupsV2, err = iamagv2.NewIamAccessGroupsV2(iamagOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
 	return &cs, err
 }
 
@@ -213,6 +225,7 @@ type ClientSession interface {
 	GlobalTaggingV1() *gtagv1.GlobalTaggingV1
 	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
 	IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1
+	IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2
 }
 
 type clientSessionImpl struct {
@@ -222,6 +235,7 @@ type clientSessionImpl struct {
 	globalTaggingV1       *gtagv1.GlobalTaggingV1
 	ibmCloudDatabasesV5   *icdv5.IbmCloudDatabasesV5
 	iamPolicyManagementV1 *iampmv1.IamPolicyManagementV1
+	iamAccessGroupsV2     *iamagv2.IamAccessGroupsV2
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -246,6 +260,10 @@ func (c *clientSessionImpl) IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5 {
 
 func (c *clientSessionImpl) IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1 {
 	return c.iamPolicyManagementV1
+}
+
+func (c *clientSessionImpl) IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2 {
+	return c.iamAccessGroupsV2
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array
@@ -413,7 +431,8 @@ func IsResourceInactive(err error) bool {
 
 // IsResourceNotFound returns true if the SDK returns a not found error
 func IsResourceNotFound(err error) bool {
-	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound))
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted
