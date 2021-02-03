@@ -41,6 +41,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		iampolicymanagementv1.SetupPolicy,
 		iampolicymanagementv1.SetupCustomRole,
 		iamaccessgroupsv2.SetupAccessGroup,
+		iamaccessgroupsv2.SetupGroupMembership,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

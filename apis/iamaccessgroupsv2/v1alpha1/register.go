@@ -43,10 +43,18 @@ var (
 	AccessGroupGroupKind        = schema.GroupKind{Group: Group, Kind: AccessGroupKind}.String()
 	AccessGroupKindAPIVersion   = AccessGroupKind + "." + SchemeGroupVersion.String()
 	AccessGroupGroupVersionKind = SchemeGroupVersion.WithKind(AccessGroupKind)
+
+	GroupMembershipKind             = reflect.TypeOf(GroupMembership{}).Name()
+	GroupMembershipGroupKind        = schema.GroupKind{Group: Group, Kind: GroupMembershipKind}.String()
+	GroupMembershipKindAPIVersion   = GroupMembershipKind + "." + SchemeGroupVersion.String()
+	GroupMembershipGroupVersionKind = SchemeGroupVersion.WithKind(GroupMembershipKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&AccessGroup{},
-		&AccessGroupList{})
+		&AccessGroupList{},
+		&GroupMembership{},
+		&GroupMembershipList{},
+	)
 }
