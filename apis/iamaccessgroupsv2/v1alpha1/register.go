@@ -48,6 +48,11 @@ var (
 	GroupMembershipGroupKind        = schema.GroupKind{Group: Group, Kind: GroupMembershipKind}.String()
 	GroupMembershipKindAPIVersion   = GroupMembershipKind + "." + SchemeGroupVersion.String()
 	GroupMembershipGroupVersionKind = SchemeGroupVersion.WithKind(GroupMembershipKind)
+
+	AccessGroupRuleKind             = reflect.TypeOf(AccessGroupRule{}).Name()
+	AccessGroupRuleGroupKind        = schema.GroupKind{Group: Group, Kind: AccessGroupRuleKind}.String()
+	AccessGroupRuleKindAPIVersion   = AccessGroupRuleKind + "." + SchemeGroupVersion.String()
+	AccessGroupRuleGroupVersionKind = SchemeGroupVersion.WithKind(AccessGroupRuleKind)
 )
 
 func init() {
@@ -56,5 +61,7 @@ func init() {
 		&AccessGroupList{},
 		&GroupMembership{},
 		&GroupMembershipList{},
+		&AccessGroupRule{},
+		&AccessGroupRuleList{},
 	)
 }

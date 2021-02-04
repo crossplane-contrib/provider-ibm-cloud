@@ -76,6 +76,62 @@ func (mg *AccessGroup) SetWriteConnectionSecretToReference(r *runtimev1alpha1.Se
 	mg.Spec.WriteConnectionSecretToReference = r
 }
 
+// GetCondition of this AccessGroupRule.
+func (mg *AccessGroupRule) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
+	return mg.Status.GetCondition(ct)
+}
+
+// GetDeletionPolicy of this AccessGroupRule.
+func (mg *AccessGroupRule) GetDeletionPolicy() runtimev1alpha1.DeletionPolicy {
+	return mg.Spec.DeletionPolicy
+}
+
+// GetProviderConfigReference of this AccessGroupRule.
+func (mg *AccessGroupRule) GetProviderConfigReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderConfigReference
+}
+
+/*
+GetProviderReference of this AccessGroupRule.
+Deprecated: Use GetProviderConfigReference.
+*/
+func (mg *AccessGroupRule) GetProviderReference() *runtimev1alpha1.Reference {
+	return mg.Spec.ProviderReference
+}
+
+// GetWriteConnectionSecretToReference of this AccessGroupRule.
+func (mg *AccessGroupRule) GetWriteConnectionSecretToReference() *runtimev1alpha1.SecretReference {
+	return mg.Spec.WriteConnectionSecretToReference
+}
+
+// SetConditions of this AccessGroupRule.
+func (mg *AccessGroupRule) SetConditions(c ...runtimev1alpha1.Condition) {
+	mg.Status.SetConditions(c...)
+}
+
+// SetDeletionPolicy of this AccessGroupRule.
+func (mg *AccessGroupRule) SetDeletionPolicy(r runtimev1alpha1.DeletionPolicy) {
+	mg.Spec.DeletionPolicy = r
+}
+
+// SetProviderConfigReference of this AccessGroupRule.
+func (mg *AccessGroupRule) SetProviderConfigReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderConfigReference = r
+}
+
+/*
+SetProviderReference of this AccessGroupRule.
+Deprecated: Use SetProviderConfigReference.
+*/
+func (mg *AccessGroupRule) SetProviderReference(r *runtimev1alpha1.Reference) {
+	mg.Spec.ProviderReference = r
+}
+
+// SetWriteConnectionSecretToReference of this AccessGroupRule.
+func (mg *AccessGroupRule) SetWriteConnectionSecretToReference(r *runtimev1alpha1.SecretReference) {
+	mg.Spec.WriteConnectionSecretToReference = r
+}
+
 // GetCondition of this GroupMembership.
 func (mg *GroupMembership) GetCondition(ct runtimev1alpha1.ConditionType) runtimev1alpha1.Condition {
 	return mg.Status.GetCondition(ct)

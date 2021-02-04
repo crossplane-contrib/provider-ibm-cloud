@@ -287,6 +287,9 @@ func BoolValue(v *bool) bool {
 // Int64Ptr converts the supplied int64 to a pointer to that int64.
 func Int64Ptr(p int64) *int64 { return &p }
 
+// Int64Value converts the supplied int64 pointer to a value
+func Int64Value(p *int64) int64 { return *p }
+
 // BoolPtr converts the supplied bool to a pointer to that bool
 func BoolPtr(p bool) *bool { return &p }
 

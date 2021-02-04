@@ -26,8 +26,27 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 )
 
-// ResolveReferences of this ScalingGroup
+// ResolveReferences of this GroupMembership
 func (mg *GroupMembership) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPIResolver(c, mg)
+
+	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.AccessGroupID),
+		Reference:    mg.Spec.ForProvider.AccessGroupIDRef,
+		Selector:     mg.Spec.ForProvider.AccessGroupIDSelector,
+		To:           reference.To{Managed: &AccessGroup{}, List: &AccessGroupList{}},
+		Extract:      AccessGroupID(),
+	})
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.accessGroupId")
+	}
+	mg.Spec.ForProvider.AccessGroupID = reference.ToPtrValue(rsp.ResolvedValue)
+	mg.Spec.ForProvider.AccessGroupIDRef = rsp.ResolvedReference
+	return nil
+}
+
+// ResolveReferences of this AccessGroupRule
+func (mg *AccessGroupRule) ResolveReferences(ctx context.Context, c client.Reader) error {
 	r := reference.NewAPIResolver(c, mg)
 
 	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
