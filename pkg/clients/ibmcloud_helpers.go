@@ -86,13 +86,13 @@ func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearch
 	}
 
 	var id *string
-    id = svcEntries.Resources[0].Metadata.Ui.PrimaryOfferingID
+	id = svcEntries.Resources[0].Metadata.Ui.PrimaryOfferingID
 
-    // Some Catalog Entries (i.e. Cloudant) do not set UI
-    // Metadata ID. Use Resource ID attribute in this case.
-    if id == nil {
-        id = svcEntries.Resources[0].ID
-    }
+	// Some Catalog Entries (i.e. Cloudant) do not set UI
+	// Metadata ID. Use Resource ID attribute in this case.
+	if id == nil {
+		id = svcEntries.Resources[0].ID
+	}
 
 	getChildOptions := &gcat.GetChildObjectsOptions{
 		ID:   id,
