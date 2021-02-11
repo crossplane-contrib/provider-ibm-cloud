@@ -1,0 +1,15 @@
+apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+kind: ResourceInstance
+metadata:
+  name: mycloudant
+spec:
+  forProvider:
+    name: mycloudant
+    target: us-south
+    resourceGroupName: default
+    serviceName: cloudantnosqldb
+    resourcePlanName: standard
+    tags:
+      - dev
+  providerConfigRef:
+    name: ibm-cloud
