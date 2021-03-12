@@ -33,6 +33,7 @@ import (
 	"k8s.io/apimachinery/pkg/types"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
@@ -40,6 +41,8 @@ import (
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
+	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
+	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
 
@@ -59,14 +62,16 @@ const (
 	errGetTracker         = "error setting up provider config usage tracker"
 	errGetProviderCfg     = "error getting provider config"
 	errNoSecret           = "no credentials secret reference was provided"
-	errGetGcat            = "error initializing GlobalCatalogV1 client"
-	errGetGtag            = "error initializing GlobalTaggingV1 client"
+	errInitClient         = "error initializing client"
 	errParseTok           = "error parsig IAM access token"
 	errNotFound           = "Not Found"
+	errFailedToFind       = "Failed to find"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
 	errUnprocEntity       = "Unprocessable Entity"
+	// ETagAnnotation annotation name for ETag
+	ETagAnnotation = "Etag"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -143,7 +148,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.resourceControllerV2, err = rcv2.NewResourceControllerV2(rcv2Opts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	gcatOpts := &gcat.GlobalCatalogV1Options{
@@ -153,7 +158,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.globalCatalogV1, err = gcat.NewGlobalCatalogV1(gcatOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	rmgrOpts := &rmgrv2.ResourceManagerV2Options{
@@ -163,7 +168,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.resourceManagerV2, err = rmgrv2.NewResourceManagerV2(rmgrOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	gtagsOpts := &gtagv1.GlobalTaggingV1Options{
@@ -173,7 +178,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.globalTaggingV1, err = gtagv1.NewGlobalTaggingV1(gtagsOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGtag)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	icdOpts := &icdv5.IbmCloudDatabasesV5Options{
@@ -186,7 +191,27 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.ibmCloudDatabasesV5, err = icdv5.NewIbmCloudDatabasesV5(icdOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGtag)
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
+	iampmOpts := &iampmv1.IamPolicyManagementV1Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	cs.iamPolicyManagementV1, err = iampmv1.NewIamPolicyManagementV1(iampmOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
+	iamagOpts := &iamagv2.IamAccessGroupsV2Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	cs.iamAccessGroupsV2, err = iamagv2.NewIamAccessGroupsV2(iamagOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	return &cs, err
@@ -199,14 +224,18 @@ type ClientSession interface {
 	ResourceManagerV2() *rmgrv2.ResourceManagerV2
 	GlobalTaggingV1() *gtagv1.GlobalTaggingV1
 	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
+	IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1
+	IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2
 }
 
 type clientSessionImpl struct {
-	resourceControllerV2 *rcv2.ResourceControllerV2
-	globalCatalogV1      *gcat.GlobalCatalogV1
-	resourceManagerV2    *rmgrv2.ResourceManagerV2
-	globalTaggingV1      *gtagv1.GlobalTaggingV1
-	ibmCloudDatabasesV5  *icdv5.IbmCloudDatabasesV5
+	resourceControllerV2  *rcv2.ResourceControllerV2
+	globalCatalogV1       *gcat.GlobalCatalogV1
+	resourceManagerV2     *rmgrv2.ResourceManagerV2
+	globalTaggingV1       *gtagv1.GlobalTaggingV1
+	ibmCloudDatabasesV5   *icdv5.IbmCloudDatabasesV5
+	iamPolicyManagementV1 *iampmv1.IamPolicyManagementV1
+	iamAccessGroupsV2     *iamagv2.IamAccessGroupsV2
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -229,6 +258,14 @@ func (c *clientSessionImpl) IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5 {
 	return c.ibmCloudDatabasesV5
 }
 
+func (c *clientSessionImpl) IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1 {
+	return c.iamPolicyManagementV1
+}
+
+func (c *clientSessionImpl) IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2 {
+	return c.iamAccessGroupsV2
+}
+
 // StrPtr2Bytes converts the supplied string pointer to a byte array
 // and returns nil for nil pointer
 func StrPtr2Bytes(v *string) []byte {
@@ -249,6 +286,9 @@ func BoolValue(v *bool) bool {
 
 // Int64Ptr converts the supplied int64 to a pointer to that int64.
 func Int64Ptr(p int64) *int64 { return &p }
+
+// Int64Value converts the supplied int64 pointer to a value
+func Int64Value(p *int64) int64 { return *p }
 
 // BoolPtr converts the supplied bool to a pointer to that bool
 func BoolPtr(p bool) *bool { return &p }
@@ -394,7 +434,8 @@ func IsResourceInactive(err error) bool {
 
 // IsResourceNotFound returns true if the SDK returns a not found error
 func IsResourceNotFound(err error) bool {
-	return strings.Contains(err.Error(), errNotFound)
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted
@@ -419,4 +460,22 @@ func ExtractErrorMessage(resp *corev4.DetailedResponse, err error) error {
 		}
 	}
 	return err
+}
+
+// GetEtag gets the Etag from a detailed response
+func GetEtag(resp *corev4.DetailedResponse) string {
+	if resp.Headers == nil {
+		return ""
+	}
+	return resp.Headers.Get("Etag")
+}
+
+// GetEtagAnnotation returns the etag annotation value on the resource.
+func GetEtagAnnotation(o metav1.Object) string {
+	return o.GetAnnotations()[ETagAnnotation]
+}
+
+// SetEtagAnnotation sets the etag annotation of the resource.
+func SetEtagAnnotation(o metav1.Object, name string) {
+	meta.AddAnnotations(o, map[string]string{ETagAnnotation: name})
 }

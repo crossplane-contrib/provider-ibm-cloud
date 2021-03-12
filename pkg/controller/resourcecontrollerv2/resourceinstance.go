@@ -206,7 +206,7 @@ func (c *riExternal) Update(ctx context.Context, mg resource.Managed) (managed.E
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdRes)
 	}
 
-	if err = ibmc.UpdateResourceInstanceTags(c.client, cr.Status.AtProvider.Crn, cr.Spec.ForProvider.Tags); err != nil {
+	if err = ibmc.UpdateResourceInstanceTags(c.client, cr.Status.AtProvider.CRN, cr.Spec.ForProvider.Tags); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdRes)
 	}
 

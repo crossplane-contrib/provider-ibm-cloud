@@ -1,0 +1,17 @@
+apiVersion: iamaccessgroupsv2.ibm-cloud.crossplane.io/v1alpha1
+kind: AccessGroupRule
+metadata:
+  name: accessgrouprule-managers
+spec:
+  forProvider:
+    name: Manager group rule
+    accessGroupIdRef:
+      name: accessgroup-managers
+    expiration: 12
+    realmName: "https://idp.example.org/SAML2"
+    conditions:
+    - claim: isManager
+      operator: EQUALS
+      value: "true"
+  providerConfigRef:
+    name: ibm-cloud

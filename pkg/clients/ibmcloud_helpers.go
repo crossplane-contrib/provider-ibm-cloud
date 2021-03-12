@@ -86,7 +86,7 @@ func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearch
 	}
 
 	var id *string
-	id = svcEntries.Resources[0].Metadata.Ui.PrimaryOfferingID
+	id = svcEntries.Resources[0].Metadata.UI.PrimaryOfferingID
 
 	// Some Catalog Entries (i.e. Cloudant) do not set UI
 	// Metadata ID. Use Resource ID attribute in this case.
@@ -196,10 +196,10 @@ func UpdateResourceInstanceTags(client ClientSession, crn string, tags []string)
 
 // GetServiceName gets ServiceName from Crn
 func GetServiceName(in *rcv2.ResourceInstance) string {
-	if in.Crn == nil {
+	if in.CRN == nil {
 		return ""
 	}
-	crn, err := crn.Parse(*in.Crn)
+	crn, err := crn.Parse(*in.CRN)
 	if err != nil {
 		return ""
 	}

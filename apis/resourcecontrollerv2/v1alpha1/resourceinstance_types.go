@@ -64,7 +64,7 @@ type ResourceInstanceParameters struct {
 	// Indicates if the resource instance is locked for further update or delete operations. It does not affect actions
 	// performed on child resources like aliases, bindings or keys. False by default.
 	// +optional
-	EntityLock *string `json:"entityLock,omitempty"`
+	EntityLock *bool `json:"entityLock,omitempty"`
 }
 
 // ResourceInstanceObservation are the observable fields of a ResourceInstance.
@@ -78,7 +78,7 @@ type ResourceInstanceObservation struct {
 
 	// The full Cloud Resource Name (CRN) associated with the instance. For more information about this format, see [Cloud
 	// Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
-	Crn string `json:"crn,omitempty"`
+	CRN string `json:"crn,omitempty"`
 
 	// When you provision a new resource, a relative URL path is created identifying the location of the instance.
 	URL string `json:"url,omitempty"`
@@ -90,7 +90,7 @@ type ResourceInstanceObservation struct {
 	ResourceGroupID string `json:"resourceGroupId,omitempty"`
 
 	// The long ID (full CRN) of the resource group.
-	ResourceGroupCrn string `json:"resourceGroupCrn,omitempty"`
+	ResourceGroupCRN string `json:"resourceGroupCrn,omitempty"`
 
 	// ResourceID is the unique ID of the offering. This value is provided by and stored in the global catalog.
 	ResourceID string `json:"resourceId,omitempty"`
@@ -100,7 +100,7 @@ type ResourceInstanceObservation struct {
 
 	// The full deployment CRN as defined in the global catalog. The Cloud Resource Name (CRN) of the deployment location
 	// where the instance is provisioned.
-	TargetCrn string `json:"targetCrn,omitempty"`
+	TargetCRN string `json:"targetCrn,omitempty"`
 
 	// The current state of the instance. For example, if the instance is deleted, it will return removed.
 	State string `json:"state,omitempty"`

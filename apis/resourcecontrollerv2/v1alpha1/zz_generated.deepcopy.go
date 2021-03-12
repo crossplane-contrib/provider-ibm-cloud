@@ -170,7 +170,7 @@ func (in *ResourceInstanceParameters) DeepCopyInto(out *ResourceInstanceParamete
 	}
 	if in.EntityLock != nil {
 		in, out := &in.EntityLock, &out.EntityLock
-		*out = new(string)
+		*out = new(bool)
 		**out = **in
 	}
 }

@@ -52,6 +52,6 @@ func SourceCRN() reference.ExtractValueFn {
 		if !ok {
 			return ""
 		}
-		return cr.Status.AtProvider.Crn
+		return cr.Status.AtProvider.CRN
 	}
 }

@@ -133,7 +133,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			Resources: []gcat.CatalogEntry{
 				{
 					Metadata: &gcat.CatalogEntryMetadata{
-						Ui: &gcat.UIMetaData{
+						UI: &gcat.UIMetaData{
 							PrimaryOfferingID: reference.ToPtrValue(svc[0]),
 						},
 					},

@@ -1,0 +1,15 @@
+apiVersion: iamaccessgroupsv2.ibm-cloud.crossplane.io/v1alpha1
+kind: GroupMembership
+metadata:
+  name: groupmembership-managers
+spec:
+  forProvider:
+    accessGroupIdRef:
+      name: accessgroup-managers
+    members:
+      - iamId: IBMid-100000KRAY
+        type: user
+      - iamId: iam-ServiceId-65ed8767-22a4-4244-bef3-297bb0531a95
+        type: service    
+  providerConfigRef:
+    name: ibm-cloud

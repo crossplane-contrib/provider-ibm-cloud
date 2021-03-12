@@ -17,11 +17,12 @@ limitations under the License.
 package controller
 
 import (
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	ctrl "sigs.k8s.io/controller-runtime"
 
-	"github.com/crossplane/crossplane-runtime/pkg/logging"
-
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iamaccessgroupsv2"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iampolicymanagementv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/ibmclouddatabasesv5"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/resourcecontrollerv2"
 )
@@ -37,6 +38,11 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		ibmclouddatabasesv5.SetupScalingGroup,
 		ibmclouddatabasesv5.SetupWhitelist,
 		ibmclouddatabasesv5.SetupAutoscalingGroup,
+		iampolicymanagementv1.SetupPolicy,
+		iampolicymanagementv1.SetupCustomRole,
+		iamaccessgroupsv2.SetupAccessGroup,
+		iamaccessgroupsv2.SetupGroupMembership,
+		iamaccessgroupsv2.SetupAccessGroupRule,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

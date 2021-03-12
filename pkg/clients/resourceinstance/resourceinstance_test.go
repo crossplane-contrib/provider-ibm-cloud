@@ -44,7 +44,7 @@ var (
 	serviceName       = "cloud-object-storage"
 	tags              = []string{"dev"}
 	target            = "global"
-	entityLock        = "false"
+	entityLock        = false
 	dashboardURL      = "https://cloud.ibm.com/objectstorage/crn%3Av1%3Abluemix%3Apublic%3Acloud-object-storage%3Aglobal%3Aa%2F0b5a00334eaf9eb9339d2a0008f20d7f5%3A614500000-7ae6-4755-a5ae-83a8dd806ee4%3A%3A"
 	parameters        = map[string]interface{}{
 		"par1": "value1",
@@ -59,9 +59,9 @@ var (
 	startDate, _        = strfmt.ParseDateTime("2020-10-27T14:53:07.001933907Z")
 	resourceAliasesURL  = "/v2/resource_instances/614566d9-7ae6-4755-a5ae-83a8dd806ee4/resource_aliases"
 	resourceBindingsURL = "/v2/resource_instances/614566d9-7ae6-4755-a5ae-83a8dd806ee4/resource_bindings"
-	resourceGroupCrn    = "crn:v1:bluemix:public:resource-controller::a/0b5a00334eaf9eb9339d2ab48f20d7f5::resource-group:80bd19ee87314085bb8ac243e6e010d9"
+	resourceGroupCRN    = "crn:v1:bluemix:public:resource-controller::a/0b5a00334eaf9eb9339d2ab48f20d7f5::resource-group:80bd19ee87314085bb8ac243e6e010d9"
 	resourceKeysURL     = "/v2/resource_instances/614566d9-7ae6-4755-a5ae-83a8dd806ee4/resource_keys"
-	targetCrn           = "crn:v1:bluemix:public:globalcatalog::::deployment:744bfc56-d12c-4866-88d5-dac9139e0e5d%3Aglobal"
+	targetCRN           = "crn:v1:bluemix:public:globalcatalog::::deployment:744bfc56-d12c-4866-88d5-dac9139e0e5d%3Aglobal"
 	rcType              = "service_instance"
 	url                 = "/v2/resource_instances/614566d9-7ae6-4755-a5ae-83a8dd806ee4"
 	createdBy           = "user0001"
@@ -70,7 +70,7 @@ var (
 func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceInstanceParameters {
 	p := &v1alpha1.ResourceInstanceParameters{
 		Name:              instName,
-		EntityLock:        reference.ToPtrValue(entityLock),
+		EntityLock:        &entityLock,
 		AllowCleanup:      ibmc.BoolPtr(allowCleanup),
 		Parameters:        ibmc.MapToRawExtension(parameters),
 		ResourceGroupName: resourceGroupName,
@@ -90,7 +90,7 @@ func observation(m ...func(*v1alpha1.ResourceInstanceObservation)) *v1alpha1.Res
 	o := &v1alpha1.ResourceInstanceObservation{
 		AccountID:     accountID,
 		CreatedAt:     ibmc.DateTimeToMetaV1Time(&createdAt),
-		Crn:           crnRes,
+		CRN:           crnRes,
 		DashboardURL:  dashboardURL,
 		GUID:          guid,
 		ID:            id,
@@ -104,14 +104,14 @@ func observation(m ...func(*v1alpha1.ResourceInstanceObservation)) *v1alpha1.Res
 		},
 		ResourceAliasesURL:  resourceAliasesURL,
 		ResourceBindingsURL: resourceBindingsURL,
-		ResourceGroupCrn:    resourceGroupCrn,
+		ResourceGroupCRN:    resourceGroupCRN,
 		ResourceGroupID:     resourceGroupID,
 		ResourceID:          resourceID,
 		ResourceKeysURL:     resourceKeysURL,
 		ResourcePlanID:      resourcePlanID,
 		State:               state,
 		SubType:             "",
-		TargetCrn:           targetCrn,
+		TargetCRN:           targetCRN,
 		Type:                rcType,
 		URL:                 url,
 		UpdatedAt:           ibmc.DateTimeToMetaV1Time(&createdAt),
@@ -131,11 +131,11 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		AllowCleanup:  &allowCleanup,
 		CreatedAt:     &createdAt,
 		CreatedBy:     &createdBy,
-		Crn:           &crnRes,
+		CRN:           &crnRes,
 		DashboardURL:  &dashboardURL,
 		DeletedAt:     nil,
 		DeletedBy:     nil,
-		Guid:          &guid,
+		GUID:          &guid,
 		ID:            &id,
 		LastOperation: lastOperation,
 		Locked:        &locked,
@@ -149,7 +149,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		},
 		ResourceAliasesURL:  &resourceAliasesURL,
 		ResourceBindingsURL: &resourceBindingsURL,
-		ResourceGroupCrn:    &resourceGroupCrn,
+		ResourceGroupCRN:    &resourceGroupCRN,
 		ResourceGroupID:     &resourceGroupID,
 		ResourceID:          &resourceID,
 		ResourceKeysURL:     &resourceKeysURL,
@@ -160,7 +160,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		ScheduledReclaimBy:  nil,
 		State:               &state,
 		SubType:             nil,
-		TargetCrn:           &targetCrn,
+		TargetCRN:           &targetCRN,
 		Type:                &rcType,
 		URL:                 &url,
 		UpdatedAt:           &createdAt,
@@ -255,7 +255,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 		Resources: []gcat.CatalogEntry{
 			{
 				Metadata: &gcat.CatalogEntryMetadata{
-					Ui: &gcat.UIMetaData{
+					UI: &gcat.UIMetaData{
 						PrimaryOfferingID: reference.ToPtrValue(serviceName),
 					},
 				},

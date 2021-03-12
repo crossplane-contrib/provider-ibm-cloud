@@ -161,7 +161,7 @@ type AutoscalingGroupSpec struct {
 
 // AutoscalingGroupObservation are the observable fields of a Autoscaling Group.
 type AutoscalingGroupObservation struct {
-	// The current state of the whitelist
+	// The current state of the autoscaling group
 	State string `json:"state,omitempty"`
 }
 
