@@ -40,6 +40,7 @@ import (
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
+	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
 
@@ -59,8 +60,7 @@ const (
 	errGetTracker         = "error setting up provider config usage tracker"
 	errGetProviderCfg     = "error getting provider config"
 	errNoSecret           = "no credentials secret reference was provided"
-	errGetGcat            = "error initializing GlobalCatalogV1 client"
-	errGetGtag            = "error initializing GlobalTaggingV1 client"
+	errInitClient         = "error initializing client"
 	errParseTok           = "error parsig IAM access token"
 	errNotFound           = "Not Found"
 	errPendingReclamation = "Instance is pending reclamation"
@@ -143,7 +143,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.resourceControllerV2, err = rcv2.NewResourceControllerV2(rcv2Opts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	gcatOpts := &gcat.GlobalCatalogV1Options{
@@ -153,7 +153,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.globalCatalogV1, err = gcat.NewGlobalCatalogV1(gcatOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	rmgrOpts := &rmgrv2.ResourceManagerV2Options{
@@ -163,7 +163,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.resourceManagerV2, err = rmgrv2.NewResourceManagerV2(rmgrOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGcat)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	gtagsOpts := &gtagv1.GlobalTaggingV1Options{
@@ -173,7 +173,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.globalTaggingV1, err = gtagv1.NewGlobalTaggingV1(gtagsOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGtag)
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	icdOpts := &icdv5.IbmCloudDatabasesV5Options{
@@ -186,7 +186,17 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 	}
 	cs.ibmCloudDatabasesV5, err = icdv5.NewIbmCloudDatabasesV5(icdOpts)
 	if err != nil {
-		return nil, errors.Wrap(err, errGetGtag)
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
+	iampmOpts := &iampmv1.IamPolicyManagementV1Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+	cs.iamPolicyManagementV1, err = iampmv1.NewIamPolicyManagementV1(iampmOpts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
 	}
 
 	return &cs, err
@@ -199,14 +209,16 @@ type ClientSession interface {
 	ResourceManagerV2() *rmgrv2.ResourceManagerV2
 	GlobalTaggingV1() *gtagv1.GlobalTaggingV1
 	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
+	IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1
 }
 
 type clientSessionImpl struct {
-	resourceControllerV2 *rcv2.ResourceControllerV2
-	globalCatalogV1      *gcat.GlobalCatalogV1
-	resourceManagerV2    *rmgrv2.ResourceManagerV2
-	globalTaggingV1      *gtagv1.GlobalTaggingV1
-	ibmCloudDatabasesV5  *icdv5.IbmCloudDatabasesV5
+	resourceControllerV2  *rcv2.ResourceControllerV2
+	globalCatalogV1       *gcat.GlobalCatalogV1
+	resourceManagerV2     *rmgrv2.ResourceManagerV2
+	globalTaggingV1       *gtagv1.GlobalTaggingV1
+	ibmCloudDatabasesV5   *icdv5.IbmCloudDatabasesV5
+	iamPolicyManagementV1 *iampmv1.IamPolicyManagementV1
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -227,6 +239,10 @@ func (c *clientSessionImpl) GlobalTaggingV1() *gtagv1.GlobalTaggingV1 {
 
 func (c *clientSessionImpl) IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5 {
 	return c.ibmCloudDatabasesV5
+}
+
+func (c *clientSessionImpl) IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1 {
+	return c.iamPolicyManagementV1
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array

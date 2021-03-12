@@ -1,8 +1,6 @@
 package resourceinstance
 
 import (
-	"strconv"
-
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
@@ -36,7 +34,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		spec.AllowCleanup = in.AllowCleanup
 	}
 	if spec.EntityLock == nil {
-		spec.EntityLock = reference.ToPtrValue(strconv.FormatBool(*in.Locked))
+		spec.EntityLock = in.Locked
 	}
 	if spec.Parameters == nil {
 		spec.Parameters = ibmc.MapToRawExtension(in.Parameters)
@@ -94,23 +92,23 @@ func GenerateObservation(client ibmc.ClientSession, in *rcv2.ResourceInstance) (
 	o := v1alpha1.ResourceInstanceObservation{
 		AccountID:           reference.FromPtrValue(in.AccountID),
 		CreatedAt:           ibmc.DateTimeToMetaV1Time(in.CreatedAt),
-		Crn:                 reference.FromPtrValue(in.Crn),
+		CRN:                 reference.FromPtrValue(in.CRN),
 		DashboardURL:        reference.FromPtrValue(in.DashboardURL),
 		DeletedAt:           ibmc.DateTimeToMetaV1Time(in.DeletedAt),
-		GUID:                reference.FromPtrValue(in.Guid),
+		GUID:                reference.FromPtrValue(in.GUID),
 		ID:                  reference.FromPtrValue(in.ID),
 		LastOperation:       ibmc.MapToRawExtension(in.LastOperation),
 		PlanHistory:         GeneratePlanHistory(in.PlanHistory),
 		ResourceAliasesURL:  reference.FromPtrValue(in.ResourceAliasesURL),
 		ResourceBindingsURL: reference.FromPtrValue(in.ResourceBindingsURL),
-		ResourceGroupCrn:    reference.FromPtrValue(in.ResourceGroupCrn),
+		ResourceGroupCRN:    reference.FromPtrValue(in.ResourceGroupCRN),
 		ResourceGroupID:     reference.FromPtrValue(in.ResourceGroupID),
 		ResourceID:          reference.FromPtrValue(in.ResourceID),
 		ResourceKeysURL:     reference.FromPtrValue(in.ResourceKeysURL),
 		ResourcePlanID:      reference.FromPtrValue(in.ResourcePlanID),
 		State:               reference.FromPtrValue(in.State),
 		SubType:             reference.FromPtrValue(in.SubType),
-		TargetCrn:           reference.FromPtrValue(in.TargetCrn),
+		TargetCRN:           reference.FromPtrValue(in.TargetCRN),
 		Type:                reference.FromPtrValue(in.Type),
 		URL:                 reference.FromPtrValue(in.URL),
 		UpdatedAt:           ibmc.DateTimeToMetaV1Time(in.UpdatedAt),
@@ -126,12 +124,12 @@ func GenerateObservation(client ibmc.ClientSession, in *rcv2.ResourceInstance) (
 	return o, nil
 }
 
-// GenerateTarget generates Target from Crn
+// GenerateTarget generates Target from CRN
 func GenerateTarget(in *rcv2.ResourceInstance) string {
-	if in.Crn == nil {
+	if in.CRN == nil {
 		return ""
 	}
-	crn, err := crn.Parse(*in.Crn)
+	crn, err := crn.Parse(*in.CRN)
 	if err != nil {
 		return ""
 	}
@@ -173,7 +171,7 @@ func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.Reso
 		Name:         reference.FromPtrValue(in.Name),
 		Target:       GenerateTarget(in),
 		AllowCleanup: in.AllowCleanup,
-		EntityLock:   reference.ToPtrValue(strconv.FormatBool(*in.Locked)),
+		EntityLock:   in.Locked,
 		ServiceName:  ibmc.GetServiceName(in),
 		Parameters:   ibmc.MapToRawExtension(in.Parameters),
 	}
@@ -187,7 +185,7 @@ func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.Reso
 		return nil, err
 	}
 	o.ResourcePlanName = reference.FromPtrValue(pName)
-	tags, err := ibmc.GetResourceInstanceTags(client, reference.FromPtrValue(in.Crn))
+	tags, err := ibmc.GetResourceInstanceTags(client, reference.FromPtrValue(in.CRN))
 	if err != nil {
 		return nil, err
 	}

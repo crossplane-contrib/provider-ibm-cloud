@@ -66,9 +66,9 @@ func GenerateObservation(in *rcv2.ResourceKey) (v1alpha1.ResourceKeyObservation,
 		ResourceInstanceURL: reference.FromPtrValue(in.ResourceInstanceURL),
 		UpdatedBy:           reference.FromPtrValue(in.UpdatedBy),
 		CreatedAt:           GenerateMetaV1Time(in.CreatedAt),
-		Crn:                 reference.FromPtrValue(in.Crn),
+		CRN:                 reference.FromPtrValue(in.CRN),
 		DeletedAt:           GenerateMetaV1Time(in.DeletedAt),
-		GUID:                reference.FromPtrValue(in.Guid),
+		GUID:                reference.FromPtrValue(in.GUID),
 		ID:                  reference.FromPtrValue(in.ID),
 		ResourceGroupID:     reference.FromPtrValue(in.ResourceGroupID),
 		State:               reference.FromPtrValue(in.State),
@@ -109,7 +109,7 @@ func GenerateResourceKeyParameters(in *rcv2.ResourceKey) (*v1alpha1.ResourceKeyP
 	o := &v1alpha1.ResourceKeyParameters{
 		Name:   reference.FromPtrValue(in.Name),
 		Role:   in.Role,
-		Source: in.SourceCrn,
+		Source: in.SourceCRN,
 		// TODO - need resolution for https://github.com/IBM/platform-services-go-sdk/issues/57
 		// Parameters: GenerateResourceKeyPostParameters(in.),
 	}
@@ -119,7 +119,7 @@ func GenerateResourceKeyParameters(in *rcv2.ResourceKey) (*v1alpha1.ResourceKeyP
 // GenerateResourceKeyPostParameters generates v1alpha1.ResourceKeyPostParameters from rcv2.ResourceKeyPostParameters
 func GenerateResourceKeyPostParameters(in *rcv2.ResourceKeyPostParameters) *v1alpha1.ResourceKeyPostParameters {
 	o := &v1alpha1.ResourceKeyPostParameters{
-		ServiceidCrn: reference.FromPtrValue(in.ServiceidCrn),
+		ServiceidCRN: reference.FromPtrValue(in.ServiceidCRN),
 	}
 	return o
 }
@@ -153,8 +153,8 @@ func handleFlettenedConnectionVars(in *rcv2.ResourceKey) (managed.ConnectionDeta
 		"apikey":               ibmc.StrPtr2Bytes(in.Credentials.Apikey),
 		"iamApikeyDescription": ibmc.StrPtr2Bytes(in.Credentials.IamApikeyDescription),
 		"iamApikeyName":        ibmc.StrPtr2Bytes(in.Credentials.IamApikeyName),
-		"iamRoleCrn":           ibmc.StrPtr2Bytes(in.Credentials.IamRoleCrn),
-		"iamServiceidCrn":      ibmc.StrPtr2Bytes(in.Credentials.IamServiceidCrn),
+		"iamRoleCRN":           ibmc.StrPtr2Bytes(in.Credentials.IamRoleCRN),
+		"iamServiceidCRN":      ibmc.StrPtr2Bytes(in.Credentials.IamServiceidCRN),
 	}
 	f, err := flatten.Flatten(in.Credentials.GetProperties(), "", flatten.DotStyle)
 	if err != nil {

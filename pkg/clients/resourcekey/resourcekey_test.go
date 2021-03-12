@@ -24,8 +24,8 @@ var (
 	keyName                                        = "cos-key"
 	resourceGroupID                                = "mock-resource-group-id"
 	resInstURL                                     = "/v2/resource_keys/614566d9-7ae6-4755-a5ae-83a8dd806ee4"
-	sourceCrn                                      = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
-	resCrn                                         = "crn:v1:bluemix:public:key:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
+	sourceCRN                                      = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
+	resCRN                                         = "crn:v1:bluemix:public:key:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
 	accountID                                      = "fake-account-id"
 	guid                                           = "78d88b2b-bbbb-aaaa-8888-5c26e8b6a555"
 	createdAt, _                                   = strfmt.ParseDateTime("2020-10-31T02:33:06Z")
@@ -34,8 +34,8 @@ var (
 	apikey                                         = "fake_api_key"
 	iamApikeyDescr                                 = "Auto-generated for key 055aa817-cb92-4a2a-8155-0f7588b2e844"
 	iamApikeyName                                  = "cos-key"
-	iamRoleCrn                                     = "crn:v1:bluemix:public:iam::::serviceRole:Manager"
-	iamServiceidCrn                                = "crn:v1:bluemix:public:iam-identity::a/0b5a00334eaf9eb9339d2ab48f20d7f5::serviceid:ServiceId-ed663a94-5a2e-487b-a26d-2c7811565790"
+	iamRoleCRN                                     = "crn:v1:bluemix:public:iam::::serviceRole:Manager"
+	iamServiceidCRN                                = "crn:v1:bluemix:public:iam-identity::a/0b5a00334eaf9eb9339d2ab48f20d7f5::serviceid:ServiceId-ed663a94-5a2e-487b-a26d-2c7811565790"
 	connectionCliArguments00                       = "host=fake-host.databases.appdomain.cloud port=31700 dbname=ibmclouddb user=fake-user sslmode=verify-full"
 	connectionCliBin                               = "psql"
 	connectionCliCertificateCertificateBase64      = "ZmFrZS1jZXJ0aWZpY2F0ZQo="
@@ -120,7 +120,7 @@ func params(m ...func(*v1alpha1.ResourceKeyParameters)) *v1alpha1.ResourceKeyPar
 	p := &v1alpha1.ResourceKeyParameters{
 		Name:   keyName,
 		Role:   &role,
-		Source: &sourceCrn,
+		Source: &sourceCRN,
 	}
 
 	for _, f := range m {
@@ -136,7 +136,7 @@ func observation(m ...func(*v1alpha1.ResourceKeyObservation)) *v1alpha1.Resource
 		DeletedBy:           "",
 		IamCompatible:       iamCompatible,
 		CreatedAt:           GenerateMetaV1Time(&createdAt),
-		Crn:                 resCrn,
+		CRN:                 resCRN,
 		DeletedAt:           nil,
 		GUID:                guid,
 		ID:                  id,
@@ -159,10 +159,10 @@ func instance(m ...func(*rcv2.ResourceKey)) *rcv2.ResourceKey {
 		AccountID: &accountID,
 		CreatedAt: &createdAt,
 		CreatedBy: &createdBy,
-		Crn:       &resCrn,
+		CRN:       &resCRN,
 		DeletedAt: nil,
 		DeletedBy: nil,
-		Guid:      &guid,
+		GUID:      &guid,
 		ID:        &id,
 		Name:      &keyName,
 		// Parameters:    parameters, // TODO
@@ -174,7 +174,7 @@ func instance(m ...func(*rcv2.ResourceKey)) *rcv2.ResourceKey {
 		IamCompatible:       &iamCompatible,
 		ResourceInstanceURL: &resInstURL,
 		Role:                &role,
-		SourceCrn:           &sourceCrn,
+		SourceCRN:           &sourceCRN,
 	}
 
 	for _, f := range m {
@@ -188,7 +188,7 @@ func instanceOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourc
 		Name: &keyName,
 		//Parameters:     parameters,
 		Role:   &role,
-		Source: &sourceCrn,
+		Source: &sourceCRN,
 	}
 	for _, f := range m {
 		f(i)
@@ -213,8 +213,8 @@ func credentials(m ...func(*rcv2.Credentials)) *rcv2.Credentials {
 		Apikey:               &apikey,
 		IamApikeyDescription: &iamApikeyDescr,
 		IamApikeyName:        &iamApikeyName,
-		IamRoleCrn:           &iamRoleCrn,
-		IamServiceidCrn:      &iamServiceidCrn,
+		IamRoleCRN:           &iamRoleCRN,
+		IamServiceidCRN:      &iamServiceidCRN,
 	}
 	for _, f := range m {
 		f(i)
@@ -321,7 +321,7 @@ func TestLateInitializeSpecs(t *testing.T) {
 			want: want{
 				params: params(func(p *v1alpha1.ResourceKeyParameters) {
 					p.Role = &role
-					p.Source = &sourceCrn
+					p.Source = &sourceCRN
 				})},
 		},
 		"AllFilledAlready": {
@@ -475,8 +475,8 @@ func TestGetConnectionDetails(t *testing.T) {
 						r.Apikey = nil
 						r.IamApikeyDescription = nil
 						r.IamApikeyName = nil
-						r.IamRoleCrn = nil
-						r.IamServiceidCrn = nil
+						r.IamRoleCRN = nil
+						r.IamServiceidCRN = nil
 						for k, v := range creds2AddProps {
 							r.SetProperty(k, v)
 						}
@@ -505,8 +505,8 @@ func TestGetConnectionDetails(t *testing.T) {
 				"iamApikeyName":        []byte(iamApikeyName),
 				"endpoints":            ibmc.ConvertVarsMap(creds1AddProps)["endpoints"],
 				"iamApikeyDescription": []byte(iamApikeyDescr),
-				"iamRoleCrn":           []byte(iamRoleCrn),
-				"iamServiceidCrn":      []byte(iamServiceidCrn),
+				"iamRoleCRN":           []byte(iamRoleCRN),
+				"iamServiceidCRN":      []byte(iamServiceidCRN),
 				"resource_instance_id": ibmc.ConvertVarsMap(creds1AddProps)["resource_instance_id"],
 			}},
 		},
@@ -518,8 +518,8 @@ func TestGetConnectionDetails(t *testing.T) {
 						r.Apikey = nil
 						r.IamApikeyDescription = nil
 						r.IamApikeyName = nil
-						r.IamRoleCrn = nil
-						r.IamServiceidCrn = nil
+						r.IamRoleCRN = nil
+						r.IamServiceidCRN = nil
 						for k, v := range creds2AddProps {
 							r.SetProperty(k, v)
 						}
@@ -530,8 +530,8 @@ func TestGetConnectionDetails(t *testing.T) {
 				"apikey":                       nil,
 				"iamApikeyDescription":         nil,
 				"iamApikeyName":                nil,
-				"iamRoleCrn":                   nil,
-				"iamServiceidCrn":              nil,
+				"iamRoleCRN":                   nil,
+				"iamServiceidCRN":              nil,
 				"connection.cli.arguments.0.0": []byte(connectionCliArguments00),
 				"connection.cli.bin":           []byte(connectionCliBin),
 				"connection.cli.certificate.certificate_base64":      []byte(connectionCliCertificateCertificateBase64),

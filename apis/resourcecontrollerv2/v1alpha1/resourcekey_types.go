@@ -59,7 +59,7 @@ type ResourceKeyParameters struct {
 // resource brokers, whereas platform defined options are not.
 type ResourceKeyPostParameters struct {
 	// An optional platform defined option to reuse an existing IAM serviceId for the role assignment.
-	ServiceidCrn string `json:"serviceidCrn,omitempty"`
+	ServiceidCRN string `json:"serviceidCrn,omitempty"`
 }
 
 // ResourceKeyObservation are the observable fields of a ResourceKey.
@@ -73,7 +73,7 @@ type ResourceKeyObservation struct {
 
 	// The full Cloud Resource Name (CRN) associated with the key. For more information about this format, see [Cloud
 	// Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
-	Crn string `json:"crn,omitempty"`
+	CRN string `json:"crn,omitempty"`
 
 	// When you created a new key, a relative URL path is created identifying the location of the key.
 	URL string `json:"url,omitempty"`

@@ -220,7 +220,7 @@ spec:
               description: AutoscalingGroupObservation are the observable fields of a Autoscaling Group.
               properties:
                 state:
-                  description: The current state of the whitelist
+                  description: The current state of the autoscaling group
                   type: string
               type: object
             conditions:

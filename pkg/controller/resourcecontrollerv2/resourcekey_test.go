@@ -84,8 +84,8 @@ func rkWithGUID(s string) keyModifier {
 	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.GUID = s }
 }
 
-func rkWithCrn(s string) keyModifier {
-	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.Crn = s }
+func rkWithCRN(s string) keyModifier {
+	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.CRN = s }
 }
 
 func rkWithURL(s string) keyModifier {
@@ -162,8 +162,8 @@ func resourceKeySpec() v1alpha1.ResourceKeyParameters {
 func genTestSDKResourceKey() *rcv2.ResourceKey {
 	i := &rcv2.ResourceKey{
 		CreatedAt:           &createdAt,
-		Crn:                 &rkCrn,
-		Guid:                &guid,
+		CRN:                 &rkCrn,
+		GUID:                &guid,
 		ID:                  &rkID,
 		Name:                &rkName,
 		ResourceGroupID:     &resourceGroupID,
@@ -173,7 +173,7 @@ func genTestSDKResourceKey() *rcv2.ResourceKey {
 		IamCompatible:       &iamCompatible,
 		Role:                &role,
 		ResourceInstanceURL: &resInstURL,
-		SourceCrn:           &sourceCrn,
+		SourceCRN:           &sourceCrn,
 		URL:                 &url,
 	}
 	return i
@@ -183,7 +183,7 @@ func genTestCRResourceKey(im ...keyModifier) *v1alpha1.ResourceKey {
 	i := key(
 		rkWithAccountID(accountID),
 		rkWithCreatedAt(createdAt),
-		rkWithCrn(rkCrn),
+		rkWithCRN(rkCrn),
 		rkWithGUID(guid),
 		rkWithID(rkID),
 		rkWithResourceGroupID(resourceGroupID),

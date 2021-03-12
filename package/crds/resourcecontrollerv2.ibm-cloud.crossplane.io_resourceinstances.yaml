@@ -57,7 +57,7 @@ spec:
                   type: boolean
                 entityLock:
                   description: Indicates if the resource instance is locked for further update or delete operations. It does not affect actions performed on child resources like aliases, bindings or keys. False by default.
-                  type: string
+                  type: boolean
                 name:
                   description: An human-readable name of the instance.
                   type: string

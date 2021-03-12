@@ -72,7 +72,7 @@ var (
 	serviceName       = "cloud-object-storage"
 	tags              = []string{"dev"}
 	target            = "global"
-	entityLock        = "false"
+	entityLock        = false
 	parameters        = map[string]interface{}{}
 )
 
@@ -102,8 +102,8 @@ func withGUID(s string) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.GUID = s }
 }
 
-func withCrn(s string) instanceModifier {
-	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Crn = s }
+func withCRN(s string) instanceModifier {
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.CRN = s }
 }
 
 func withResourceID(s string) instanceModifier {
@@ -193,7 +193,7 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 		Resources: []gcat.CatalogEntry{
 			{
 				Metadata: &gcat.CatalogEntryMetadata{
-					Ui: &gcat.UIMetaData{
+					UI: &gcat.UIMetaData{
 						PrimaryOfferingID: reference.ToPtrValue(serviceName),
 					},
 				},
@@ -228,7 +228,7 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 	o := v1alpha1.ResourceInstanceParameters{
 		Name:              name,
-		EntityLock:        reference.ToPtrValue(entityLock),
+		EntityLock:        &entityLock,
 		AllowCleanup:      ibmc.BoolPtr(false),
 		Parameters:        ibmc.MapToRawExtension(parameters),
 		ResourceGroupName: resourceGroupName,
@@ -244,8 +244,8 @@ func genTestSDKResourceInstance() *rcv2.ResourceInstance {
 	i := &rcv2.ResourceInstance{
 		AllowCleanup:    &allowCleanup,
 		CreatedAt:       &createdAt,
-		Crn:             &crn,
-		Guid:            &guid,
+		CRN:             &crn,
+		GUID:            &guid,
 		ID:              &id,
 		Locked:          &locked,
 		Name:            &name,
@@ -263,7 +263,7 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 		withExternalNameAnnotation(id),
 		withSpec(resourceInstanceSpec()),
 		withID(id),
-		withCrn(crn),
+		withCRN(crn),
 		withGUID(guid),
 		withState(state),
 		withResourcePlanID(resourcePlanID),
