@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: customroles.iampolicymanagementv1.ibm-cloud.crossplane.io
+  name: accessgroups.iamaccessgroupsv2.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: iampolicymanagementv1.ibm-cloud.crossplane.io
+  group: iamaccessgroupsv2.ibmcloud.crossplane.io
   names:
-    kind: CustomRole
-    listKind: CustomRoleList
-    plural: customroles
-    singular: customrole
+    kind: AccessGroup
+    listKind: AccessGroupList
+    plural: accessgroups
+    singular: accessgroup
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A CustomRole represents an instance of an IAM policy on IBM Cloud
+      description: A AccessGroup represents an instance of an IAM policy on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,7 +41,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: A CustomRoleSpec defines the desired state of a CustomRole.
+          description: A AccessGroupSpec defines the desired state of a AccessGroup.
           properties:
             deletionPolicy:
               description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -50,34 +50,23 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: CustomRoleParameters are the configurable fields of a CustomRole.
+              description: AccessGroupParameters are the configurable fields of a AccessGroup.
               properties:
-                accountId:
-                  description: The account GUID.
+                accountID:
+                  description: IBM Cloud account identifier.
                   type: string
-                actions:
-                  description: The actions of the role.
-                  items:
-                    type: string
-                  type: array
                 description:
-                  description: The description of the role.
-                  type: string
-                displayName:
-                  description: The display name of the role that is shown in the console.
+                  description: Assign a description for the Access Group. This field has a limit of 250 characters.
                   type: string
                 name:
-                  description: The name of the role that is used in the CRN. Can only be alphanumeric and has to be capitalized.
+                  description: Assign the specified name to the Access Group. This field has a limit of 100 characters.
                   type: string
-                serviceName:
-                  description: The service name.
+                transactionID:
+                  description: An optional transaction id for the request.
                   type: string
               required:
-              - accountId
-              - actions
-              - displayName
+              - accountID
               - name
-              - serviceName
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -114,36 +103,36 @@ spec:
           - forProvider
           type: object
         status:
-          description: A CustomRoleStatus represents the observed state of a CustomRole.
+          description: A AccessGroupStatus represents the observed state of a AccessGroup.
           properties:
             atProvider:
-              description: CustomRoleObservation are the observable fields of a CustomRole.
+              description: AccessGroupObservation are the observable fields of a AccessGroup.
               properties:
                 createdAt:
-                  description: The UTC timestamp when the role was created.
+                  description: The UTC timestamp when the group was created.
                   format: date-time
                   type: string
                 createdById:
-                  description: The iam ID of the entity that created the role.
-                  type: string
-                crn:
-                  description: The role CRN.
+                  description: The iam ID of the entity that created the group.
                   type: string
                 href:
-                  description: The href link back to the role.
+                  description: A url to the given group resource.
                   type: string
                 id:
-                  description: The role ID.
+                  description: The group's Access Group ID.
                   type: string
+                isFederated:
+                  description: This is set to true if rules exist for the group.
+                  type: boolean
                 lastModifiedAt:
-                  description: The UTC timestamp when the role was last modified.
+                  description: The UTC timestamp when the group was last modified.
                   format: date-time
                   type: string
                 lastModifiedById:
-                  description: The iam ID of the entity that last modified the role.
+                  description: The iam ID of the entity that last modified the group.
                   type: string
                 state:
-                  description: The current state of the role
+                  description: The current state of the group
                   type: string
               type: object
             conditions:

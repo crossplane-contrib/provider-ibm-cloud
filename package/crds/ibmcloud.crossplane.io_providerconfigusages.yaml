@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: providerconfigusages.ibm-cloud.crossplane.io
+  name: providerconfigusages.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .metadata.creationTimestamp
@@ -19,7 +19,7 @@ spec:
   - JSONPath: .resourceRef.name
     name: RESOURCE-NAME
     type: string
-  group: ibm-cloud.crossplane.io
+  group: ibmcloud.crossplane.io
   names:
     categories:
     - crossplane

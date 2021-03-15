@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: accessgrouprules.iamaccessgroupsv2.ibm-cloud.crossplane.io
+  name: resourcekeys.resourcecontrollerv2.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: iamaccessgroupsv2.ibm-cloud.crossplane.io
+  group: resourcecontrollerv2.ibmcloud.crossplane.io
   names:
-    kind: AccessGroupRule
-    listKind: AccessGroupRuleList
-    plural: accessgrouprules
-    singular: accessgrouprule
+    kind: ResourceKey
+    listKind: ResourceKeyList
+    plural: resourcekeys
+    singular: resourcekey
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A AccessGroupRule represents an instance of an IAM policy on IBM Cloud
+      description: A ResourceKey represents an instance of a managed service on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,8 +41,12 @@ spec:
         metadata:
           type: object
         spec:
-          description: A AccessGroupRuleSpec defines the desired state of a AccessGroupRule.
+          description: A ResourceKeySpec defines the desired state of a ResourceKey.
           properties:
+            connectionTemplates:
+              additionalProperties:
+                type: string
+              type: object
             deletionPolicy:
               description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
               enum:
@@ -50,13 +54,26 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: AccessGroupRuleParameters are the configurable fields of a AccessGroupRule.
+              description: ResourceKeyParameters are the configurable fields of a ResourceKey.
               properties:
-                accessGroupId:
-                  description: The Access Group identifier.
+                name:
+                  description: The human-readable name of the key.
                   type: string
-                accessGroupIdRef:
-                  description: Reference to AccessGroupID
+                parameters:
+                  description: Configuration options represented as key-value pairs. Service defined options are passed through to the target resource brokers, whereas platform defined options are not.
+                  properties:
+                    serviceidCrn:
+                      description: An optional platform defined option to reuse an existing IAM serviceId for the role assignment.
+                      type: string
+                  type: object
+                role:
+                  description: The role name or it's CRN.
+                  type: string
+                source:
+                  description: The short or long ID of resource instance or alias.
+                  type: string
+                sourceRef:
+                  description: SourceRef is a reference to a resource instance used to set Source
                   properties:
                     name:
                       description: Name of the referenced object.
@@ -64,8 +81,8 @@ spec:
                   required:
                   - name
                   type: object
-                accessGroupIdSelector:
-                  description: Selector for AccessGroupID
+                sourceSelector:
+                  description: SourceSelector selects a reference to a resource instance used to set Source.
                   properties:
                     matchControllerRef:
                       description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
@@ -76,44 +93,6 @@ spec:
                       description: MatchLabels ensures an object with matching labels is selected.
                       type: object
                   type: object
-                conditions:
-                  description: A list of conditions the rule must satisfy.
-                  items:
-                    description: 'RuleCondition : The condition of a rule.'
-                    properties:
-                      claim:
-                        description: The claim to evaluate against. This will be found in the `ext` claims of a user's login request.
-                        type: string
-                      operator:
-                        description: The operation to perform on the claim. Valid operators are EQUALS, EQUALS_IGNORE_CASE, IN, NOT_EQUALS_IGNORE_CASE, NOT_EQUALS, and CONTAINS.
-                        type: string
-                      value:
-                        description: The stringified JSON value that the claim is compared to using the operator.
-                        type: string
-                    required:
-                    - claim
-                    - operator
-                    - value
-                    type: object
-                  type: array
-                expiration:
-                  description: The number of hours that the rule lives for (Must be between 1 and 24).
-                  format: int64
-                  type: integer
-                name:
-                  description: The name of the rule.
-                  type: string
-                realmName:
-                  description: The url of the identity provider.
-                  type: string
-                transactionID:
-                  description: An optional transaction id for the request.
-                  type: string
-              required:
-              - conditions
-              - expiration
-              - name
-              - realmName
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -150,33 +129,58 @@ spec:
           - forProvider
           type: object
         status:
-          description: A AccessGroupRuleStatus represents the observed state of a AccessGroupRule.
+          description: A ResourceKeyStatus represents the observed state of a ResourceKey.
           properties:
             atProvider:
-              description: AccessGroupRuleObservation are the observable fields of a AccessGroupRule.
+              description: ResourceKeyObservation are the observable fields of a ResourceKey.
               properties:
                 accountId:
-                  description: The account id that the group is in.
+                  description: An alpha-numeric value identifying the account ID.
+                  type: string
+                created_by:
+                  description: The subject who created the key.
                   type: string
                 createdAt:
-                  description: The UTC timestamp when the rule was created.
+                  description: The date when the key was created.
                   format: date-time
                   type: string
-                createdById:
-                  description: The iam ID of the entity that created the rule.
+                crn:
+                  description: The full Cloud Resource Name (CRN) associated with the key. For more information about this format, see [Cloud Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
                   type: string
+                deleted_by:
+                  description: The subject who deleted the key.
+                  type: string
+                deletedAt:
+                  description: The date when the key was deleted.
+                  format: date-time
+                  type: string
+                guid:
+                  description: When you create a new key, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the key.
+                  type: string
+                iamCompatible:
+                  description: Specifies whether the key’s credentials support IAM.
+                  type: boolean
                 id:
-                  description: The rule id.
+                  description: The ID associated with the key.
                   type: string
-                lastModifiedAt:
-                  description: The UTC timestamp when the rule was last modified.
-                  format: date-time
+                resourceGroupId:
+                  description: The short ID of the resource group.
                   type: string
-                lastModifiedById:
-                  description: The iam ID of the entity that last modified the rule.
+                resourceInstanceUrl:
+                  description: The relative path to the resource.
                   type: string
                 state:
-                  description: The current state of the group
+                  description: The state of the key.
+                  type: string
+                updated_by:
+                  description: The subject who updated the key.
+                  type: string
+                updatedAt:
+                  description: The date when the key was last updated.
+                  format: date-time
+                  type: string
+                url:
+                  description: When you created a new key, a relative URL path is created identifying the location of the key.
                   type: string
               type: object
             conditions:

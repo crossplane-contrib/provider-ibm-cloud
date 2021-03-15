@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: resourcekeys.resourcecontrollerv2.ibm-cloud.crossplane.io
+  name: policies.iampolicymanagementv1.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: resourcecontrollerv2.ibm-cloud.crossplane.io
+  group: iampolicymanagementv1.ibmcloud.crossplane.io
   names:
-    kind: ResourceKey
-    listKind: ResourceKeyList
-    plural: resourcekeys
-    singular: resourcekey
+    kind: Policy
+    listKind: PolicyList
+    plural: policies
+    singular: policy
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A ResourceKey represents an instance of a managed service on IBM Cloud
+      description: A Policy represents an instance of an IAM policy on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,12 +41,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: A ResourceKeySpec defines the desired state of a ResourceKey.
+          description: A PolicySpec defines the desired state of a Policy.
           properties:
-            connectionTemplates:
-              additionalProperties:
-                type: string
-              type: object
             deletionPolicy:
               description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
               enum:
@@ -54,45 +50,80 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: ResourceKeyParameters are the configurable fields of a ResourceKey.
+              description: PolicyParameters are the configurable fields of a Policy.
               properties:
-                name:
-                  description: The human-readable name of the key.
+                description:
+                  description: Customer-defined description.
                   type: string
-                parameters:
-                  description: Configuration options represented as key-value pairs. Service defined options are passed through to the target resource brokers, whereas platform defined options are not.
-                  properties:
-                    serviceidCrn:
-                      description: An optional platform defined option to reuse an existing IAM serviceId for the role assignment.
-                      type: string
-                  type: object
-                role:
-                  description: The role name or it's CRN.
-                  type: string
-                source:
-                  description: The short or long ID of resource instance or alias.
-                  type: string
-                sourceRef:
-                  description: SourceRef is a reference to a resource instance used to set Source
-                  properties:
-                    name:
-                      description: Name of the referenced object.
-                      type: string
-                  required:
-                  - name
-                  type: object
-                sourceSelector:
-                  description: SourceSelector selects a reference to a resource instance used to set Source.
-                  properties:
-                    matchControllerRef:
-                      description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
-                      type: boolean
-                    matchLabels:
-                      additionalProperties:
+                resources:
+                  description: The resources associated with a policy.
+                  items:
+                    description: 'PolicyResource : The attributes of the resource. Note that only one resource is allowed in a policy.'
+                    properties:
+                      attributes:
+                        description: List of resource attributes.
+                        items:
+                          description: 'ResourceAttribute : An attribute associated with a resource.'
+                          properties:
+                            name:
+                              description: The name of an attribute.
+                              type: string
+                            operator:
+                              description: The operator of an attribute.
+                              type: string
+                            value:
+                              description: The value of an attribute.
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                    type: object
+                  type: array
+                roles:
+                  description: A set of role cloud resource names (CRNs) granted by the policy.
+                  items:
+                    description: 'PolicyRole : A role associated with a policy.'
+                    properties:
+                      roleId:
+                        description: The role cloud resource name granted by the policy.
                         type: string
-                      description: MatchLabels ensures an object with matching labels is selected.
-                      type: object
-                  type: object
+                    required:
+                    - roleId
+                    type: object
+                  type: array
+                subjects:
+                  description: The subjects associated with a policy.
+                  items:
+                    description: 'PolicySubject : The subject attribute values that must match in order for this policy to apply in a permission decision.'
+                    properties:
+                      attributes:
+                        description: List of subject attributes.
+                        items:
+                          description: 'SubjectAttribute : An attribute associated with a subject.'
+                          properties:
+                            name:
+                              description: The name of an attribute.
+                              type: string
+                            value:
+                              description: The value of an attribute.
+                              type: string
+                          required:
+                          - name
+                          - value
+                          type: object
+                        type: array
+                    type: object
+                  type: array
+                type:
+                  description: The policy type; either 'access' or 'authorization'.
+                  type: string
+              required:
+              - resources
+              - roles
+              - subjects
+              - type
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -129,58 +160,33 @@ spec:
           - forProvider
           type: object
         status:
-          description: A ResourceKeyStatus represents the observed state of a ResourceKey.
+          description: A PolicyStatus represents the observed state of a Policy.
           properties:
             atProvider:
-              description: ResourceKeyObservation are the observable fields of a ResourceKey.
+              description: PolicyObservation are the observable fields of a Policy.
               properties:
-                accountId:
-                  description: An alpha-numeric value identifying the account ID.
-                  type: string
-                created_by:
-                  description: The subject who created the key.
-                  type: string
                 createdAt:
-                  description: The date when the key was created.
+                  description: The UTC timestamp when the policy was created.
                   format: date-time
                   type: string
-                crn:
-                  description: The full Cloud Resource Name (CRN) associated with the key. For more information about this format, see [Cloud Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
+                createdById:
+                  description: The iam ID of the entity that created the policy.
                   type: string
-                deleted_by:
-                  description: The subject who deleted the key.
+                href:
+                  description: The href link back to the policy.
                   type: string
-                deletedAt:
-                  description: The date when the key was deleted.
-                  format: date-time
-                  type: string
-                guid:
-                  description: When you create a new key, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the key.
-                  type: string
-                iamCompatible:
-                  description: Specifies whether the key’s credentials support IAM.
-                  type: boolean
                 id:
-                  description: The ID associated with the key.
+                  description: The policy ID.
                   type: string
-                resourceGroupId:
-                  description: The short ID of the resource group.
+                lastModifiedAt:
+                  description: The UTC timestamp when the policy was last modified.
+                  format: date-time
                   type: string
-                resourceInstanceUrl:
-                  description: The relative path to the resource.
+                lastModifiedById:
+                  description: The iam ID of the entity that last modified the policy.
                   type: string
                 state:
-                  description: The state of the key.
-                  type: string
-                updated_by:
-                  description: The subject who updated the key.
-                  type: string
-                updatedAt:
-                  description: The date when the key was last updated.
-                  format: date-time
-                  type: string
-                url:
-                  description: When you created a new key, a relative URL path is created identifying the location of the key.
+                  description: The current state of the policy
                   type: string
               type: object
             conditions:

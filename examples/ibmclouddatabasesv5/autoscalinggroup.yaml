@@ -1,4 +1,4 @@
-apiVersion: ibmclouddatabasesv5.ibm-cloud.crossplane.io/v1alpha1
+apiVersion: ibmclouddatabasesv5.ibmcloud.crossplane.io/v1alpha1
 kind: AutoscalingGroup
 metadata:
   name: postgresql-asg

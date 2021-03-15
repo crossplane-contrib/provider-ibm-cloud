@@ -1,4 +1,4 @@
-apiVersion: iampolicymanagementv1.ibm-cloud.crossplane.io/v1alpha1
+apiVersion: iampolicymanagementv1.ibmcloud.crossplane.io/v1alpha1
 kind: CustomRole
 metadata:
   name: customrole-postgres

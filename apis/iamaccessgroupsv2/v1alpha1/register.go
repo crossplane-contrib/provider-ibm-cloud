@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	Group   = "iamaccessgroupsv2.ibm-cloud.crossplane.io"
+	Group   = "iamaccessgroupsv2.ibmcloud.crossplane.io"
 	Version = "v1alpha1"
 )
 

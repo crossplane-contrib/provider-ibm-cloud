@@ -25,7 +25,7 @@ import (
 
 // Package type metadata.
 const (
-	APIGroup = "ibmclouddatabasesv5.ibm-cloud.crossplane.io"
+	APIGroup = "ibmclouddatabasesv5.ibmcloud.crossplane.io"
 	Version  = "v1alpha1"
 )
 
