@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: scalinggroups.ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  name: scalinggroups.ibmclouddatabasesv5.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,7 +19,7 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  group: ibmclouddatabasesv5.ibmcloud.crossplane.io
   names:
     kind: ScalingGroup
     listKind: ScalingGroupList

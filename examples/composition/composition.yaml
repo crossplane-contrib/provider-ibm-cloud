@@ -12,7 +12,7 @@ spec:
     kind: CompositePostgreSQLInstance
   resources:
     - base:
-        apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+        apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
         kind: ResourceInstance
         spec:
           forProvider:
@@ -47,7 +47,7 @@ spec:
         - fromFieldPath: "spec.parameters.version"
           toFieldPath: "spec.forProvider.parameters.version"              
     - base:
-        apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+        apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
         kind: ResourceKey
         spec:
           forProvider:

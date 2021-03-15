@@ -53,7 +53,7 @@ We will create the following ProviderConfig object to configure credentials for 
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: ibm-cloud.crossplane.io/v1beta1
+apiVersion: ibmcloud.crossplane.io/v1beta1
 kind: ProviderConfig
 metadata:
   name: ibm-cloud

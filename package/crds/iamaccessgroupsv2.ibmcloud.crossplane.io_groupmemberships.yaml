@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: accessgroups.iamaccessgroupsv2.ibm-cloud.crossplane.io
+  name: groupmemberships.iamaccessgroupsv2.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: iamaccessgroupsv2.ibm-cloud.crossplane.io
+  group: iamaccessgroupsv2.ibmcloud.crossplane.io
   names:
-    kind: AccessGroup
-    listKind: AccessGroupList
-    plural: accessgroups
-    singular: accessgroup
+    kind: GroupMembership
+    listKind: GroupMembershipList
+    plural: groupmemberships
+    singular: groupmembership
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A AccessGroup represents an instance of an IAM policy on IBM Cloud
+      description: A GroupMembership represents an instance of an IAM policy on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,7 +41,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: A AccessGroupSpec defines the desired state of a AccessGroup.
+          description: A GroupMembershipSpec defines the desired state of a GroupMembership.
           properties:
             deletionPolicy:
               description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
@@ -50,23 +50,53 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: AccessGroupParameters are the configurable fields of a AccessGroup.
+              description: GroupMembershipParameters are the configurable fields of a GroupMembership.
               properties:
-                accountID:
-                  description: IBM Cloud account identifier.
+                accessGroupId:
+                  description: The Access Group identifier.
                   type: string
-                description:
-                  description: Assign a description for the Access Group. This field has a limit of 250 characters.
-                  type: string
-                name:
-                  description: Assign the specified name to the Access Group. This field has a limit of 100 characters.
-                  type: string
+                accessGroupIdRef:
+                  description: Reference to AccessGroupID
+                  properties:
+                    name:
+                      description: Name of the referenced object.
+                      type: string
+                  required:
+                  - name
+                  type: object
+                accessGroupIdSelector:
+                  description: Selector for AccessGroupID
+                  properties:
+                    matchControllerRef:
+                      description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                      type: boolean
+                    matchLabels:
+                      additionalProperties:
+                        type: string
+                      description: MatchLabels ensures an object with matching labels is selected.
+                      type: object
+                  type: object
+                members:
+                  description: An array of member objects to add to an access group.
+                  items:
+                    description: 'AddGroupMembersRequestMembersItem : AddGroupMembersRequestMembersItem struct'
+                    properties:
+                      iamId:
+                        description: The IBMid or Service Id of the member.
+                        type: string
+                      type:
+                        description: The type of the member, must be either "user" or "service".
+                        type: string
+                    required:
+                    - iamId
+                    - type
+                    type: object
+                  type: array
                 transactionID:
                   description: An optional transaction id for the request.
                   type: string
               required:
-              - accountID
-              - name
+              - members
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -103,34 +133,43 @@ spec:
           - forProvider
           type: object
         status:
-          description: A AccessGroupStatus represents the observed state of a AccessGroup.
+          description: A GroupMembershipStatus represents the observed state of a GroupMembership.
           properties:
             atProvider:
-              description: AccessGroupObservation are the observable fields of a AccessGroup.
+              description: GroupMembershipObservation are the observable fields of a GroupMembership.
               properties:
-                createdAt:
-                  description: The UTC timestamp when the group was created.
-                  format: date-time
-                  type: string
-                createdById:
-                  description: The iam ID of the entity that created the group.
-                  type: string
-                href:
-                  description: A url to the given group resource.
-                  type: string
-                id:
-                  description: The group's Access Group ID.
-                  type: string
-                isFederated:
-                  description: This is set to true if rules exist for the group.
-                  type: boolean
-                lastModifiedAt:
-                  description: The UTC timestamp when the group was last modified.
-                  format: date-time
-                  type: string
-                lastModifiedById:
-                  description: The iam ID of the entity that last modified the group.
-                  type: string
+                members:
+                  description: The members of an access group.
+                  items:
+                    description: 'ListGroupMembersResponseMember : A single member of an access group in a list.'
+                    properties:
+                      createdAt:
+                        description: The timestamp the membership was created at.
+                        format: date-time
+                        type: string
+                      createdById:
+                        description: The `iam_id` of the entity that created the membership.
+                        type: string
+                      description:
+                        description: If the member type is service, this is the service id's description.
+                        type: string
+                      email:
+                        description: If the member type is user, this is the user's email.
+                        type: string
+                      href:
+                        description: A url to the given member resource.
+                        type: string
+                      iamId:
+                        description: The IBMid or Service Id of the member.
+                        type: string
+                      name:
+                        description: The user's or service id's name.
+                        type: string
+                      type:
+                        description: The member type - either `user` or `service`.
+                        type: string
+                    type: object
+                  type: array
                 state:
                   description: The current state of the group
                   type: string

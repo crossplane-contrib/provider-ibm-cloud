@@ -16,6 +16,6 @@ limitations under the License.
 
 // Package v1alpha1 contains the v1alpha1 group Sample resources of the Template provider.
 // +kubebuilder:object:generate=true
-// +groupName=iampolicymanagementv1.ibm-cloud.crossplane.io
+// +groupName=iampolicymanagementv1.ibmcloud.crossplane.io
 // +versionName=v1alpha1
 package v1alpha1

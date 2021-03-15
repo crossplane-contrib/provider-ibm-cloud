@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: autoscalinggroups.ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  name: accessgrouprules.iamaccessgroupsv2.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  group: iamaccessgroupsv2.ibmcloud.crossplane.io
   names:
-    kind: AutoscalingGroup
-    listKind: AutoscalingGroupList
-    plural: autoscalinggroups
-    singular: autoscalinggroup
+    kind: AccessGroupRule
+    listKind: AccessGroupRuleList
+    plural: accessgrouprules
+    singular: accessgrouprule
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A AutoscalingGroup represents an instance of a managed service on IBM Cloud
+      description: A AccessGroupRule represents an instance of an IAM policy on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,12 +41,8 @@ spec:
         metadata:
           type: object
         spec:
-          description: A AutoscalingGroupSpec defines the desired state of a AutoscalingGroup.
+          description: A AccessGroupRuleSpec defines the desired state of a AccessGroupRule.
           properties:
-            connectionTemplates:
-              additionalProperties:
-                type: string
-              type: object
             deletionPolicy:
               description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
               enum:
@@ -54,77 +50,13 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: AutoscalingGroupParameters are the configurable fields of a AutoscalingGroup.
+              description: AccessGroupRuleParameters are the configurable fields of a AccessGroupRule.
               properties:
-                cpu:
-                  description: CPU -
-                  properties:
-                    rate:
-                      description: 'AutoscalingCPUGroupCPURate : AutoscalingCPUGroupCPURate struct'
-                      properties:
-                        increasePercent:
-                          format: int64
-                          type: integer
-                        limitCountPerMember:
-                          format: int64
-                          type: integer
-                        periodSeconds:
-                          format: int64
-                          type: integer
-                        units:
-                          type: string
-                      type: object
-                    scalers:
-                      type: object
-                  type: object
-                disk:
-                  description: Disk -
-                  properties:
-                    rate:
-                      description: 'AutoscalingDiskGroupDiskRate : AutoscalingDiskGroupDiskRate struct'
-                      properties:
-                        increasePercent:
-                          format: int64
-                          type: integer
-                        limitMbPerMember:
-                          format: int64
-                          type: integer
-                        periodSeconds:
-                          format: int64
-                          type: integer
-                        units:
-                          type: string
-                      type: object
-                    scalers:
-                      description: 'AutoscalingDiskGroupDiskScalers : AutoscalingDiskGroupDiskScalers struct'
-                      properties:
-                        capacity:
-                          description: 'AutoscalingDiskGroupDiskScalersCapacity : AutoscalingDiskGroupDiskScalersCapacity struct'
-                          properties:
-                            enabled:
-                              type: boolean
-                            freeSpaceLessThanPercent:
-                              format: int64
-                              type: integer
-                          type: object
-                        ioUtilization:
-                          description: 'AutoscalingDiskGroupDiskScalersIoUtilization : AutoscalingDiskGroupDiskScalersIoUtilization struct'
-                          properties:
-                            abovePercent:
-                              format: int64
-                              type: integer
-                            enabled:
-                              type: boolean
-                            overPeriod:
-                              type: string
-                          type: object
-                      type: object
-                  type: object
-                id:
-                  description: Deployment ID.
+                accessGroupId:
+                  description: The Access Group identifier.
                   type: string
-                idRef:
-                  description: IDRef is a reference to an ICD resource instance used to set ID
+                accessGroupIdRef:
+                  description: Reference to AccessGroupID
                   properties:
                     name:
                       description: Name of the referenced object.
@@ -132,8 +64,8 @@ spec:
                   required:
                   - name
                   type: object
-                idSelector:
-                  description: SourceSelector selects a reference to an ICD resource instance used to set ID.
+                accessGroupIdSelector:
+                  description: Selector for AccessGroupID
                   properties:
                     matchControllerRef:
                       description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
@@ -144,40 +76,44 @@ spec:
                       description: MatchLabels ensures an object with matching labels is selected.
                       type: object
                   type: object
-                memory:
-                  description: "\tMemory -"
-                  properties:
-                    rate:
-                      description: 'AutoscalingMemoryGroupMemoryRate : AutoscalingMemoryGroupMemoryRate struct'
-                      properties:
-                        increasePercent:
-                          format: int64
-                          type: integer
-                        limitMbPerMember:
-                          format: int64
-                          type: integer
-                        periodSeconds:
-                          format: int64
-                          type: integer
-                        units:
-                          type: string
-                      type: object
-                    scalers:
-                      description: 'AutoscalingMemoryGroupMemoryScalers : AutoscalingMemoryGroupMemoryScalers struct'
-                      properties:
-                        ioUtilization:
-                          description: 'AutoscalingMemoryGroupMemoryScalersIoUtilization : AutoscalingMemoryGroupMemoryScalersIoUtilization struct'
-                          properties:
-                            abovePercent:
-                              format: int64
-                              type: integer
-                            enabled:
-                              type: boolean
-                            overPeriod:
-                              type: string
-                          type: object
-                      type: object
-                  type: object
+                conditions:
+                  description: A list of conditions the rule must satisfy.
+                  items:
+                    description: 'RuleCondition : The condition of a rule.'
+                    properties:
+                      claim:
+                        description: The claim to evaluate against. This will be found in the `ext` claims of a user's login request.
+                        type: string
+                      operator:
+                        description: The operation to perform on the claim. Valid operators are EQUALS, EQUALS_IGNORE_CASE, IN, NOT_EQUALS_IGNORE_CASE, NOT_EQUALS, and CONTAINS.
+                        type: string
+                      value:
+                        description: The stringified JSON value that the claim is compared to using the operator.
+                        type: string
+                    required:
+                    - claim
+                    - operator
+                    - value
+                    type: object
+                  type: array
+                expiration:
+                  description: The number of hours that the rule lives for (Must be between 1 and 24).
+                  format: int64
+                  type: integer
+                name:
+                  description: The name of the rule.
+                  type: string
+                realmName:
+                  description: The url of the identity provider.
+                  type: string
+                transactionID:
+                  description: An optional transaction id for the request.
+                  type: string
+              required:
+              - conditions
+              - expiration
+              - name
+              - realmName
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -214,13 +150,33 @@ spec:
           - forProvider
           type: object
         status:
-          description: A AutoscalingGroupStatus represents the observed state of a AutoscalingGroup.
+          description: A AccessGroupRuleStatus represents the observed state of a AccessGroupRule.
           properties:
             atProvider:
-              description: AutoscalingGroupObservation are the observable fields of a Autoscaling Group.
+              description: AccessGroupRuleObservation are the observable fields of a AccessGroupRule.
               properties:
+                accountId:
+                  description: The account id that the group is in.
+                  type: string
+                createdAt:
+                  description: The UTC timestamp when the rule was created.
+                  format: date-time
+                  type: string
+                createdById:
+                  description: The iam ID of the entity that created the rule.
+                  type: string
+                id:
+                  description: The rule id.
+                  type: string
+                lastModifiedAt:
+                  description: The UTC timestamp when the rule was last modified.
+                  format: date-time
+                  type: string
+                lastModifiedById:
+                  description: The iam ID of the entity that last modified the rule.
+                  type: string
                 state:
-                  description: The current state of the autoscaling group
+                  description: The current state of the group
                   type: string
               type: object
             conditions:

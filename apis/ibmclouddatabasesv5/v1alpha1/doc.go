@@ -16,6 +16,6 @@ limitations under the License.
 
 // Package v1alpha1 contains the v1alpha1 group ibmclouddatabasesv5 resources of the IBM Cloud provider.
 // +kubebuilder:object:generate=true
-// +groupName=ibmclouddatabasesv5.ibm-cloud.crossplane.io
+// +groupName=ibmclouddatabasesv5.ibmcloud.crossplane.io
 // +versionName=v1alpha1
 package v1alpha1

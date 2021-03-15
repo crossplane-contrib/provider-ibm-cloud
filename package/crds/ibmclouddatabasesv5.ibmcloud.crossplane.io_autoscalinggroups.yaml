@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: whitelists.ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  name: autoscalinggroups.ibmclouddatabasesv5.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .status.bindingPhase
@@ -19,18 +19,18 @@ spec:
   - JSONPath: .metadata.creationTimestamp
     name: AGE
     type: date
-  group: ibmclouddatabasesv5.ibm-cloud.crossplane.io
+  group: ibmclouddatabasesv5.ibmcloud.crossplane.io
   names:
-    kind: Whitelist
-    listKind: WhitelistList
-    plural: whitelists
-    singular: whitelist
+    kind: AutoscalingGroup
+    listKind: AutoscalingGroupList
+    plural: autoscalinggroups
+    singular: autoscalinggroup
   scope: Cluster
   subresources:
     status: {}
   validation:
     openAPIV3Schema:
-      description: A Whitelist represents an instance of a managed service on IBM Cloud
+      description: A AutoscalingGroup represents an instance of a managed service on IBM Cloud
       properties:
         apiVersion:
           description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
@@ -41,7 +41,7 @@ spec:
         metadata:
           type: object
         spec:
-          description: A WhitelistSpec defines the desired state of a Whitelist.
+          description: A AutoscalingGroupSpec defines the desired state of a AutoscalingGroup.
           properties:
             connectionTemplates:
               additionalProperties:
@@ -54,11 +54,72 @@ spec:
               - Delete
               type: string
             forProvider:
-              description: WhitelistParameters are the configurable fields of a Whitelist.
+              description: AutoscalingGroupParameters are the configurable fields of a AutoscalingGroup.
               properties:
-                IfMatch:
-                  description: Verify that the current allowlist matches a provided ETag value. Use in conjunction with the GET operation's ETag header to ensure synchronicity between clients.
-                  type: string
+                cpu:
+                  description: CPU -
+                  properties:
+                    rate:
+                      description: 'AutoscalingCPUGroupCPURate : AutoscalingCPUGroupCPURate struct'
+                      properties:
+                        increasePercent:
+                          format: int64
+                          type: integer
+                        limitCountPerMember:
+                          format: int64
+                          type: integer
+                        periodSeconds:
+                          format: int64
+                          type: integer
+                        units:
+                          type: string
+                      type: object
+                    scalers:
+                      type: object
+                  type: object
+                disk:
+                  description: Disk -
+                  properties:
+                    rate:
+                      description: 'AutoscalingDiskGroupDiskRate : AutoscalingDiskGroupDiskRate struct'
+                      properties:
+                        increasePercent:
+                          format: int64
+                          type: integer
+                        limitMbPerMember:
+                          format: int64
+                          type: integer
+                        periodSeconds:
+                          format: int64
+                          type: integer
+                        units:
+                          type: string
+                      type: object
+                    scalers:
+                      description: 'AutoscalingDiskGroupDiskScalers : AutoscalingDiskGroupDiskScalers struct'
+                      properties:
+                        capacity:
+                          description: 'AutoscalingDiskGroupDiskScalersCapacity : AutoscalingDiskGroupDiskScalersCapacity struct'
+                          properties:
+                            enabled:
+                              type: boolean
+                            freeSpaceLessThanPercent:
+                              format: int64
+                              type: integer
+                          type: object
+                        ioUtilization:
+                          description: 'AutoscalingDiskGroupDiskScalersIoUtilization : AutoscalingDiskGroupDiskScalersIoUtilization struct'
+                          properties:
+                            abovePercent:
+                              format: int64
+                              type: integer
+                            enabled:
+                              type: boolean
+                            overPeriod:
+                              type: string
+                          type: object
+                      type: object
+                  type: object
                 id:
                   description: Deployment ID.
                   type: string
@@ -83,19 +144,40 @@ spec:
                       description: MatchLabels ensures an object with matching labels is selected.
                       type: object
                   type: object
-                ipAddresses:
-                  description: An array of allowlist entries.
-                  items:
-                    description: 'WhitelistEntry : WhitelistEntry struct'
-                    properties:
-                      address:
-                        description: An IPv4 address or a CIDR range (netmasked IPv4 address).
-                        type: string
-                      description:
-                        description: A human readable description of the address or range for identification purposes.
-                        type: string
-                    type: object
-                  type: array
+                memory:
+                  description: "\tMemory -"
+                  properties:
+                    rate:
+                      description: 'AutoscalingMemoryGroupMemoryRate : AutoscalingMemoryGroupMemoryRate struct'
+                      properties:
+                        increasePercent:
+                          format: int64
+                          type: integer
+                        limitMbPerMember:
+                          format: int64
+                          type: integer
+                        periodSeconds:
+                          format: int64
+                          type: integer
+                        units:
+                          type: string
+                      type: object
+                    scalers:
+                      description: 'AutoscalingMemoryGroupMemoryScalers : AutoscalingMemoryGroupMemoryScalers struct'
+                      properties:
+                        ioUtilization:
+                          description: 'AutoscalingMemoryGroupMemoryScalersIoUtilization : AutoscalingMemoryGroupMemoryScalersIoUtilization struct'
+                          properties:
+                            abovePercent:
+                              format: int64
+                              type: integer
+                            enabled:
+                              type: boolean
+                            overPeriod:
+                              type: string
+                          type: object
+                      type: object
+                  type: object
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -132,13 +214,13 @@ spec:
           - forProvider
           type: object
         status:
-          description: A WhitelistStatus represents the observed state of a Whitelist.
+          description: A AutoscalingGroupStatus represents the observed state of a AutoscalingGroup.
           properties:
             atProvider:
-              description: WhitelistObservation are the observable fields of a Whitelist.
+              description: AutoscalingGroupObservation are the observable fields of a Autoscaling Group.
               properties:
                 state:
-                  description: The current state of the whitelist
+                  description: The current state of the autoscaling group
                   type: string
               type: object
             conditions:

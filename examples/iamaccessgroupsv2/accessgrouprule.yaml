@@ -1,4 +1,4 @@
-apiVersion: iamaccessgroupsv2.ibm-cloud.crossplane.io/v1alpha1
+apiVersion: iamaccessgroupsv2.ibmcloud.crossplane.io/v1alpha1
 kind: AccessGroupRule
 metadata:
   name: accessgrouprule-managers

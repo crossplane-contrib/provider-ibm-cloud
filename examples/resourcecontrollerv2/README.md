@@ -40,7 +40,7 @@ finally, create and apply the custom resource:
 
 ```shell
 cat <<EOF | kubectl apply -f -
-apiVersion: resourcecontrollerv2.ibm-cloud.crossplane.io/v1alpha1
+apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
 kind: ResourceInstance
 metadata:
   name: $META_NAME

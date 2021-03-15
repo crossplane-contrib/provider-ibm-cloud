@@ -16,6 +16,6 @@ limitations under the License.
 
 // Package v1beta1 contains the core resources of the Google Cloud Platform.
 // +kubebuilder:object:generate=true
-// +groupName=ibm-cloud.crossplane.io
+// +groupName=ibmcloud.crossplane.io
 // +versionName=v1beta1
 package v1beta1

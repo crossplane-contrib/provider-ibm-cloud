@@ -4,7 +4,7 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: providerconfigs.ibm-cloud.crossplane.io
+  name: providerconfigs.ibmcloud.crossplane.io
 spec:
   additionalPrinterColumns:
   - JSONPath: .spec.projectID
@@ -17,7 +17,7 @@ spec:
     name: SECRET-NAME
     priority: 1
     type: string
-  group: ibm-cloud.crossplane.io
+  group: ibmcloud.crossplane.io
   names:
     categories:
     - crossplane
