@@ -1,0 +1,15 @@
+apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
+kind: ResourceKey
+metadata:
+  name: mycloudant-creds
+spec:
+  forProvider:
+    name: mycloudant-creds
+    sourceRef:
+      name: mycloudant
+    role: Manager
+  providerConfigRef:
+    name: ibm-cloud
+  writeConnectionSecretToRef:
+    name: mycloudant
+    namespace: crossplane-system  

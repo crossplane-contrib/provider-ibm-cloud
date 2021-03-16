@@ -55,11 +55,8 @@ spec:
                 allowCleanup:
                   description: A boolean that dictates if the resource instance should be deleted (cleaned up) during the processing of a region instance delete call.
                   type: boolean
-                entityLock:
-                  description: Indicates if the resource instance is locked for further update or delete operations. It does not affect actions performed on child resources like aliases, bindings or keys. False by default.
-                  type: boolean
                 name:
-                  description: An human-readable name of the instance.
+                  description: The name of the instance. Must be 180 characters or less and cannot include any special characters other than `(space) - . _ :`.
                   type: string
                 parameters:
                   description: Configuration options represented as key-value pairs that are passed through to the target resource brokers.
@@ -83,7 +80,6 @@ spec:
                   type: string
               required:
               - name
-              - resourceGroupName
               - resourcePlanName
               - serviceName
               - target
@@ -151,6 +147,9 @@ spec:
                 deletedBy:
                   description: The subject who deleted the instance.
                   type: string
+                extensions:
+                  description: Additional instance properties, contributed by the service and/or platform, are represented as key-value pairs.
+                  type: object
                 guid:
                   description: When you create a new resource, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the instance.
                   type: string
@@ -160,11 +159,17 @@ spec:
                 lastOperation:
                   description: The status of the last operation requested on the instance.
                   type: object
+                locked:
+                  description: A boolean that dictates if the resource instance is locked or not.
+                  type: boolean
                 planHistory:
                   description: The plan history of the instance.
                   items:
                     description: 'PlanHistoryItem : An element of the plan history of the instance.'
                     properties:
+                      requestorId:
+                        description: The subject who made the plan change.
+                        type: string
                       resourcePlanId:
                         description: The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
                         type: string
@@ -190,7 +195,7 @@ spec:
                   description: The short ID of the resource group.
                   type: string
                 resourceId:
-                  description: ResourceID is the unique ID of the offering. This value is provided by and stored in the global catalog.
+                  description: The unique ID of the offering. This value is provided by and stored in the global catalog.
                   type: string
                 resourceKeysUrl:
                   description: The relative path to the resource keys for the instance.

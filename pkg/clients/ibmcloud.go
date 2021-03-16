@@ -72,6 +72,21 @@ const (
 	errUnprocEntity       = "Unprocessable Entity"
 	// ETagAnnotation annotation name for ETag
 	ETagAnnotation = "Etag"
+
+	// ErrNewClient -
+	ErrNewClient = "cannot create new Client"
+	// ErrGetAuth -
+	ErrGetAuth = "error getting auth info"
+	// ErrGenObservation -
+	ErrGenObservation = "error generating observation"
+	// ErrManagedUpdateFailed -
+	ErrManagedUpdateFailed = "cannot update custom resource"
+	// ErrCheckUpToDate -
+	ErrCheckUpToDate = "cannot determine if resource is up to date"
+	// ErrBadRequest -
+	ErrBadRequest = "error getting instance: Bad Request"
+	// ErrGetConnDetails -
+	ErrGetConnDetails = "error getting connection details"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
@@ -335,6 +350,7 @@ func RawExtensionToInterface(in *runtime.RawExtension) interface{} {
 
 // MapToRawExtension - create a RawExtension from a Map
 func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
+	// TODO check why this is required
 	if len(in) == 0 {
 		return nil
 	}
@@ -353,6 +369,24 @@ func RawExtensionToMap(in *runtime.RawExtension) map[string]interface{} {
 	o := make(map[string]interface{})
 	_ = json.Unmarshal(in.Raw, &o)
 	return o
+}
+
+// ParseDateTime - a wrapper around strfmt.DateTime used for tests generation
+func ParseDateTime(dateTime string) strfmt.DateTime {
+	p, _ := strfmt.ParseDateTime(dateTime)
+	return p
+}
+
+// ParseDateTimePtr - a wrapper around strfmt.DateTime used for tests generation
+func ParseDateTimePtr(dateTime string) *strfmt.DateTime {
+	p := ParseDateTime(dateTime)
+	return &p
+}
+
+// ParseMetaV1Time - a wrapper around strfmt.DateTime used for tests generation
+func ParseMetaV1Time(dateTime string) *metav1.Time {
+	t := ParseDateTime(dateTime)
+	return DateTimeToMetaV1Time(&t)
 }
 
 // DateTimeToMetaV1Time converts strfmt.DateTime to metav1.Time

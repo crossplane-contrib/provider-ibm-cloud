@@ -8,3 +8,7 @@ cover.out
 # ignore IDE folders
 .vscode/
 .DS_Store
+
+# ignore OpenAPI generator files
+.openapi-generator-ignore
+.openapi-generator/

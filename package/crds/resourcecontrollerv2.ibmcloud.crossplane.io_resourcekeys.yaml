@@ -57,7 +57,7 @@ spec:
               description: ResourceKeyParameters are the configurable fields of a ResourceKey.
               properties:
                 name:
-                  description: The human-readable name of the key.
+                  description: The name of the key.
                   type: string
                 parameters:
                   description: Configuration options represented as key-value pairs. Service defined options are passed through to the target resource brokers, whereas platform defined options are not.
@@ -73,7 +73,7 @@ spec:
                   description: The short or long ID of resource instance or alias.
                   type: string
                 sourceRef:
-                  description: SourceRef is a reference to a resource instance used to set Source
+                  description: A reference to a resource used to set Source
                   properties:
                     name:
                       description: Name of the referenced object.
@@ -82,7 +82,7 @@ spec:
                   - name
                   type: object
                 sourceSelector:
-                  description: SourceSelector selects a reference to a resource instance used to set Source.
+                  description: SourceSelector selects a reference to a resource used to set Source
                   properties:
                     matchControllerRef:
                       description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
@@ -93,6 +93,8 @@ spec:
                       description: MatchLabels ensures an object with matching labels is selected.
                       type: object
                   type: object
+              required:
+              - name
               type: object
             providerConfigRef:
               description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
@@ -137,22 +139,22 @@ spec:
                 accountId:
                   description: An alpha-numeric value identifying the account ID.
                   type: string
-                created_by:
-                  description: The subject who created the key.
-                  type: string
                 createdAt:
                   description: The date when the key was created.
                   format: date-time
                   type: string
+                createdBy:
+                  description: The subject who created the key.
+                  type: string
                 crn:
                   description: The full Cloud Resource Name (CRN) associated with the key. For more information about this format, see [Cloud Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
-                  type: string
-                deleted_by:
-                  description: The subject who deleted the key.
                   type: string
                 deletedAt:
                   description: The date when the key was deleted.
                   format: date-time
+                  type: string
+                deletedBy:
+                  description: The subject who deleted the key.
                   type: string
                 guid:
                   description: When you create a new key, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the key.
@@ -169,15 +171,18 @@ spec:
                 resourceInstanceUrl:
                   description: The relative path to the resource.
                   type: string
+                sourceCrn:
+                  description: The CRN of resource instance or alias associated to the key.
+                  type: string
                 state:
                   description: The state of the key.
-                  type: string
-                updated_by:
-                  description: The subject who updated the key.
                   type: string
                 updatedAt:
                   description: The date when the key was last updated.
                   format: date-time
+                  type: string
+                updatedBy:
+                  description: The subject who updated the key.
                   type: string
                 url:
                   description: When you created a new key, a relative URL path is created identifying the location of the key.

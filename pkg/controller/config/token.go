@@ -45,7 +45,7 @@ import (
 
 const (
 	timeout      = 2 * time.Minute
-	requeueTime  = 10 * time.Minute
+	requeueTime  = 30 * time.Minute
 	errGetPC     = "cannot get ProviderConfig"
 	errNoSecret  = "no credentials secret reference was provided"
 	errGetSecret = "cannot get credentials secret"
