@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -22,25 +22,22 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// In spec mandatory fields should be by value, and optional fields pointers
-// In status, all fields should be by value, except timestamps - metav1.Time, and runtime.RawExtension which requires special treatment
-// https://github.com/crossplane/crossplane/blob/master/design/one-pager-managed-resource-api-design.md#pointer-types-and-markers
-
 // ResourceKeyParameters are the configurable fields of a ResourceKey.
 type ResourceKeyParameters struct {
-	// The human-readable name of the key.
-	Name string `json:"name,omitempty"`
+	// The name of the key.
+	Name string `json:"name"`
 
 	// The short or long ID of resource instance or alias.
 	// +immutable
+	// +optional
 	Source *string `json:"source,omitempty"`
 
-	// SourceRef is a reference to a resource instance used to set Source
+	// A reference to a resource used to set Source
 	// +immutable
 	// +optional
 	SourceRef *runtimev1alpha1.Reference `json:"sourceRef,omitempty"`
 
-	// SourceSelector selects a reference to a resource instance used to set Source.
+	// SourceSelector selects a reference to a resource used to set Source
 	// +immutable
 	// +optional
 	SourceSelector *runtimev1alpha1.Selector `json:"sourceSelector,omitempty"`
@@ -84,6 +81,9 @@ type ResourceKeyObservation struct {
 	// The short ID of the resource group.
 	ResourceGroupID string `json:"resourceGroupId,omitempty"`
 
+	// The CRN of resource instance or alias associated to the key.
+	SourceCRN string `json:"sourceCrn,omitempty"`
+
 	// The state of the key.
 	State string `json:"state,omitempty"`
 
@@ -103,13 +103,31 @@ type ResourceKeyObservation struct {
 	DeletedAt *metav1.Time `json:"deletedAt,omitempty"`
 
 	// The subject who created the key.
-	CreatedBy string `json:"created_by,omitempty"`
+	CreatedBy string `json:"createdBy,omitempty"`
 
 	// The subject who updated the key.
-	UpdatedBy string `json:"updated_by,omitempty"`
+	UpdatedBy string `json:"updatedBy,omitempty"`
 
 	// The subject who deleted the key.
-	DeletedBy string `json:"deleted_by,omitempty"`
+	DeletedBy string `json:"deletedBy,omitempty"`
+}
+
+// Credentials : The credentials for a resource.
+type Credentials struct {
+	// The API key for the credentials.
+	Apikey string `json:"apikey,omitempty"`
+
+	// The optional description of the API key.
+	IamApikeyDescription string `json:"iamApikeyDescription,omitempty"`
+
+	// The name of the API key.
+	IamApikeyName string `json:"iamApikeyName,omitempty"`
+
+	// The Cloud Resource Name for the role of the credentials.
+	IamRoleCRN string `json:"iamRoleCrn,omitempty"`
+
+	// The Cloud Resource Name for the service ID of the credentials.
+	IamServiceidCRN string `json:"iamServiceidCrn,omitempty"`
 }
 
 // A ResourceKeySpec defines the desired state of a ResourceKey.

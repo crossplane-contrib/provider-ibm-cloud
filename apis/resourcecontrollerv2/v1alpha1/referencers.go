@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -35,23 +35,23 @@ func (mg *ResourceKey) ResolveReferences(ctx context.Context, c client.Reader) e
 		Reference:    mg.Spec.ForProvider.SourceRef,
 		Selector:     mg.Spec.ForProvider.SourceSelector,
 		To:           reference.To{Managed: &ResourceInstance{}, List: &ResourceInstanceList{}},
-		Extract:      SourceCRN(),
+		Extract:      SourceGUID(),
 	})
 	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.source")
+		return errors.Wrap(err, "spec.forProvider.Source")
 	}
 	mg.Spec.ForProvider.Source = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.SourceRef = rsp.ResolvedReference
 	return nil
 }
 
-// SourceCRN extracts the resolved ResourceInstance's CRN
-func SourceCRN() reference.ExtractValueFn {
+// SourceGUID extracts the resolved ResourceInstance's GUID
+func SourceGUID() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
 		cr, ok := mg.(*ResourceInstance)
 		if !ok {
 			return ""
 		}
-		return cr.Status.AtProvider.CRN
+		return cr.Status.AtProvider.GUID
 	}
 }

@@ -46,7 +46,6 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourceinstance"
 )
 
 const (
@@ -62,22 +61,21 @@ var (
 	crn               = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
 	guid              = "78d88b2b-bbbb-aaaa-8888-5c26e8b6a555"
 	id                = "crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a00334eaf9eb9339d2ab48f20d7f5:78d88b2b-bbbb-aaaa-8888-5c26e8b6a555::"
-	locked            = false
+	locked            = true
 	name              = "cos-wow"
 	createdAt, _      = strfmt.ParseDateTime("2020-10-31T02:33:06Z")
 	resourceGroupID   = "mock-resource-group-id"
 	resourceID        = "aaaaaaaa-bbbb-cccc-b470-411c3edbe49c"
 	resourcePlanID    = "744bfc56-d12c-4866-88d5-dac9139e0e5d"
-	state             = ibmcc.StateActive
+	state             = "active"
 	serviceName       = "cloud-object-storage"
 	tags              = []string{"dev"}
 	target            = "global"
-	entityLock        = false
 	parameters        = map[string]interface{}{}
 )
 
-var _ managed.ExternalConnecter = &riConnector{}
-var _ managed.ExternalClient = &riExternal{}
+var _ managed.ExternalConnecter = &resourceinstanceConnector{}
+var _ managed.ExternalClient = &resourceinstanceExternal{}
 
 type handler struct {
 	path        string
@@ -121,6 +119,12 @@ func withResourceGroupID(s string) instanceModifier {
 func withCreatedAt(t strfmt.DateTime) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) {
 		i.Status.AtProvider.CreatedAt = ibmc.DateTimeToMetaV1Time(&t)
+	}
+}
+
+func withLocked(b bool) instanceModifier {
+	return func(i *v1alpha1.ResourceInstance) {
+		i.Status.AtProvider.Locked = b
 	}
 }
 
@@ -228,7 +232,6 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 	o := v1alpha1.ResourceInstanceParameters{
 		Name:              name,
-		EntityLock:        &entityLock,
 		AllowCleanup:      ibmc.BoolPtr(false),
 		Parameters:        ibmc.MapToRawExtension(parameters),
 		ResourceGroupName: resourceGroupName,
@@ -237,6 +240,12 @@ func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 		Tags:              tags,
 		Target:            target,
 	}
+	return o
+}
+
+func resourceInstanceNewSpec() v1alpha1.ResourceInstanceParameters {
+	o := resourceInstanceSpec()
+	o.Target = "new-target"
 	return o
 }
 
@@ -271,6 +280,7 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 		withResourceID(resourceID),
 		withCreatedAt(createdAt),
 		withConditions(cpv1alpha1.Available()),
+		withLocked(true),
 	)
 	for _, m := range im {
 		m(i)
@@ -337,7 +347,7 @@ func TestObserve(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(),
-				err: errors.New(errBadRequest),
+				err: errors.New(errGetResourceInstanceFailed + ": Bad Request"),
 			},
 		},
 		"ObservedResourceInstanceUpToDate": {
@@ -379,6 +389,7 @@ func TestObserve(t *testing.T) {
 					withExternalNameAnnotation(id),
 					withID(id),
 					withSpec(resourceInstanceSpec()),
+					withLocked(true),
 				),
 			},
 			want: want{
@@ -429,11 +440,11 @@ func TestObserve(t *testing.T) {
 				mg: instance(
 					withExternalNameAnnotation(id),
 					withID(id),
-					withSpec(resourceInstanceSpec()),
+					withSpec(resourceInstanceNewSpec()),
 				),
 			},
 			want: want{
-				mg: genTestCRResourceInstance(),
+				mg: genTestCRResourceInstance(withLocked(true), withSpec(resourceInstanceNewSpec())),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
@@ -452,7 +463,7 @@ func TestObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						ri := genTestSDKResourceInstance()
-						ri.State = reference.ToPtrValue(ibmcc.StatePendingReclamation)
+						ri.State = reference.ToPtrValue("pending_reclamation")
 						_ = json.NewEncoder(w).Encode(ri)
 					},
 				},
@@ -484,7 +495,7 @@ func TestObserve(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := riExternal{
+			e := resourceinstanceExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -614,7 +625,7 @@ func TestCreate(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(withSpec(resourceInstanceSpec()), withConditions(cpv1alpha1.Creating())),
-				err: errors.Wrap(errors.New(errNoRCDep), errCreateRes),
+				err: errors.Wrap(errors.New(errNoRCDep), errCreateResourceInstance),
 			},
 		},
 	}
@@ -632,7 +643,7 @@ func TestCreate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := riExternal{
+			e := resourceinstanceExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -735,7 +746,7 @@ func TestDelete(t *testing.T) {
 			},
 			want: want{
 				mg:  instance(withID(id), withConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteRes),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteResourceInstance),
 			},
 		},
 	}
@@ -753,7 +764,7 @@ func TestDelete(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := riExternal{
+			e := resourceinstanceExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -852,7 +863,7 @@ func TestUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  genTestCRResourceInstance(),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdRes),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdResourceInstance),
 			},
 		},
 	}
@@ -870,7 +881,7 @@ func TestUpdate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := riExternal{
+			e := resourceinstanceExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),

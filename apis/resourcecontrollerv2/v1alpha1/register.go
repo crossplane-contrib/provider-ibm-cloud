@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ var (
 	SchemeBuilder = &scheme.Builder{GroupVersion: SchemeGroupVersion}
 )
 
-// Resourcecontrollerv2 types metadata.
+// resourcecontrollerv2 types metadata.
 var (
 	ResourceInstanceKind             = reflect.TypeOf(ResourceInstance{}).Name()
 	ResourceInstanceGroupKind        = schema.GroupKind{Group: Group, Kind: ResourceInstanceKind}.String()

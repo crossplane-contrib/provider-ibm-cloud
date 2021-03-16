@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-// Package v1alpha1 contains the v1alpha1 group Sample resources of the Template provider.
+// Package v1alpha1 contains the v1alpha1 group resourcecontrollerv2 resources of the IBM Cloud provider.
 // +kubebuilder:object:generate=true
 // +groupName=resourcecontrollerv2.ibmcloud.crossplane.io
 // +versionName=v1alpha1

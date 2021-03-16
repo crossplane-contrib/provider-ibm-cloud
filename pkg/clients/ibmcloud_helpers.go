@@ -233,3 +233,15 @@ func QueryResourceInstances(client ClientSession, queryOpts *rcv2.ListResourceIn
 	list, _, err := client.ResourceControllerV2().ListResourceInstances(queryOpts)
 	return list, err
 }
+
+// GenerateTarget generates Target from CRN
+func GenerateTarget(in *rcv2.ResourceInstance) string {
+	if in.CRN == nil {
+		return ""
+	}
+	crn, err := crn.Parse(*in.CRN)
+	if err != nil {
+		return ""
+	}
+	return crn.Region
+}

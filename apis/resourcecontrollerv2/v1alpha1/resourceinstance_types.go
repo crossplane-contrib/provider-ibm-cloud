@@ -1,5 +1,5 @@
 /*
-Copyright 2020 The Crossplane Authors.
+Copyright 2021 The Crossplane Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -23,13 +23,10 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// In spec mandatory fields should be by value, and optional fields pointers
-// In status, all fields should be by value, except timestamps - metav1.Time, and runtime.RawExtension which requires special treatment
-// https://github.com/crossplane/crossplane/blob/master/design/one-pager-managed-resource-api-design.md#pointer-types-and-markers
-
 // ResourceInstanceParameters are the configurable fields of a ResourceInstance.
 type ResourceInstanceParameters struct {
-	// An human-readable name of the instance.
+	// The name of the instance. Must be 180 characters or less and cannot include any special characters other than
+	// `(space) - . _ :`.
 	Name string `json:"name"`
 
 	// The deployment location where the instance should be hosted.
@@ -38,7 +35,8 @@ type ResourceInstanceParameters struct {
 
 	// The name of the resource group where the instance is deployed
 	// +immutable
-	ResourceGroupName string `json:"resourceGroupName"`
+	// +optional
+	ResourceGroupName string `json:"resourceGroupName,omitempty"`
 
 	// The name of the service offering like cloud-object-storage, kms etc
 	// +immutable
@@ -60,11 +58,6 @@ type ResourceInstanceParameters struct {
 	// Configuration options represented as key-value pairs that are passed through to the target resource brokers.
 	// +optional
 	Parameters *runtime.RawExtension `json:"parameters,omitempty"`
-
-	// Indicates if the resource instance is locked for further update or delete operations. It does not affect actions
-	// performed on child resources like aliases, bindings or keys. False by default.
-	// +optional
-	EntityLock *bool `json:"entityLock,omitempty"`
 }
 
 // ResourceInstanceObservation are the observable fields of a ResourceInstance.
@@ -92,7 +85,7 @@ type ResourceInstanceObservation struct {
 	// The long ID (full CRN) of the resource group.
 	ResourceGroupCRN string `json:"resourceGroupCrn,omitempty"`
 
-	// ResourceID is the unique ID of the offering. This value is provided by and stored in the global catalog.
+	// The unique ID of the offering. This value is provided by and stored in the global catalog.
 	ResourceID string `json:"resourceId,omitempty"`
 
 	// The unique ID of the plan associated with the offering. This value is provided by and stored in the global catalog.
@@ -111,6 +104,9 @@ type ResourceInstanceObservation struct {
 	// The sub-type of instance, e.g. `cfaas`.
 	SubType string `json:"subType,omitempty"`
 
+	// A boolean that dictates if the resource instance is locked or not.
+	Locked bool `json:"locked,omitempty"`
+
 	// The status of the last operation requested on the instance.
 	LastOperation *runtime.RawExtension `json:"lastOperation,omitempty"`
 
@@ -119,6 +115,9 @@ type ResourceInstanceObservation struct {
 
 	// The plan history of the instance.
 	PlanHistory []PlanHistoryItem `json:"planHistory,omitempty"`
+
+	// Additional instance properties, contributed by the service and/or platform, are represented as key-value pairs.
+	Extensions *runtime.RawExtension `json:"extensions,omitempty"`
 
 	// The relative path to the resource aliases for the instance.
 	ResourceAliasesURL string `json:"resourceAliasesUrl,omitempty"`
@@ -167,6 +166,9 @@ type PlanHistoryItem struct {
 
 	// The date on which the plan was changed.
 	StartDate *metav1.Time `json:"startDate"`
+
+	// The subject who made the plan change.
+	RequestorID string `json:"requestorId,omitempty"`
 }
 
 // A ResourceInstanceSpec defines the desired state of a ResourceInstance.

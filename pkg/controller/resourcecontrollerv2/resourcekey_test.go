@@ -44,7 +44,6 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	ibmcrk "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/resourcekey"
 )
 
 var (
@@ -63,8 +62,8 @@ var (
 	errWrongGUID  = fmt.Sprintf("Failed to retrieve an alias with guid: %s", wrongGUID)
 )
 
-var _ managed.ExternalConnecter = &riConnector{}
-var _ managed.ExternalClient = &riExternal{}
+var _ managed.ExternalConnecter = &resourcekeyConnector{}
+var _ managed.ExternalClient = &resourcekeyExternal{}
 
 type keyModifier func(*v1alpha1.ResourceKey)
 
@@ -108,13 +107,17 @@ func rkWithResourceGroupID(s string) keyModifier {
 	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.ResourceGroupID = s }
 }
 
+func rkWithSourceCRN(s string) keyModifier {
+	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.SourceCRN = s }
+}
+
 func rkWithResourceInstanceURL(s string) keyModifier {
 	return func(i *v1alpha1.ResourceKey) { i.Status.AtProvider.ResourceInstanceURL = s }
 }
 
 func rkWithCreatedAt(t strfmt.DateTime) keyModifier {
 	return func(i *v1alpha1.ResourceKey) {
-		i.Status.AtProvider.CreatedAt = ibmcrk.GenerateMetaV1Time(&t)
+		i.Status.AtProvider.CreatedAt = ibmc.DateTimeToMetaV1Time(&t)
 	}
 }
 
@@ -271,7 +274,7 @@ func TestResourceKeyObserve(t *testing.T) {
 			},
 			want: want{
 				mg:  key(),
-				err: errors.New(errBadRequest),
+				err: errors.New(errGetResourceKeyFailed + ": Bad Request"),
 			},
 		},
 		"ObservedResourceKeyUpToDate": {
@@ -300,7 +303,7 @@ func TestResourceKeyObserve(t *testing.T) {
 				),
 			},
 			want: want{
-				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec())),
+				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec()), rkWithSourceCRN(sourceCrn)),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -336,7 +339,7 @@ func TestResourceKeyObserve(t *testing.T) {
 			},
 			want: want{
 				mg: genTestCRResourceKey(rkWithSpec(resourceKeySpec()),
-					rkWithExternalNameAnnotation(rkID)),
+					rkWithExternalNameAnnotation(rkID), rkWithSourceCRN(sourceCrn)),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  false,
@@ -355,7 +358,7 @@ func TestResourceKeyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						rk := genTestSDKResourceKey()
-						rk.State = reference.ToPtrValue(ibmcrk.StateRemoved)
+						rk.State = reference.ToPtrValue("removed")
 						_ = json.NewEncoder(w).Encode(rk)
 					},
 				},
@@ -387,7 +390,7 @@ func TestResourceKeyObserve(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := resourcekeyExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -489,7 +492,7 @@ func TestResourceKeyCreate(t *testing.T) {
 			},
 			want: want{
 				mg:  key(rkWithSpec(resourceKeySpec()), rkWithConditions(cpv1alpha1.Creating())),
-				err: errors.Wrap(errors.New(errWrongGUID), errCreateRes),
+				err: errors.Wrap(errors.New(errWrongGUID), errCreateResourceKey),
 			},
 		},
 	}
@@ -507,7 +510,7 @@ func TestResourceKeyCreate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := resourcekeyExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -610,7 +613,7 @@ func TestResourceKeyDelete(t *testing.T) {
 			},
 			want: want{
 				mg:  key(rkWithID(id), rkWithConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteRes),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteResourceKey),
 			},
 		},
 	}
@@ -628,7 +631,7 @@ func TestResourceKeyDelete(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := resourcekeyExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
@@ -710,7 +713,7 @@ func TestResourceKeyUpdate(t *testing.T) {
 			},
 			want: want{
 				mg:  genTestCRResourceKey(),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdRes),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdResourceKey),
 			},
 		},
 	}
@@ -728,7 +731,7 @@ func TestResourceKeyUpdate(t *testing.T) {
 				BearerToken: bearerTok,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
-			e := rkExternal{
+			e := resourcekeyExternal{
 				kube:   tc.kube,
 				client: mClient,
 				logger: logging.NewNopLogger(),
