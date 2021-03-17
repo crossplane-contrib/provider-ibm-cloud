@@ -10,6 +10,10 @@ spec:
   compositeTypeRef:
     apiVersion: example.org/v1alpha1
     kind: CompositePostgreSQLInstance
+  patchSets:
+  - name: metadata
+    patches:
+    - fromFieldPath: metadata.labels  
   resources:
     - base:
         apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
@@ -24,10 +28,8 @@ spec:
           providerConfigRef:
             name: ibm-cloud
       patches:
-        - fromFieldPath: "metadata.labels"
-          toFieldPath: "metadata.labels"
-        - fromFieldPath: "metadata.annotations"
-          toFieldPath: "metadata.annotations"
+        - type: PatchSet
+          patchSetName: metadata
         - fromFieldPath: "metadata.name"
           toFieldPath:  "spec.forProvider.name"    
         - fromFieldPath: "spec.parameters.location"
@@ -62,10 +64,8 @@ spec:
           writeConnectionSecretToRef:
             namespace: crossplane-system  
       patches:
-        - fromFieldPath: "metadata.labels"
-          toFieldPath: "metadata.labels"
-        - fromFieldPath: "metadata.annotations"
-          toFieldPath: "metadata.annotations"
+        - type: PatchSet
+          patchSetName: metadata
         - fromFieldPath: "metadata.name"
           toFieldPath:  "spec.forProvider.name"    
         - fromFieldPath: "metadata.uid"
