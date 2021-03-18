@@ -8,7 +8,7 @@ spec:
     target: us-south
     resourceGroupName: default
     serviceName: messagehub
-    resourcePlanName: standard
+    resourcePlanName: lite
     tags:
       - dev
   providerConfigRef:
