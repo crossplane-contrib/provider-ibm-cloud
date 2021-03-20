@@ -121,7 +121,7 @@ func (c *gmExternal) Observe(ctx context.Context, mg resource.Managed) (managed.
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetGroupMembershipFailed)
 	}
-	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp))
+	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp.Headers))
 
 	if len(instance.Members) == 0 {
 		return managed.ExternalObservation{

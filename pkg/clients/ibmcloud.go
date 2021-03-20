@@ -497,11 +497,11 @@ func ExtractErrorMessage(resp *corev4.DetailedResponse, err error) error {
 }
 
 // GetEtag gets the Etag from a detailed response
-func GetEtag(resp *corev4.DetailedResponse) string {
-	if resp.Headers == nil {
+func GetEtag(headers http.Header) string {
+	if headers == nil {
 		return ""
 	}
-	return resp.Headers.Get("Etag")
+	return headers.Get("Etag")
 }
 
 // GetEtagAnnotation returns the etag annotation value on the resource.
