@@ -62,7 +62,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 
 // GenerateCreateResourceInstanceOptions produces CreateResourceInstanceOptions object from ResourceInstanceParameters object.
 func GenerateCreateResourceInstanceOptions(client ibmc.ClientSession, in v1alpha1.ResourceInstanceParameters, o *rcv2.CreateResourceInstanceOptions) error {
-	rgID, err := ibmc.GetResourceGroupID(client, in.ResourceGroupName)
+	rgID, err := ibmc.GetResourceGroupID(client, &in.ResourceGroupName)
 	if err != nil {
 		return errors.Wrap(err, errGetResGroupID)
 	}

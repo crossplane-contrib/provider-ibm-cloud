@@ -264,7 +264,7 @@ func TestGetResourcePlanName(t *testing.T) {
 
 func TestGetResourceGroupID(t *testing.T) {
 	type args struct {
-		rgName string
+		rgName *string
 	}
 	type want struct {
 		rgID *string
@@ -276,13 +276,19 @@ func TestGetResourceGroupID(t *testing.T) {
 	}{
 		"Found": {
 			args: args{
-				rgName: resourceGroupName,
+				rgName: &resourceGroupName,
+			},
+			want: want{rgID: &resourceGroupID, err: nil},
+		},
+		"Default": {
+			args: args{
+				rgName: nil,
 			},
 			want: want{rgID: &resourceGroupID, err: nil},
 		},
 		"NotFound": {
 			args: args{
-				rgName: invalidRGName,
+				rgName: &invalidRGName,
 			},
 			want: want{rgID: nil, err: errors.New(errRGIDNotFound)},
 		},
