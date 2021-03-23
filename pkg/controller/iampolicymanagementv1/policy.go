@@ -126,7 +126,7 @@ func (c *pExternal) Observe(ctx context.Context, mg resource.Managed) (managed.E
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetPolicyFailed)
 	}
-	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp))
+	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp.Headers))
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	if err = ibmcp.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
