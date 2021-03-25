@@ -28,6 +28,7 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -106,6 +107,14 @@ func withCRN(s string) instanceModifier {
 
 func withResourceID(s string) instanceModifier {
 	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.ResourceID = s }
+}
+
+func withExtensions(s *runtime.RawExtension) instanceModifier {
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.Extensions = s }
+}
+
+func withLastOperation(s *runtime.RawExtension) instanceModifier {
+	return func(i *v1alpha1.ResourceInstance) { i.Status.AtProvider.LastOperation = s }
 }
 
 func withResourcePlanID(s string) instanceModifier {
@@ -281,6 +290,8 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 		withCreatedAt(createdAt),
 		withConditions(cpv1alpha1.Available()),
 		withLocked(true),
+		withExtensions(ibmc.MapToRawExtension(map[string]interface{}{})),
+		withLastOperation(ibmc.MapToRawExtension(map[string]interface{}{})),
 	)
 	for _, m := range im {
 		m(i)

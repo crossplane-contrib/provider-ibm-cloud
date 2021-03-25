@@ -350,11 +350,10 @@ func RawExtensionToInterface(in *runtime.RawExtension) interface{} {
 
 // MapToRawExtension - create a RawExtension from a Map
 func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
-	// TODO check why this is required
-	if len(in) == 0 {
-		return nil
+	js := []byte("{}")
+	if len(in) > 0 {
+		js, _ = json.Marshal(in)
 	}
-	js, _ := json.Marshal(in)
 	o := &runtime.RawExtension{
 		Raw: js,
 	}

@@ -108,7 +108,7 @@ func instance(m ...func(*rcv2.ResourceKey)) *rcv2.ResourceKey {
 	return i
 }
 
-func instanceOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourceKeyOptions {
+func instanceCreateOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourceKeyOptions {
 	i := &rcv2.CreateResourceKeyOptions{
 		Name:   reference.ToPtrValue("my-key"),
 		Source: reference.ToPtrValue("25eba2a9-beef-450b-82cf-f5ad5e36c6dd"),
@@ -134,7 +134,7 @@ func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceKeyOptions)) *rcv2.UpdateR
 	return i
 }
 
-func TestGenerateCreateResourceKeyOptions(t *testing.T) {
+func TestResourceKeyGenerateCreateOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceKeyParameters
 	}
@@ -147,7 +147,7 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 	}{
 		"FullConversion": {
 			args: args{params: *params()},
-			want: want{instance: instanceOpts()},
+			want: want{instance: instanceCreateOpts()},
 		},
 		"MissingFields": {
 			args: args{
@@ -155,7 +155,7 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 					p.Parameters = nil
 					p.Role = nil
 				})},
-			want: want{instance: instanceOpts(func(i *rcv2.CreateResourceKeyOptions) {
+			want: want{instance: instanceCreateOpts(func(i *rcv2.CreateResourceKeyOptions) {
 				i.Parameters = nil
 				i.Role = nil
 			})},
@@ -184,7 +184,7 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 	}
 }
 
-func TestGenerateUpdateResourceKeyOptions(t *testing.T) {
+func TestResourceKeyGenerateUpdateOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceKeyParameters
 	}
@@ -228,7 +228,7 @@ func TestGenerateUpdateResourceKeyOptions(t *testing.T) {
 	}
 }
 
-func TestLateInitializeSpecs(t *testing.T) {
+func TestResourceKeyLateInitializeSpecs(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceKey
 		params   *v1alpha1.ResourceKeyParameters
@@ -280,7 +280,7 @@ func TestLateInitializeSpecs(t *testing.T) {
 	}
 }
 
-func TestGenerateObservation(t *testing.T) {
+func TestResourceKeyGenerateObservation(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceKey
 	}
@@ -321,7 +321,7 @@ func TestGenerateObservation(t *testing.T) {
 	}
 }
 
-func TestIsUpToDate(t *testing.T) {
+func TestResourceKeyIsUpToDate(t *testing.T) {
 	type args struct {
 		params   *v1alpha1.ResourceKeyParameters
 		instance *rcv2.ResourceKey
