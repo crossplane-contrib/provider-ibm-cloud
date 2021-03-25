@@ -47,9 +47,7 @@ func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceI
 		ResourcePlanName:  "standard",
 		Tags:              []string{"testString"},
 		AllowCleanup:      ibmc.BoolPtr(true),
-		Parameters: ibmc.MapToRawExtension(map[string]interface{}{
-			"par1": "value1",
-		}),
+		Parameters:        ibmc.MapToRawExtension(make(map[string]interface{})),
 	}
 
 	for _, f := range m {
@@ -101,20 +99,18 @@ func observation(m ...func(*v1alpha1.ResourceInstanceObservation)) *v1alpha1.Res
 
 func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 	i := &rcv2.ResourceInstance{
-		ID:               reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
-		GUID:             reference.ToPtrValue("8d7af921-b136-4078-9666-081bd8470d94"),
-		CRN:              reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
-		URL:              reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94"),
-		Name:             reference.ToPtrValue("my-instance"),
-		AccountID:        reference.ToPtrValue("4329073d16d2f3663f74bfa955259139"),
-		ResourceGroupID:  reference.ToPtrValue("0be5ad401ae913d8ff665d92680664ed"),
-		ResourceGroupCRN: reference.ToPtrValue("crn:v1:bluemix:public:resource-controller::a/4329073d16d2f3663f74bfa955259139::resource-group:0be5ad401ae913d8ff665d92680664ed"),
-		ResourceID:       reference.ToPtrValue("dff97f5c-bc5e-4455-b470-411c3edbe49c"),
-		ResourcePlanID:   reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
-		TargetCRN:        reference.ToPtrValue("crn:v1:bluemix:public:resource-catalog::a/9e16d1fed8aa7e1bd73e7a9d23434a5a::deployment:2fdf0c08-2d32-4f46-84b5-32e0c92fffd8%3Aglobal"),
-		Parameters: map[string]interface{}{
-			"par1": "value1",
-		},
+		ID:                  reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
+		GUID:                reference.ToPtrValue("8d7af921-b136-4078-9666-081bd8470d94"),
+		CRN:                 reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
+		URL:                 reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94"),
+		Name:                reference.ToPtrValue("my-instance"),
+		AccountID:           reference.ToPtrValue("4329073d16d2f3663f74bfa955259139"),
+		ResourceGroupID:     reference.ToPtrValue("0be5ad401ae913d8ff665d92680664ed"),
+		ResourceGroupCRN:    reference.ToPtrValue("crn:v1:bluemix:public:resource-controller::a/4329073d16d2f3663f74bfa955259139::resource-group:0be5ad401ae913d8ff665d92680664ed"),
+		ResourceID:          reference.ToPtrValue("dff97f5c-bc5e-4455-b470-411c3edbe49c"),
+		ResourcePlanID:      reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
+		TargetCRN:           reference.ToPtrValue("crn:v1:bluemix:public:resource-catalog::a/9e16d1fed8aa7e1bd73e7a9d23434a5a::deployment:2fdf0c08-2d32-4f46-84b5-32e0c92fffd8%3Aglobal"),
+		Parameters:          make(map[string]interface{}),
 		State:               reference.ToPtrValue("active"),
 		Type:                reference.ToPtrValue("service_instance"),
 		SubType:             reference.ToPtrValue("testString"),
@@ -123,6 +119,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		LastOperation:       make(map[string]interface{}),
 		DashboardURL:        reference.ToPtrValue("/objectstorage/crn%3Av1%3Abluemix%3Apublic%3Acloud-object-storage%3Aglobal%3Aa%2F4329073d16d2f3663f74bfa955259139%3A8d7af921-b136-4078-9666-081bd8470d94%3A%3A"),
 		PlanHistory:         []rcv2.PlanHistoryItem{},
+		Extensions:          make(map[string]interface{}),
 		ResourceAliasesURL:  reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94/resource_aliases"),
 		ResourceBindingsURL: reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94/resource_bindings"),
 		ResourceKeysURL:     reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94/resource_keys"),
@@ -144,7 +141,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 	return i
 }
 
-func instanceOpts(m ...func(*rcv2.CreateResourceInstanceOptions)) *rcv2.CreateResourceInstanceOptions {
+func instanceCreateOpts(m ...func(*rcv2.CreateResourceInstanceOptions)) *rcv2.CreateResourceInstanceOptions {
 	i := &rcv2.CreateResourceInstanceOptions{
 		Name:           reference.ToPtrValue("my-instance"),
 		Target:         reference.ToPtrValue("global"),
@@ -152,9 +149,7 @@ func instanceOpts(m ...func(*rcv2.CreateResourceInstanceOptions)) *rcv2.CreateRe
 		ResourcePlanID: reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
 		Tags:           []string{"testString"},
 		AllowCleanup:   ibmc.BoolPtr(true),
-		Parameters: map[string]interface{}{
-			"par1": "value1",
-		},
+		Parameters:     make(map[string]interface{}),
 	}
 	for _, f := range m {
 		f(i)
@@ -164,11 +159,9 @@ func instanceOpts(m ...func(*rcv2.CreateResourceInstanceOptions)) *rcv2.CreateRe
 
 func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceInstanceOptions)) *rcv2.UpdateResourceInstanceOptions {
 	i := &rcv2.UpdateResourceInstanceOptions{
-		ID:   reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
-		Name: reference.ToPtrValue("my-instance"),
-		Parameters: map[string]interface{}{
-			"par1": "value1",
-		},
+		ID:             reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
+		Name:           reference.ToPtrValue("my-instance"),
+		Parameters:     make(map[string]interface{}),
 		ResourcePlanID: reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
 		AllowCleanup:   ibmc.BoolPtr(true),
 	}
@@ -178,7 +171,7 @@ func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceInstanceOptions)) *rcv2.Up
 	return i
 }
 
-func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
+func TestResourceInstanceGenerateCreateOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceInstanceParameters
 	}
@@ -191,7 +184,7 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 	}{
 		"FullConversion": {
 			args: args{params: *params()},
-			want: want{instance: instanceOpts()},
+			want: want{instance: instanceCreateOpts()},
 		},
 		"MissingFields": {
 			args: args{
@@ -200,7 +193,7 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 					p.AllowCleanup = nil
 					p.Parameters = nil
 				})},
-			want: want{instance: instanceOpts(func(i *rcv2.CreateResourceInstanceOptions) {
+			want: want{instance: instanceCreateOpts(func(i *rcv2.CreateResourceInstanceOptions) {
 				i.Tags = nil
 				i.AllowCleanup = nil
 				i.Parameters = nil
@@ -226,14 +219,14 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 			if diff := cmp.Diff(tc.want.instance, r,
 				// temporary hack
 				cmpopts.IgnoreUnexported((rcv2.ResourceKeyPostParameters{})),
-				cmpopts.IgnoreFields(rcv2.CreateResourceInstanceOptions{}, "EntityLock")); diff != "" {
+				cmpopts.IgnoreFields(rcv2.CreateResourceInstanceOptions{})); diff != "" {
 				t.Errorf("GenerateCreateResourceInstanceOptions(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
 }
 
-func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
+func TestResourceInstanceGenerateUpdateOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceInstanceParameters
 	}
@@ -284,7 +277,7 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 	}
 }
 
-func TestLateInitializeSpecs(t *testing.T) {
+func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceInstance
 		params   *v1alpha1.ResourceInstanceParameters
@@ -341,7 +334,7 @@ func TestLateInitializeSpecs(t *testing.T) {
 	}
 }
 
-func TestGenerateObservation(t *testing.T) {
+func TestResourceInstanceGenerateObservation(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceInstance
 	}
@@ -383,7 +376,7 @@ func TestGenerateObservation(t *testing.T) {
 	}
 }
 
-func TestIsUpToDate(t *testing.T) {
+func TestResourceInstanceIsUpToDate(t *testing.T) {
 	type args struct {
 		params   *v1alpha1.ResourceInstanceParameters
 		instance *rcv2.ResourceInstance
