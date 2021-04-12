@@ -36,7 +36,7 @@ type ResourceInstanceParameters struct {
 	// The name of the resource group where the instance is deployed
 	// +immutable
 	// +optional
-	ResourceGroupName string `json:"resourceGroupName,omitempty"`
+	ResourceGroupName *string `json:"resourceGroupName,omitempty"`
 
 	// The name of the service offering like cloud-object-storage, kms etc
 	// +immutable

@@ -6,7 +6,6 @@ spec:
   forProvider:
     name: mycloudant
     target: us-south
-    resourceGroupName: default
     serviceName: cloudantnosqldb
     resourcePlanName: standard
     tags:

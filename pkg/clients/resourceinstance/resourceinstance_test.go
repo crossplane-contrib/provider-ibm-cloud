@@ -42,11 +42,11 @@ func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceI
 	p := &v1alpha1.ResourceInstanceParameters{
 		Name:              "my-instance",
 		Target:            "global",
-		ResourceGroupName: "default",
+		ResourceGroupName: reference.ToPtrValue("default"),
 		ServiceName:       "cloud-object-storage",
 		ResourcePlanName:  "standard",
 		Tags:              []string{"testString"},
-		AllowCleanup:      ibmc.BoolPtr(true),
+		AllowCleanup:      ibmc.BoolPtr(false),
 		Parameters:        ibmc.MapToRawExtension(make(map[string]interface{})),
 	}
 
@@ -114,7 +114,7 @@ func instance(m ...func(*rcv2.ResourceInstance)) *rcv2.ResourceInstance {
 		State:               reference.ToPtrValue("active"),
 		Type:                reference.ToPtrValue("service_instance"),
 		SubType:             reference.ToPtrValue("testString"),
-		AllowCleanup:        ibmc.BoolPtr(true),
+		AllowCleanup:        ibmc.BoolPtr(false),
 		Locked:              ibmc.BoolPtr(true),
 		LastOperation:       make(map[string]interface{}),
 		DashboardURL:        reference.ToPtrValue("/objectstorage/crn%3Av1%3Abluemix%3Apublic%3Acloud-object-storage%3Aglobal%3Aa%2F4329073d16d2f3663f74bfa955259139%3A8d7af921-b136-4078-9666-081bd8470d94%3A%3A"),
@@ -148,7 +148,7 @@ func instanceCreateOpts(m ...func(*rcv2.CreateResourceInstanceOptions)) *rcv2.Cr
 		ResourceGroup:  reference.ToPtrValue("0be5ad401ae913d8ff665d92680664ed"),
 		ResourcePlanID: reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
 		Tags:           []string{"testString"},
-		AllowCleanup:   ibmc.BoolPtr(true),
+		AllowCleanup:   ibmc.BoolPtr(false),
 		Parameters:     make(map[string]interface{}),
 	}
 	for _, f := range m {
@@ -163,7 +163,7 @@ func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceInstanceOptions)) *rcv2.Up
 		Name:           reference.ToPtrValue("my-instance"),
 		Parameters:     make(map[string]interface{}),
 		ResourcePlanID: reference.ToPtrValue("2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"),
-		AllowCleanup:   ibmc.BoolPtr(true),
+		AllowCleanup:   ibmc.BoolPtr(false),
 	}
 	for _, f := range m {
 		f(i)
@@ -171,7 +171,8 @@ func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceInstanceOptions)) *rcv2.Up
 	return i
 }
 
-func TestResourceInstanceGenerateCreateOptions(t *testing.T) {
+// Test GenerateCreateResourceInstanceOptions method
+func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceInstanceParameters
 	}
@@ -193,11 +194,12 @@ func TestResourceInstanceGenerateCreateOptions(t *testing.T) {
 					p.AllowCleanup = nil
 					p.Parameters = nil
 				})},
-			want: want{instance: instanceCreateOpts(func(i *rcv2.CreateResourceInstanceOptions) {
-				i.Tags = nil
-				i.AllowCleanup = nil
-				i.Parameters = nil
-			})},
+			want: want{
+				instance: instanceCreateOpts(func(i *rcv2.CreateResourceInstanceOptions) {
+					i.Tags = nil
+					i.AllowCleanup = nil
+					i.Parameters = nil
+				})},
 		},
 	}
 	for name, tc := range cases {
@@ -226,7 +228,8 @@ func TestResourceInstanceGenerateCreateOptions(t *testing.T) {
 	}
 }
 
-func TestResourceInstanceGenerateUpdateOptions(t *testing.T) {
+// Test GenerateUpdateResourceInstanceOptions method
+func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceInstanceParameters
 	}
@@ -247,10 +250,11 @@ func TestResourceInstanceGenerateUpdateOptions(t *testing.T) {
 					p.Parameters = nil
 					p.AllowCleanup = nil
 				})},
-			want: want{instance: instanceUpdateOpts(func(i *rcv2.UpdateResourceInstanceOptions) {
-				i.Parameters = nil
-				i.AllowCleanup = nil
-			})},
+			want: want{
+				instance: instanceUpdateOpts(func(i *rcv2.UpdateResourceInstanceOptions) {
+					i.Parameters = nil
+					i.AllowCleanup = nil
+				})},
 		},
 	}
 	for name, tc := range cases {
@@ -277,6 +281,7 @@ func TestResourceInstanceGenerateUpdateOptions(t *testing.T) {
 	}
 }
 
+// Test LateInitializeSpecs method
 func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceInstance
@@ -334,6 +339,7 @@ func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 	}
 }
 
+// Test GenerateObservation method
 func TestResourceInstanceGenerateObservation(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceInstance
@@ -376,6 +382,7 @@ func TestResourceInstanceGenerateObservation(t *testing.T) {
 	}
 }
 
+// Test IsUpToDate method
 func TestResourceInstanceIsUpToDate(t *testing.T) {
 	type args struct {
 		params   *v1alpha1.ResourceInstanceParameters

@@ -119,6 +119,7 @@ func IsUpToDate(client ibmc.ClientSession, in *v1alpha1.ResourceKeyParameters, o
 		cmpopts.IgnoreFields(v1alpha1.ResourceKeyParameters{}, "Source", "Parameters"), cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})))
 
 	if diff != "" {
+		fmt.Printf(">>> %s\n", diff)
 		l.Info("IsUpToDate", "Diff", diff)
 		return false, nil
 	}
@@ -144,7 +145,7 @@ func GetConnectionDetails(cr *v1alpha1.ResourceKey, in *rcv2.ResourceKey) (manag
 	if cr.Spec.ConnectionTemplates != nil {
 		return handleTemplatedConnectionVars(cr, in)
 	}
-	return handleFlettenedConnectionVars(in)
+	return handleFlattenedConnectionVars(in)
 }
 
 func handleTemplatedConnectionVars(cr *v1alpha1.ResourceKey, in *rcv2.ResourceKey) (managed.ConnectionDetails, error) {
@@ -160,7 +161,7 @@ func handleTemplatedConnectionVars(cr *v1alpha1.ResourceKey, in *rcv2.ResourceKe
 	return ibmc.ConvertVarsMap(values), nil
 }
 
-func handleFlettenedConnectionVars(in *rcv2.ResourceKey) (managed.ConnectionDetails, error) {
+func handleFlattenedConnectionVars(in *rcv2.ResourceKey) (managed.ConnectionDetails, error) {
 	m := managed.ConnectionDetails{
 		"apikey":               ibmc.StrPtr2Bytes(in.Credentials.Apikey),
 		"iamApikeyDescription": ibmc.StrPtr2Bytes(in.Credentials.IamApikeyDescription),

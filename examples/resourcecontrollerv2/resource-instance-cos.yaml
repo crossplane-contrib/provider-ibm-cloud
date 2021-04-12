@@ -6,7 +6,6 @@ spec:
   forProvider:
     name: mycos
     target: global
-    resourceGroupName: default
     serviceName: cloud-object-storage
     resourcePlanName: standard
     tags:

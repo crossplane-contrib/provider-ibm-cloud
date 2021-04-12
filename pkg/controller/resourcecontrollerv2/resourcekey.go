@@ -148,7 +148,6 @@ func (c *resourcekeyExternal) Observe(ctx context.Context, mg resource.Managed) 
 	default:
 		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
-
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
 	upToDate, err := resclient.IsUpToDate(c.client, &cr.Spec.ForProvider, instance, c.logger)
