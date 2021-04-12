@@ -44,12 +44,12 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		}
 		spec.Tags = tags
 	}
-	if spec.ResourceGroupName == "" {
+	if spec.ResourceGroupName == nil {
 		rgName, err := ibmc.GetResourceGroupName(client, reference.FromPtrValue(in.ResourceGroupID))
 		if err != nil {
 			return err
 		}
-		spec.ResourceGroupName = rgName
+		spec.ResourceGroupName = &rgName
 	}
 	if spec.AllowCleanup == nil {
 		spec.AllowCleanup = in.AllowCleanup
@@ -118,6 +118,7 @@ func GenerateObservation(client ibmc.ClientSession, in *rcv2.ResourceInstance) (
 		LastOperation:       ibmc.MapToRawExtension(in.LastOperation),
 		DashboardURL:        reference.FromPtrValue(in.DashboardURL),
 		PlanHistory:         GeneratePlanHistory(in.PlanHistory),
+		Extensions:          ibmc.MapToRawExtension(in.Extensions),
 		ResourceAliasesURL:  reference.FromPtrValue(in.ResourceAliasesURL),
 		ResourceBindingsURL: reference.FromPtrValue(in.ResourceBindingsURL),
 		ResourceKeysURL:     reference.FromPtrValue(in.ResourceKeysURL),
@@ -153,6 +154,7 @@ func GeneratePlanHistoryItem(in rcv2.PlanHistoryItem) v1alpha1.PlanHistoryItem {
 	planHistoryItem := v1alpha1.PlanHistoryItem{
 		ResourcePlanID: reference.FromPtrValue(in.ResourcePlanID),
 		StartDate:      ibmc.DateTimeToMetaV1Time(in.StartDate),
+		RequestorID:    reference.FromPtrValue(in.RequestorID),
 	}
 	return planHistoryItem
 }
@@ -192,7 +194,7 @@ func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.Reso
 
 	o := &v1alpha1.ResourceInstanceParameters{
 		Name:              reference.FromPtrValue(in.Name),
-		ResourceGroupName: rgName,
+		ResourceGroupName: &rgName,
 		ServiceName:       sName,
 		ResourcePlanName:  reference.FromPtrValue(pName),
 		AllowCleanup:      in.AllowCleanup,

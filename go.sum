@@ -26,8 +26,14 @@ github.com/IBM/go-sdk-core v1.1.0 h1:pV73lZqr9r1xKb3h08c1uNG3AphwoV5KzUzhS+pfEqY
 github.com/IBM/go-sdk-core v1.1.0/go.mod h1:2pcx9YWsIsZ3I7kH+1amiAkXvLTZtAq9kbxsfXilSoY=
 github.com/IBM/go-sdk-core/v4 v4.9.0 h1:OkSg5kaEfVoNuBA4IsIOz8Ur5rbGHbWxmWCZ7nK/oc0=
 github.com/IBM/go-sdk-core/v4 v4.9.0/go.mod h1:DbQ+3pFoIjxGGTEiA9zQ2V0cemMNmFMkLBBnR729HKg=
-github.com/IBM/platform-services-go-sdk v0.17.4 h1:V6EGnYQh9Tw8/LVMDAX6EdKbjlh7xvrvF4W/HF8cl+c=
-github.com/IBM/platform-services-go-sdk v0.17.4/go.mod h1:ez3yDwaaa1+aqzaMOPUwjwkOMjdkmtVyMqyE+/Yx7AI=
+github.com/IBM/go-sdk-core/v4 v4.10.0 h1:aLoKusSFVsxMJeKHf8csj9tBWt4Y50kVvfxoKh6scN0=
+github.com/IBM/go-sdk-core/v4 v4.10.0/go.mod h1:0uz2ca0MZ2DwsBRGl9Jp3EaCTqxmKZTdvV/CkCB7JnI=
+github.com/IBM/go-sdk-core/v5 v5.0.0 h1:XB78PXwPVkhPBwESiK7cU5owMw9LMU1xyDMDajuNcJk=
+github.com/IBM/go-sdk-core/v5 v5.0.0/go.mod h1:vyNdbFujJtdTj9HbihtvKwwS3k/GKSKpOx9ZIQ6MWDY=
+github.com/IBM/go-sdk-core/v5 v5.2.0 h1:fVqzyAh9AiEOOcKZHVClmaH78qiYdxcUArP/27yo/l8=
+github.com/IBM/go-sdk-core/v5 v5.2.0/go.mod h1:vyNdbFujJtdTj9HbihtvKwwS3k/GKSKpOx9ZIQ6MWDY=
+github.com/IBM/platform-services-go-sdk v0.17.18 h1:rI1Kqc7c+KmqE1MoXJh+Lhi/3EW5WfXi+53H3AEK+rg=
+github.com/IBM/platform-services-go-sdk v0.17.18/go.mod h1:MSg7VY5MecPRSClxTAD9kLlSIOur4vTjpbJZW9NCMDA=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=

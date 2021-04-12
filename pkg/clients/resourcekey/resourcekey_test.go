@@ -40,12 +40,12 @@ const (
 
 func params(m ...func(*v1alpha1.ResourceKeyParameters)) *v1alpha1.ResourceKeyParameters {
 	p := &v1alpha1.ResourceKeyParameters{
-		Name:   "my-key",
+		Name:   "my-instance-key-1",
 		Source: reference.ToPtrValue("25eba2a9-beef-450b-82cf-f5ad5e36c6dd"),
 		Parameters: &v1alpha1.ResourceKeyPostParameters{
 			ServiceidCRN: "crn:v1:bluemix:public:iam-identity::a/9fceaa56d1ab84893af6b9eec5ab81bb::serviceid:ServiceId-fe4c29b5-db13-410a-bacc-b5779a03d393",
 		},
-		Role: reference.ToPtrValue("Writer"),
+		Role: reference.ToPtrValue("crn:v1:bluemix:public:iam::::serviceRole:Writer"),
 	}
 
 	for _, f := range m {
@@ -86,11 +86,11 @@ func instance(m ...func(*rcv2.ResourceKey)) *rcv2.ResourceKey {
 		GUID:                reference.ToPtrValue("23693f48-aaa2-4079-b0c7-334846eff8d0"),
 		CRN:                 reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94:resource-key:23693f48-aaa2-4079-b0c7-334846eff8d0"),
 		URL:                 reference.ToPtrValue("/v2/resource_keys/23693f48-aaa2-4079-b0c7-334846eff8d0"),
-		Name:                reference.ToPtrValue("my-key"),
+		Name:                reference.ToPtrValue("my-instance-key-1"),
 		AccountID:           reference.ToPtrValue("4329073d16d2f3663f74bfa955259139"),
 		ResourceGroupID:     reference.ToPtrValue("0be5ad401ae913d8ff665d92680664ed"),
 		SourceCRN:           reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94::"),
-		Role:                reference.ToPtrValue("Writer"),
+		Role:                reference.ToPtrValue("crn:v1:bluemix:public:iam::::serviceRole:Writer"),
 		State:               reference.ToPtrValue("active"),
 		IamCompatible:       ibmc.BoolPtr(true),
 		ResourceInstanceURL: reference.ToPtrValue("/v2/resource_instances/8d7af921-b136-4078-9666-081bd8470d94"),
@@ -108,14 +108,14 @@ func instance(m ...func(*rcv2.ResourceKey)) *rcv2.ResourceKey {
 	return i
 }
 
-func instanceOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourceKeyOptions {
+func instanceCreateOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourceKeyOptions {
 	i := &rcv2.CreateResourceKeyOptions{
-		Name:   reference.ToPtrValue("my-key"),
+		Name:   reference.ToPtrValue("my-instance-key-1"),
 		Source: reference.ToPtrValue("25eba2a9-beef-450b-82cf-f5ad5e36c6dd"),
 		Parameters: &rcv2.ResourceKeyPostParameters{
 			ServiceidCRN: reference.ToPtrValue("crn:v1:bluemix:public:iam-identity::a/9fceaa56d1ab84893af6b9eec5ab81bb::serviceid:ServiceId-fe4c29b5-db13-410a-bacc-b5779a03d393"),
 		},
-		Role: reference.ToPtrValue("Writer"),
+		Role: reference.ToPtrValue("crn:v1:bluemix:public:iam::::serviceRole:Writer"),
 	}
 	for _, f := range m {
 		f(i)
@@ -126,7 +126,7 @@ func instanceOpts(m ...func(*rcv2.CreateResourceKeyOptions)) *rcv2.CreateResourc
 func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceKeyOptions)) *rcv2.UpdateResourceKeyOptions {
 	i := &rcv2.UpdateResourceKeyOptions{
 		ID:   reference.ToPtrValue("crn:v1:bluemix:public:cloud-object-storage:global:a/4329073d16d2f3663f74bfa955259139:8d7af921-b136-4078-9666-081bd8470d94:resource-key:23693f48-aaa2-4079-b0c7-334846eff8d0"),
-		Name: reference.ToPtrValue("my-key"),
+		Name: reference.ToPtrValue("my-instance-key-1"),
 	}
 	for _, f := range m {
 		f(i)
@@ -134,6 +134,7 @@ func instanceUpdateOpts(m ...func(*rcv2.UpdateResourceKeyOptions)) *rcv2.UpdateR
 	return i
 }
 
+// Test GenerateCreateResourceKeyOptions method
 func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceKeyParameters
@@ -147,7 +148,7 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 	}{
 		"FullConversion": {
 			args: args{params: *params()},
-			want: want{instance: instanceOpts()},
+			want: want{instance: instanceCreateOpts()},
 		},
 		"MissingFields": {
 			args: args{
@@ -155,10 +156,11 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 					p.Parameters = nil
 					p.Role = nil
 				})},
-			want: want{instance: instanceOpts(func(i *rcv2.CreateResourceKeyOptions) {
-				i.Parameters = nil
-				i.Role = nil
-			})},
+			want: want{
+				instance: instanceCreateOpts(func(i *rcv2.CreateResourceKeyOptions) {
+					i.Parameters = nil
+					i.Role = nil
+				})},
 		},
 	}
 	for name, tc := range cases {
@@ -184,6 +186,7 @@ func TestGenerateCreateResourceKeyOptions(t *testing.T) {
 	}
 }
 
+// Test GenerateUpdateResourceKeyOptions method
 func TestGenerateUpdateResourceKeyOptions(t *testing.T) {
 	type args struct {
 		params v1alpha1.ResourceKeyParameters
@@ -203,8 +206,9 @@ func TestGenerateUpdateResourceKeyOptions(t *testing.T) {
 			args: args{
 				params: *params(func(p *v1alpha1.ResourceKeyParameters) {
 				})},
-			want: want{instance: instanceUpdateOpts(func(i *rcv2.UpdateResourceKeyOptions) {
-			})},
+			want: want{
+				instance: instanceUpdateOpts(func(i *rcv2.UpdateResourceKeyOptions) {
+				})},
 		},
 	}
 	for name, tc := range cases {
@@ -228,7 +232,8 @@ func TestGenerateUpdateResourceKeyOptions(t *testing.T) {
 	}
 }
 
-func TestLateInitializeSpecs(t *testing.T) {
+// Test LateInitializeSpecs method
+func TestResourceKeyLateInitializeSpecs(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceKey
 		params   *v1alpha1.ResourceKeyParameters
@@ -280,7 +285,8 @@ func TestLateInitializeSpecs(t *testing.T) {
 	}
 }
 
-func TestGenerateObservation(t *testing.T) {
+// Test GenerateObservation method
+func TestResourceKeyGenerateObservation(t *testing.T) {
 	type args struct {
 		instance *rcv2.ResourceKey
 	}
@@ -321,7 +327,8 @@ func TestGenerateObservation(t *testing.T) {
 	}
 }
 
-func TestIsUpToDate(t *testing.T) {
+// Test IsUpToDate method
+func TestResourceKeyIsUpToDate(t *testing.T) {
 	type args struct {
 		params   *v1alpha1.ResourceKeyParameters
 		instance *rcv2.ResourceKey

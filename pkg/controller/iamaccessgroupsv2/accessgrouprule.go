@@ -124,7 +124,7 @@ func (c *agrExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetAccessGroupRuleFailed)
 	}
-	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp))
+	ibmc.SetEtagAnnotation(cr, ibmc.GetEtag(resp.Headers))
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	if err = ibmcagr.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {

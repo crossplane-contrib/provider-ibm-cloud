@@ -103,18 +103,29 @@ func getPlanEntries(client ClientSession, serviceName string) (*gcat.EntrySearch
 	return planEntry, err
 }
 
-// GetResourceGroupID gets a resource group ID from a resource group name
-func GetResourceGroupID(client ClientSession, rgName string) (*string, error) {
+// GetResourceGroupID gets a resource group ID from a resource group name or default
+func GetResourceGroupID(client ClientSession, rgName *string) (*string, error) {
 	opts := &rmgrv2.ListResourceGroupsOptions{}
+
+	// If the rgName is nil, then we want to return the ID of the default resource group
+	if rgName == nil {
+		opts.Default = BoolPtr(true)
+	}
 
 	entries, _, err := client.ResourceManagerV2().ListResourceGroups(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, errListRG)
 	}
 
-	for _, rg := range entries.Resources {
-		if *rg.Name == rgName {
-			return rg.ID, nil
+	if rgName == nil {
+		if len(entries.Resources) > 0 {
+			return entries.Resources[0].ID, nil
+		}
+	} else {
+		for _, rg := range entries.Resources {
+			if *rg.Name == *rgName {
+				return rg.ID, nil
+			}
 		}
 	}
 

@@ -1,13 +1,13 @@
 apiVersion: resourcecontrollerv2.ibmcloud.crossplane.io/v1alpha1
 kind: ResourceInstance
 metadata:
-  name: cos
+  name: myes
 spec:
   forProvider:
-    name: mycos
-    target: global
-    serviceName: cloud-object-storage
-    resourcePlanName: standard
+    name: myes
+    target: us-south
+    serviceName: messagehub
+    resourcePlanName: lite
     tags:
       - dev
   providerConfigRef:
