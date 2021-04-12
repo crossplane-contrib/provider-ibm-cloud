@@ -243,7 +243,7 @@ func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
 		Name:              name,
 		AllowCleanup:      ibmc.BoolPtr(false),
 		Parameters:        ibmc.MapToRawExtension(parameters),
-		ResourceGroupName: resourceGroupName,
+		ResourceGroupName: reference.ToPtrValue(resourceGroupName),
 		ResourcePlanName:  resourcePlanName,
 		ServiceName:       serviceName,
 		Tags:              tags,

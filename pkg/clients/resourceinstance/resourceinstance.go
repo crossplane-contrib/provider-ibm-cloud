@@ -44,12 +44,12 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 		}
 		spec.Tags = tags
 	}
-	if spec.ResourceGroupName == "" {
+	if spec.ResourceGroupName == nil {
 		rgName, err := ibmc.GetResourceGroupName(client, reference.FromPtrValue(in.ResourceGroupID))
 		if err != nil {
 			return err
 		}
-		spec.ResourceGroupName = rgName
+		spec.ResourceGroupName = &rgName
 	}
 	if spec.AllowCleanup == nil {
 		spec.AllowCleanup = in.AllowCleanup
@@ -62,7 +62,7 @@ func LateInitializeSpec(client ibmc.ClientSession, spec *v1alpha1.ResourceInstan
 
 // GenerateCreateResourceInstanceOptions produces CreateResourceInstanceOptions object from ResourceInstanceParameters object.
 func GenerateCreateResourceInstanceOptions(client ibmc.ClientSession, in v1alpha1.ResourceInstanceParameters, o *rcv2.CreateResourceInstanceOptions) error {
-	rgID, err := ibmc.GetResourceGroupID(client, &in.ResourceGroupName)
+	rgID, err := ibmc.GetResourceGroupID(client, in.ResourceGroupName)
 	if err != nil {
 		return errors.Wrap(err, errGetResGroupID)
 	}
@@ -194,7 +194,7 @@ func GenerateResourceInstanceParameters(client ibmc.ClientSession, in *rcv2.Reso
 
 	o := &v1alpha1.ResourceInstanceParameters{
 		Name:              reference.FromPtrValue(in.Name),
-		ResourceGroupName: rgName,
+		ResourceGroupName: &rgName,
 		ServiceName:       sName,
 		ResourcePlanName:  reference.FromPtrValue(pName),
 		AllowCleanup:      in.AllowCleanup,

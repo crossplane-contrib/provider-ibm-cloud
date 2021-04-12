@@ -6,7 +6,6 @@ spec:
   forProvider:
     name: myes
     target: us-south
-    resourceGroupName: default
     serviceName: messagehub
     resourcePlanName: lite
     tags:
