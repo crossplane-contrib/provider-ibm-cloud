@@ -206,8 +206,8 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mux := http.NewServeMux()
 			mux.HandleFunc("/resource_groups/", ibmc.RgTestHandler)
-			mux.HandleFunc("/", ibmc.SvcatTestHandler)
-			mux.HandleFunc("/"+ibmc.ServiceNameMockVal+"/", ibmc.PcatTestHandler)
+			mux.HandleFunc("/", ibmc.SvcatTestHandler(tc.args.params.ServiceName))
+			mux.HandleFunc("/"+tc.args.params.ServiceName+"/", ibmc.PcatTestHandler(tc.args.params.ResourcePlanName, *tc.want.instance.ResourcePlanID))
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
@@ -261,8 +261,8 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mux := http.NewServeMux()
 			mux.HandleFunc("/resource_groups/", ibmc.RgTestHandler)
-			mux.HandleFunc("/", ibmc.SvcatTestHandler)
-			mux.HandleFunc("/"+ibmc.ServiceNameMockVal+"/", ibmc.PcatTestHandler)
+			mux.HandleFunc("/", ibmc.SvcatTestHandler(tc.args.params.ServiceName))
+			mux.HandleFunc("/"+tc.args.params.ServiceName+"/", ibmc.PcatTestHandler(tc.args.params.ResourcePlanName, *tc.want.instance.ResourcePlanID))
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
@@ -320,8 +320,8 @@ func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mux := http.NewServeMux()
 			mux.HandleFunc("/resource_groups/", ibmc.RgTestHandler)
-			mux.HandleFunc("/", ibmc.SvcatTestHandler)
-			mux.HandleFunc("/"+ibmc.ServiceNameMockVal+"/", ibmc.PcatTestHandler)
+			mux.HandleFunc("/", ibmc.SvcatTestHandler(tc.args.params.ServiceName))
+			mux.HandleFunc("/"+tc.args.params.ServiceName+"/", ibmc.PcatTestHandler(tc.args.params.ResourcePlanName, *tc.args.instance.ResourcePlanID))
 			mux.HandleFunc("/v3/tags/", ibmc.TagsTestHandler)
 			server := httptest.NewServer(mux)
 			defer server.Close()
@@ -417,8 +417,8 @@ func TestResourceInstanceIsUpToDate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			mux := http.NewServeMux()
 			mux.HandleFunc("/resource_groups/", ibmc.RgTestHandler)
-			mux.HandleFunc("/", ibmc.SvcatTestHandler)
-			mux.HandleFunc("/"+ibmc.ServiceNameMockVal+"/", ibmc.PcatTestHandler)
+			mux.HandleFunc("/", ibmc.SvcatTestHandler(tc.args.params.ServiceName))
+			mux.HandleFunc("/"+tc.args.params.ServiceName+"/", ibmc.PcatTestHandler(tc.args.params.ResourcePlanName, *tc.args.instance.ResourcePlanID))
 			mux.HandleFunc("/v3/tags/", ibmc.TagsTestHandler)
 			server := httptest.NewServer(mux)
 			defer server.Close()
