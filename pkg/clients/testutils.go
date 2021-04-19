@@ -28,12 +28,8 @@ import (
 )
 
 var (
-	resourcePlanNameMockVal  = "standard"
 	resourceGroupNameMockVal = "default"
 	resourceGroupIDMockVal   = "0be5ad401ae913d8ff665d92680664ed"
-	resourcePlanIDMockVal    = "2fdf0c08-2d32-4f46-84b5-32e0c92fffd8"
-	// ServiceNameMockVal -
-	ServiceNameMockVal = "cloud-object-storage"
 )
 
 // TagsTestHandler handler to mock client SDK call to global tags API
@@ -66,34 +62,38 @@ var RgTestHandler = func(w http.ResponseWriter, r *http.Request) {
 }
 
 // PcatTestHandler handler to mock client SDK call to global catalog API for plans
-var PcatTestHandler = func(w http.ResponseWriter, r *http.Request) {
-	_ = r.Body.Close()
-	w.Header().Set("Content-Type", "application/json")
-	planEntry := gcat.EntrySearchResult{
-		Resources: []gcat.CatalogEntry{
-			{
-				ID:   reference.ToPtrValue(resourcePlanIDMockVal),
-				Name: reference.ToPtrValue(resourcePlanNameMockVal),
+var PcatTestHandler = func(planName string, planId string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = r.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		planEntry := gcat.EntrySearchResult{
+			Resources: []gcat.CatalogEntry{
+				{
+					Name: reference.ToPtrValue(planName),
+					ID:   reference.ToPtrValue(planId),
+				},
 			},
-		},
+		}
+		_ = json.NewEncoder(w).Encode(planEntry)
 	}
-	_ = json.NewEncoder(w).Encode(planEntry)
 }
 
 // SvcatTestHandler handler to mock client SDK call to global catalog API for services
-var SvcatTestHandler = func(w http.ResponseWriter, r *http.Request) {
-	_ = r.Body.Close()
-	w.Header().Set("Content-Type", "application/json")
-	catEntry := gcat.EntrySearchResult{
-		Resources: []gcat.CatalogEntry{
-			{
-				Metadata: &gcat.CatalogEntryMetadata{
-					UI: &gcat.UIMetaData{
-						PrimaryOfferingID: reference.ToPtrValue(ServiceNameMockVal),
+var SvcatTestHandler = func(serviceName string) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		_ = r.Body.Close()
+		w.Header().Set("Content-Type", "application/json")
+		catEntry := gcat.EntrySearchResult{
+			Resources: []gcat.CatalogEntry{
+				{
+					Metadata: &gcat.CatalogEntryMetadata{
+						UI: &gcat.UIMetaData{
+							PrimaryOfferingID: reference.ToPtrValue(serviceName),
+						},
 					},
 				},
 			},
-		},
+		}
+		_ = json.NewEncoder(w).Encode(catEntry)
 	}
-	_ = json.NewEncoder(w).Encode(catEntry)
 }
