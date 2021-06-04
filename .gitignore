@@ -12,3 +12,6 @@ cover.out
 # ignore OpenAPI generator files
 .openapi-generator-ignore
 .openapi-generator/
+
+# ignore sonobuoy reports
+*.tar.gz
