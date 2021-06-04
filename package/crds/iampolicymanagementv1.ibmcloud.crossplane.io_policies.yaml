@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -6,19 +6,6 @@ metadata:
   creationTimestamp: null
   name: policies.iampolicymanagementv1.ibmcloud.crossplane.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
-    type: string
-  - JSONPath: .status.atProvider.state
-    name: STATE
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLASS
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
   group: iampolicymanagementv1.ibmcloud.crossplane.io
   names:
     kind: Policy
@@ -26,206 +13,218 @@ spec:
     plural: policies
     singular: policy
   scope: Cluster
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: A Policy represents an instance of an IAM policy on IBM Cloud
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: A PolicySpec defines the desired state of a Policy.
-          properties:
-            deletionPolicy:
-              description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
-              enum:
-              - Orphan
-              - Delete
-              type: string
-            forProvider:
-              description: PolicyParameters are the configurable fields of a Policy.
-              properties:
-                description:
-                  description: Customer-defined description.
-                  type: string
-                resources:
-                  description: The resources associated with a policy.
-                  items:
-                    description: 'PolicyResource : The attributes of the resource. Note that only one resource is allowed in a policy.'
-                    properties:
-                      attributes:
-                        description: List of resource attributes.
-                        items:
-                          description: 'ResourceAttribute : An attribute associated with a resource.'
-                          properties:
-                            name:
-                              description: The name of an attribute.
-                              type: string
-                            operator:
-                              description: The operator of an attribute.
-                              type: string
-                            value:
-                              description: The value of an attribute.
-                              type: string
-                          required:
-                          - name
-                          - value
-                          type: object
-                        type: array
-                    type: object
-                  type: array
-                roles:
-                  description: A set of role cloud resource names (CRNs) granted by the policy.
-                  items:
-                    description: 'PolicyRole : A role associated with a policy.'
-                    properties:
-                      roleId:
-                        description: The role cloud resource name granted by the policy.
-                        type: string
-                    required:
-                    - roleId
-                    type: object
-                  type: array
-                subjects:
-                  description: The subjects associated with a policy.
-                  items:
-                    description: 'PolicySubject : The subject attribute values that must match in order for this policy to apply in a permission decision.'
-                    properties:
-                      attributes:
-                        description: List of subject attributes.
-                        items:
-                          description: 'SubjectAttribute : An attribute associated with a subject.'
-                          properties:
-                            name:
-                              description: The name of an attribute.
-                              type: string
-                            value:
-                              description: The value of an attribute.
-                              type: string
-                          required:
-                          - name
-                          - value
-                          type: object
-                        type: array
-                    type: object
-                  type: array
-                type:
-                  description: The policy type; either 'access' or 'authorization'.
-                  type: string
-              required:
-              - resources
-              - roles
-              - subjects
-              - type
-              type: object
-            providerConfigRef:
-              description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
-              properties:
-                name:
-                  description: Name of the referenced object.
-                  type: string
-              required:
-              - name
-              type: object
-            providerRef:
-              description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
-              properties:
-                name:
-                  description: Name of the referenced object.
-                  type: string
-              required:
-              - name
-              type: object
-            writeConnectionSecretToRef:
-              description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
-              properties:
-                name:
-                  description: Name of the secret.
-                  type: string
-                namespace:
-                  description: Namespace of the secret.
-                  type: string
-              required:
-              - name
-              - namespace
-              type: object
-          required:
-          - forProvider
-          type: object
-        status:
-          description: A PolicyStatus represents the observed state of a Policy.
-          properties:
-            atProvider:
-              description: PolicyObservation are the observable fields of a Policy.
-              properties:
-                createdAt:
-                  description: The UTC timestamp when the policy was created.
-                  format: date-time
-                  type: string
-                createdById:
-                  description: The iam ID of the entity that created the policy.
-                  type: string
-                href:
-                  description: The href link back to the policy.
-                  type: string
-                id:
-                  description: The policy ID.
-                  type: string
-                lastModifiedAt:
-                  description: The UTC timestamp when the policy was last modified.
-                  format: date-time
-                  type: string
-                lastModifiedById:
-                  description: The iam ID of the entity that last modified the policy.
-                  type: string
-                state:
-                  description: The current state of the policy
-                  type: string
-              type: object
-            conditions:
-              description: Conditions of the resource.
-              items:
-                description: A Condition that may apply to a resource.
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A Policy represents an instance of an IAM policy on IBM Cloud
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A PolicySpec defines the desired state of a Policy.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: PolicyParameters are the configurable fields of a Policy.
                 properties:
-                  lastTransitionTime:
-                    description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                    format: date-time
+                  description:
+                    description: Customer-defined description.
                     type: string
-                  message:
-                    description: A Message containing details about this condition's last transition from one status to another, if any.
-                    type: string
-                  reason:
-                    description: A Reason for this condition's last transition from one status to another.
-                    type: string
-                  status:
-                    description: Status of this condition; is it currently True, False, or Unknown?
-                    type: string
+                  resources:
+                    description: The resources associated with a policy.
+                    items:
+                      description: 'PolicyResource : The attributes of the resource. Note that only one resource is allowed in a policy.'
+                      properties:
+                        attributes:
+                          description: List of resource attributes.
+                          items:
+                            description: 'ResourceAttribute : An attribute associated with a resource.'
+                            properties:
+                              name:
+                                description: The name of an attribute.
+                                type: string
+                              operator:
+                                description: The operator of an attribute.
+                                type: string
+                              value:
+                                description: The value of an attribute.
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                      type: object
+                    type: array
+                  roles:
+                    description: A set of role cloud resource names (CRNs) granted by the policy.
+                    items:
+                      description: 'PolicyRole : A role associated with a policy.'
+                      properties:
+                        roleId:
+                          description: The role cloud resource name granted by the policy.
+                          type: string
+                      required:
+                      - roleId
+                      type: object
+                    type: array
+                  subjects:
+                    description: The subjects associated with a policy.
+                    items:
+                      description: 'PolicySubject : The subject attribute values that must match in order for this policy to apply in a permission decision.'
+                      properties:
+                        attributes:
+                          description: List of subject attributes.
+                          items:
+                            description: 'SubjectAttribute : An attribute associated with a subject.'
+                            properties:
+                              name:
+                                description: The name of an attribute.
+                                type: string
+                              value:
+                                description: The value of an attribute.
+                                type: string
+                            required:
+                            - name
+                            - value
+                            type: object
+                          type: array
+                      type: object
+                    type: array
                   type:
-                    description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                    description: The policy type; either 'access' or 'authorization'.
                     type: string
                 required:
-                - lastTransitionTime
-                - reason
-                - status
+                - resources
+                - roles
+                - subjects
                 - type
                 type: object
-              type: array
-          type: object
-      required:
-      - spec
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A PolicyStatus represents the observed state of a Policy.
+            properties:
+              atProvider:
+                description: PolicyObservation are the observable fields of a Policy.
+                properties:
+                  createdAt:
+                    description: The UTC timestamp when the policy was created.
+                    format: date-time
+                    type: string
+                  createdById:
+                    description: The iam ID of the entity that created the policy.
+                    type: string
+                  href:
+                    description: The href link back to the policy.
+                    type: string
+                  id:
+                    description: The policy ID.
+                    type: string
+                  lastModifiedAt:
+                    description: The UTC timestamp when the policy was last modified.
+                    format: date-time
+                    type: string
+                  lastModifiedById:
+                    description: The iam ID of the entity that last modified the policy.
+                    type: string
+                  state:
+                    description: The current state of the policy
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""

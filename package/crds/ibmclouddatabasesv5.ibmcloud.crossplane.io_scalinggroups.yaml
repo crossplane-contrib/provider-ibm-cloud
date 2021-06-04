@@ -1,4 +1,4 @@
-apiVersion: apiextensions.k8s.io/v1beta1
+apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
@@ -6,19 +6,6 @@ metadata:
   creationTimestamp: null
   name: scalinggroups.ibmclouddatabasesv5.ibmcloud.crossplane.io
 spec:
-  additionalPrinterColumns:
-  - JSONPath: .status.bindingPhase
-    name: STATUS
-    type: string
-  - JSONPath: .status.atProvider.state
-    name: STATE
-    type: string
-  - JSONPath: .spec.classRef.name
-    name: CLASS
-    type: string
-  - JSONPath: .metadata.creationTimestamp
-    name: AGE
-    type: date
   group: ibmclouddatabasesv5.ibmcloud.crossplane.io
   names:
     kind: ScalingGroup
@@ -26,327 +13,339 @@ spec:
     plural: scalinggroups
     singular: scalinggroup
   scope: Cluster
-  subresources:
-    status: {}
-  validation:
-    openAPIV3Schema:
-      description: A ScalingGroup represents an instance of a managed service on IBM Cloud
-      properties:
-        apiVersion:
-          description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-          type: string
-        kind:
-          description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-          type: string
-        metadata:
-          type: object
-        spec:
-          description: A ScalingGroupSpec defines the desired state of a ScalingGroup.
-          properties:
-            connectionTemplates:
-              additionalProperties:
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A ScalingGroup represents an instance of a managed service on IBM Cloud
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A ScalingGroupSpec defines the desired state of a ScalingGroup.
+            properties:
+              connectionTemplates:
+                additionalProperties:
+                  type: string
+                type: object
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
                 type: string
-              type: object
-            deletionPolicy:
-              description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
-              enum:
-              - Orphan
-              - Delete
-              type: string
-            forProvider:
-              description: ScalingGroupParameters are the configurable fields of a ScalingGroup.
-              properties:
-                id:
-                  description: Deployment ID.
-                  type: string
-                idRef:
-                  description: IDRef is a reference to an ICD resource instance used to set ID
-                  properties:
-                    name:
-                      description: Name of the referenced object.
-                      type: string
-                  required:
-                  - name
-                  type: object
-                idSelector:
-                  description: SourceSelector selects a reference to an ICD resource instance used to set ID.
-                  properties:
-                    matchControllerRef:
-                      description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
-                      type: boolean
-                    matchLabels:
-                      additionalProperties:
-                        type: string
-                      description: MatchLabels ensures an object with matching labels is selected.
-                      type: object
-                  type: object
-                memberCpu:
-                  description: MemberCPU -
-                  properties:
-                    allocationCount:
-                      description: Number of allocated CPUs.
-                      format: int64
-                      type: integer
-                  type: object
-                memberDisk:
-                  description: MemberDisk -
-                  properties:
-                    allocationMb:
-                      description: Allocated storage in MB.
-                      format: int64
-                      type: integer
-                  type: object
-                memberMemory:
-                  description: MemberMemory -
-                  properties:
-                    allocationMb:
-                      description: Allocated memory in MB.
-                      format: int64
-                      type: integer
-                  type: object
-                members:
-                  description: Members -
-                  properties:
-                    allocationCount:
-                      description: Allocated number of members.
-                      format: int64
-                      type: integer
-                  type: object
-              type: object
-            providerConfigRef:
-              description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
-              properties:
-                name:
-                  description: Name of the referenced object.
-                  type: string
-              required:
-              - name
-              type: object
-            providerRef:
-              description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
-              properties:
-                name:
-                  description: Name of the referenced object.
-                  type: string
-              required:
-              - name
-              type: object
-            writeConnectionSecretToRef:
-              description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
-              properties:
-                name:
-                  description: Name of the secret.
-                  type: string
-                namespace:
-                  description: Namespace of the secret.
-                  type: string
-              required:
-              - name
-              - namespace
-              type: object
-          required:
-          - forProvider
-          type: object
-        status:
-          description: A ScalingGroupStatus represents the observed state of a ScalingGroup.
-          properties:
-            atProvider:
-              description: ScalingGroupObservation are the observable fields of a ScalingGroup.
-              properties:
-                groups:
-                  items:
-                    description: 'Group : Group struct'
+              forProvider:
+                description: ScalingGroupParameters are the configurable fields of a ScalingGroup.
+                properties:
+                  id:
+                    description: Deployment ID.
+                    type: string
+                  idRef:
+                    description: IDRef is a reference to an ICD resource instance used to set ID
                     properties:
-                      count:
-                        description: Number of entities in the group.
-                        format: int64
-                        type: integer
-                      cpu:
-                        description: GroupCPU -
-                        properties:
-                          allocationCount:
-                            description: Number of allocated CPUs.
-                            format: int64
-                            type: integer
-                          canScaleDown:
-                            description: Can this group's CPU scale down?.
-                            type: boolean
-                          isAdjustable:
-                            description: Is this group's CPU count adjustable.
-                            type: boolean
-                          isOptional:
-                            description: Is this group's CPU optional?.
-                            type: boolean
-                          maximumCount:
-                            description: Maximum number of CPUs.
-                            format: int64
-                            type: integer
-                          memberAllocationCount:
-                            description: Number of allocated CPUs for member
-                            format: int64
-                            type: integer
-                          minimumCount:
-                            description: Minimum number of CPUs.
-                            format: int64
-                            type: integer
-                          stepSizeCount:
-                            description: Step size CPUs can be adjusted.
-                            format: int64
-                            type: integer
-                          units:
-                            description: Units used for scaling cpu - count means the value is the number of the unit(s) available.
-                            type: string
-                        type: object
-                      disk:
-                        description: GroupDisk -
-                        properties:
-                          allocationMb:
-                            description: Total allocated storage in MB.
-                            format: int64
-                            type: integer
-                          can_scale_down:
-                            description: Can this group's storage scale down?.
-                            type: boolean
-                          isAdjustable:
-                            description: Is this group's storage adjustable?.
-                            type: boolean
-                          isOptional:
-                            description: Is this group's storage optional?.
-                            type: boolean
-                          maximumMb:
-                            description: Maximum allocated storage.
-                            format: int64
-                            type: integer
-                          memberAllocationMb:
-                            description: Allocated storage for member in MB.
-                            format: int64
-                            type: integer
-                          minimumMb:
-                            description: Minimum allocated storage.
-                            format: int64
-                            type: integer
-                          stepSizeMb:
-                            description: Step size storage can be adjusted.
-                            format: int64
-                            type: integer
-                          units:
-                            description: Units used for scaling storage.
-                            type: string
-                        type: object
-                      id:
-                        description: Id/name for group.
+                      name:
+                        description: Name of the referenced object.
                         type: string
-                      members:
-                        description: GroupMembers -
-                        properties:
-                          allocationCount:
-                            description: Allocated number of members.
-                            format: int64
-                            type: integer
-                          canScaleDown:
-                            description: Can this deployment's number of members scale down?.
-                            type: boolean
-                          isAdjustable:
-                            description: Is this deployment's number of members adjustable?.
-                            type: boolean
-                          isOptional:
-                            description: Is this deployments's number of members optional?.
-                            type: boolean
-                          maximumCount:
-                            description: Maximum number of members.
-                            format: int64
-                            type: integer
-                          minimumCount:
-                            description: Minimum number of members.
-                            format: int64
-                            type: integer
-                          stepSizeCount:
-                            description: Step size for number of members.
-                            format: int64
-                            type: integer
-                          units:
-                            description: Units used for scaling number of members.
-                            type: string
-                        type: object
-                      memory:
-                        description: GroupMemory -
-                        properties:
-                          allocationMb:
-                            description: Total allocated memory in MB.
-                            format: int64
-                            type: integer
-                          canScaleDown:
-                            description: Can this group's memory scale down?.
-                            type: boolean
-                          isAdjustable:
-                            description: Is this group's memory adjustable?.
-                            type: boolean
-                          isOptional:
-                            description: Is this group's memory optional?.
-                            type: boolean
-                          maximumMb:
-                            description: Maximum memory in MB.
-                            format: int64
-                            type: integer
-                          memberAllocationMb:
-                            description: Allocated memory for member in MB.
-                            format: int64
-                            type: integer
-                          minimumMb:
-                            description: Minimum memory in MB.
-                            format: int64
-                            type: integer
-                          stepSizeMb:
-                            description: Step size memory can be adjusted by in MB.
-                            format: int64
-                            type: integer
-                          units:
-                            description: Units used for scaling memory.
-                            type: string
+                    required:
+                    - name
+                    type: object
+                  idSelector:
+                    description: SourceSelector selects a reference to an ICD resource instance used to set ID.
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels is selected.
                         type: object
                     type: object
-                  type: array
-                state:
-                  description: The current state of the scaling group
-                  type: string
-              type: object
-            conditions:
-              description: Conditions of the resource.
-              items:
-                description: A Condition that may apply to a resource.
+                  memberCpu:
+                    description: MemberCPU -
+                    properties:
+                      allocationCount:
+                        description: Number of allocated CPUs.
+                        format: int64
+                        type: integer
+                    type: object
+                  memberDisk:
+                    description: MemberDisk -
+                    properties:
+                      allocationMb:
+                        description: Allocated storage in MB.
+                        format: int64
+                        type: integer
+                    type: object
+                  memberMemory:
+                    description: MemberMemory -
+                    properties:
+                      allocationMb:
+                        description: Allocated memory in MB.
+                        format: int64
+                        type: integer
+                    type: object
+                  members:
+                    description: Members -
+                    properties:
+                      allocationCount:
+                        description: Allocated number of members.
+                        format: int64
+                        type: integer
+                    type: object
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
                 properties:
-                  lastTransitionTime:
-                    description: LastTransitionTime is the last time this condition transitioned from one status to another.
-                    format: date-time
-                    type: string
-                  message:
-                    description: A Message containing details about this condition's last transition from one status to another, if any.
-                    type: string
-                  reason:
-                    description: A Reason for this condition's last transition from one status to another.
-                    type: string
-                  status:
-                    description: Status of this condition; is it currently True, False, or Unknown?
-                    type: string
-                  type:
-                    description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                  name:
+                    description: Name of the referenced object.
                     type: string
                 required:
-                - lastTransitionTime
-                - reason
-                - status
-                - type
+                - name
                 type: object
-              type: array
-          type: object
-      required:
-      - spec
-      type: object
-  version: v1alpha1
-  versions:
-  - name: v1alpha1
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A ScalingGroupStatus represents the observed state of a ScalingGroup.
+            properties:
+              atProvider:
+                description: ScalingGroupObservation are the observable fields of a ScalingGroup.
+                properties:
+                  groups:
+                    items:
+                      description: 'Group : Group struct'
+                      properties:
+                        count:
+                          description: Number of entities in the group.
+                          format: int64
+                          type: integer
+                        cpu:
+                          description: GroupCPU -
+                          properties:
+                            allocationCount:
+                              description: Number of allocated CPUs.
+                              format: int64
+                              type: integer
+                            canScaleDown:
+                              description: Can this group's CPU scale down?.
+                              type: boolean
+                            isAdjustable:
+                              description: Is this group's CPU count adjustable.
+                              type: boolean
+                            isOptional:
+                              description: Is this group's CPU optional?.
+                              type: boolean
+                            maximumCount:
+                              description: Maximum number of CPUs.
+                              format: int64
+                              type: integer
+                            memberAllocationCount:
+                              description: Number of allocated CPUs for member
+                              format: int64
+                              type: integer
+                            minimumCount:
+                              description: Minimum number of CPUs.
+                              format: int64
+                              type: integer
+                            stepSizeCount:
+                              description: Step size CPUs can be adjusted.
+                              format: int64
+                              type: integer
+                            units:
+                              description: Units used for scaling cpu - count means the value is the number of the unit(s) available.
+                              type: string
+                          type: object
+                        disk:
+                          description: GroupDisk -
+                          properties:
+                            allocationMb:
+                              description: Total allocated storage in MB.
+                              format: int64
+                              type: integer
+                            can_scale_down:
+                              description: Can this group's storage scale down?.
+                              type: boolean
+                            isAdjustable:
+                              description: Is this group's storage adjustable?.
+                              type: boolean
+                            isOptional:
+                              description: Is this group's storage optional?.
+                              type: boolean
+                            maximumMb:
+                              description: Maximum allocated storage.
+                              format: int64
+                              type: integer
+                            memberAllocationMb:
+                              description: Allocated storage for member in MB.
+                              format: int64
+                              type: integer
+                            minimumMb:
+                              description: Minimum allocated storage.
+                              format: int64
+                              type: integer
+                            stepSizeMb:
+                              description: Step size storage can be adjusted.
+                              format: int64
+                              type: integer
+                            units:
+                              description: Units used for scaling storage.
+                              type: string
+                          type: object
+                        id:
+                          description: Id/name for group.
+                          type: string
+                        members:
+                          description: GroupMembers -
+                          properties:
+                            allocationCount:
+                              description: Allocated number of members.
+                              format: int64
+                              type: integer
+                            canScaleDown:
+                              description: Can this deployment's number of members scale down?.
+                              type: boolean
+                            isAdjustable:
+                              description: Is this deployment's number of members adjustable?.
+                              type: boolean
+                            isOptional:
+                              description: Is this deployments's number of members optional?.
+                              type: boolean
+                            maximumCount:
+                              description: Maximum number of members.
+                              format: int64
+                              type: integer
+                            minimumCount:
+                              description: Minimum number of members.
+                              format: int64
+                              type: integer
+                            stepSizeCount:
+                              description: Step size for number of members.
+                              format: int64
+                              type: integer
+                            units:
+                              description: Units used for scaling number of members.
+                              type: string
+                          type: object
+                        memory:
+                          description: GroupMemory -
+                          properties:
+                            allocationMb:
+                              description: Total allocated memory in MB.
+                              format: int64
+                              type: integer
+                            canScaleDown:
+                              description: Can this group's memory scale down?.
+                              type: boolean
+                            isAdjustable:
+                              description: Is this group's memory adjustable?.
+                              type: boolean
+                            isOptional:
+                              description: Is this group's memory optional?.
+                              type: boolean
+                            maximumMb:
+                              description: Maximum memory in MB.
+                              format: int64
+                              type: integer
+                            memberAllocationMb:
+                              description: Allocated memory for member in MB.
+                              format: int64
+                              type: integer
+                            minimumMb:
+                              description: Minimum memory in MB.
+                              format: int64
+                              type: integer
+                            stepSizeMb:
+                              description: Step size memory can be adjusted by in MB.
+                              format: int64
+                              type: integer
+                            units:
+                              description: Units used for scaling memory.
+                              type: string
+                          type: object
+                      type: object
+                    type: array
+                  state:
+                    description: The current state of the scaling group
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True, False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
     served: true
     storage: true
+    subresources:
+      status: {}
 status:
   acceptedNames:
     kind: ""
