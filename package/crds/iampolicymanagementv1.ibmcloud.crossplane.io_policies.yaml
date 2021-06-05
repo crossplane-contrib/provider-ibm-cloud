@@ -8,6 +8,10 @@ metadata:
 spec:
   group: iampolicymanagementv1.ibmcloud.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
     kind: Policy
     listKind: PolicyList
     plural: policies
