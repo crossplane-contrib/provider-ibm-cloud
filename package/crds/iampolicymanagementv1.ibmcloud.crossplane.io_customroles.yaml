@@ -8,6 +8,10 @@ metadata:
 spec:
   group: iampolicymanagementv1.ibmcloud.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
     kind: CustomRole
     listKind: CustomRoleList
     plural: customroles

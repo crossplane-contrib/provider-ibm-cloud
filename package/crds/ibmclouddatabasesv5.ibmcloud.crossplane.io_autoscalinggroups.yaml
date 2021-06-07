@@ -8,6 +8,10 @@ metadata:
 spec:
   group: ibmclouddatabasesv5.ibmcloud.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
     kind: AutoscalingGroup
     listKind: AutoscalingGroupList
     plural: autoscalinggroups

@@ -8,6 +8,10 @@ metadata:
 spec:
   group: iamaccessgroupsv2.ibmcloud.crossplane.io
   names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
     kind: AccessGroupRule
     listKind: AccessGroupRuleList
     plural: accessgrouprules
