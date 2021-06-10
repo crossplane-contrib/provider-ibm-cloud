@@ -34,13 +34,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A ResourceKey represents an instance of a managed service on IBM Cloud
+        description: A ResourceKey represents an instance of a managed service on
+          IBM Cloud
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -52,22 +57,29 @@ spec:
                   type: string
                 type: object
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: ResourceKeyParameters are the configurable fields of a ResourceKey.
+                description: ResourceKeyParameters are the configurable fields of
+                  a ResourceKey.
                 properties:
                   name:
                     description: The name of the key.
                     type: string
                   parameters:
-                    description: Configuration options represented as key-value pairs. Service defined options are passed through to the target resource brokers, whereas platform defined options are not.
+                    description: Configuration options represented as key-value pairs.
+                      Service defined options are passed through to the target resource
+                      brokers, whereas platform defined options are not.
                     properties:
                       serviceidCrn:
-                        description: An optional platform defined option to reuse an existing IAM serviceId for the role assignment.
+                        description: An optional platform defined option to reuse
+                          an existing IAM serviceId for the role assignment.
                         type: string
                     type: object
                   role:
@@ -86,22 +98,27 @@ spec:
                     - name
                     type: object
                   sourceSelector:
-                    description: SourceSelector selects a reference to a resource used to set Source
+                    description: SourceSelector selects a reference to a resource
+                      used to set Source
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                 required:
                 - name
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -110,7 +127,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -119,7 +138,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -138,7 +161,8 @@ spec:
             description: A ResourceKeyStatus represents the observed state of a ResourceKey.
             properties:
               atProvider:
-                description: ResourceKeyObservation are the observable fields of a ResourceKey.
+                description: ResourceKeyObservation are the observable fields of a
+                  ResourceKey.
                 properties:
                   accountId:
                     description: An alpha-numeric value identifying the account ID.
@@ -151,7 +175,9 @@ spec:
                     description: The subject who created the key.
                     type: string
                   crn:
-                    description: The full Cloud Resource Name (CRN) associated with the key. For more information about this format, see [Cloud Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
+                    description: The full Cloud Resource Name (CRN) associated with
+                      the key. For more information about this format, see [Cloud
+                      Resource Names](https://cloud.ibm.com/docs/overview?topic=overview-crn).
                     type: string
                   deletedAt:
                     description: The date when the key was deleted.
@@ -161,7 +187,9 @@ spec:
                     description: The subject who deleted the key.
                     type: string
                   guid:
-                    description: When you create a new key, a globally unique identifier (GUID) is assigned. This GUID is a unique internal identifier managed by the resource controller that corresponds to the key.
+                    description: When you create a new key, a globally unique identifier
+                      (GUID) is assigned. This GUID is a unique internal identifier
+                      managed by the resource controller that corresponds to the key.
                     type: string
                   iamCompatible:
                     description: Specifies whether the key’s credentials support IAM.
@@ -176,7 +204,8 @@ spec:
                     description: The relative path to the resource.
                     type: string
                   sourceCrn:
-                    description: The CRN of resource instance or alias associated to the key.
+                    description: The CRN of resource instance or alias associated
+                      to the key.
                     type: string
                   state:
                     description: The state of the key.
@@ -189,7 +218,8 @@ spec:
                     description: The subject who updated the key.
                     type: string
                   url:
-                    description: When you created a new key, a relative URL path is created identifying the location of the key.
+                    description: When you created a new key, a relative URL path is
+                      created identifying the location of the key.
                     type: string
                 type: object
               conditions:
@@ -198,20 +228,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

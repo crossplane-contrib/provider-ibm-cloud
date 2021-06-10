@@ -34,13 +34,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A AutoscalingGroup represents an instance of a managed service on IBM Cloud
+        description: A AutoscalingGroup represents an instance of a managed service
+          on IBM Cloud
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -52,19 +57,24 @@ spec:
                   type: string
                 type: object
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: AutoscalingGroupParameters are the configurable fields of a AutoscalingGroup.
+                description: AutoscalingGroupParameters are the configurable fields
+                  of a AutoscalingGroup.
                 properties:
                   cpu:
                     description: CPU -
                     properties:
                       rate:
-                        description: 'AutoscalingCPUGroupCPURate : AutoscalingCPUGroupCPURate struct'
+                        description: 'AutoscalingCPUGroupCPURate : AutoscalingCPUGroupCPURate
+                          struct'
                         properties:
                           increasePercent:
                             format: int64
@@ -85,7 +95,8 @@ spec:
                     description: Disk -
                     properties:
                       rate:
-                        description: 'AutoscalingDiskGroupDiskRate : AutoscalingDiskGroupDiskRate struct'
+                        description: 'AutoscalingDiskGroupDiskRate : AutoscalingDiskGroupDiskRate
+                          struct'
                         properties:
                           increasePercent:
                             format: int64
@@ -100,10 +111,12 @@ spec:
                             type: string
                         type: object
                       scalers:
-                        description: 'AutoscalingDiskGroupDiskScalers : AutoscalingDiskGroupDiskScalers struct'
+                        description: 'AutoscalingDiskGroupDiskScalers : AutoscalingDiskGroupDiskScalers
+                          struct'
                         properties:
                           capacity:
-                            description: 'AutoscalingDiskGroupDiskScalersCapacity : AutoscalingDiskGroupDiskScalersCapacity struct'
+                            description: 'AutoscalingDiskGroupDiskScalersCapacity
+                              : AutoscalingDiskGroupDiskScalersCapacity struct'
                             properties:
                               enabled:
                                 type: boolean
@@ -112,7 +125,8 @@ spec:
                                 type: integer
                             type: object
                           ioUtilization:
-                            description: 'AutoscalingDiskGroupDiskScalersIoUtilization : AutoscalingDiskGroupDiskScalersIoUtilization struct'
+                            description: 'AutoscalingDiskGroupDiskScalersIoUtilization
+                              : AutoscalingDiskGroupDiskScalersIoUtilization struct'
                             properties:
                               abovePercent:
                                 format: int64
@@ -128,7 +142,8 @@ spec:
                     description: Deployment ID.
                     type: string
                   idRef:
-                    description: IDRef is a reference to an ICD resource instance used to set ID
+                    description: IDRef is a reference to an ICD resource instance
+                      used to set ID
                     properties:
                       name:
                         description: Name of the referenced object.
@@ -137,22 +152,26 @@ spec:
                     - name
                     type: object
                   idSelector:
-                    description: SourceSelector selects a reference to an ICD resource instance used to set ID.
+                    description: SourceSelector selects a reference to an ICD resource
+                      instance used to set ID.
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                   memory:
                     description: "\tMemory -"
                     properties:
                       rate:
-                        description: 'AutoscalingMemoryGroupMemoryRate : AutoscalingMemoryGroupMemoryRate struct'
+                        description: 'AutoscalingMemoryGroupMemoryRate : AutoscalingMemoryGroupMemoryRate
+                          struct'
                         properties:
                           increasePercent:
                             format: int64
@@ -167,10 +186,12 @@ spec:
                             type: string
                         type: object
                       scalers:
-                        description: 'AutoscalingMemoryGroupMemoryScalers : AutoscalingMemoryGroupMemoryScalers struct'
+                        description: 'AutoscalingMemoryGroupMemoryScalers : AutoscalingMemoryGroupMemoryScalers
+                          struct'
                         properties:
                           ioUtilization:
-                            description: 'AutoscalingMemoryGroupMemoryScalersIoUtilization : AutoscalingMemoryGroupMemoryScalersIoUtilization struct'
+                            description: 'AutoscalingMemoryGroupMemoryScalersIoUtilization
+                              : AutoscalingMemoryGroupMemoryScalersIoUtilization struct'
                             properties:
                               abovePercent:
                                 format: int64
@@ -184,7 +205,9 @@ spec:
                     type: object
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -193,7 +216,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -202,7 +227,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -218,10 +247,12 @@ spec:
             - forProvider
             type: object
           status:
-            description: A AutoscalingGroupStatus represents the observed state of a AutoscalingGroup.
+            description: A AutoscalingGroupStatus represents the observed state of
+              a AutoscalingGroup.
             properties:
               atProvider:
-                description: AutoscalingGroupObservation are the observable fields of a Autoscaling Group.
+                description: AutoscalingGroupObservation are the observable fields
+                  of a Autoscaling Group.
                 properties:
                   state:
                     description: The current state of the autoscaling group
@@ -233,20 +264,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

@@ -22,10 +22,11 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
+// TopicParameters are the configurable fields of a Topic.
 type TopicParameters struct {
 
 	// The name of topic to be created.
-	//+immutable
+	// +immutable
 	Name string `json:"name"`
 
 	// KafkaAdminURL is the URL to the Event Streams instance admin endpoint
@@ -43,23 +44,19 @@ type TopicParameters struct {
 	// +optional
 	KafkaAdminURLSelector *runtimev1alpha1.Selector `json:"kafkaAdminUrlSelector,omitempty"`
 
-	//+immutable
-	//+optional
-	ID string `json:"id,omitempty"`
-
 	// The number of partitions.
-	//+immutable
-	//+optional
-	Partitions int64 `json:"partitions,omitempty"`
+	// +immutable
+	// +optional
+	Partitions *int64 `json:"partitions,omitempty"`
 
 	// The number of partitions, this field takes precedence over 'partitions'. Default value is 1 if not specified.
-	//+immutable
-	//+optional
-	PartitionCount int64 `json:"partitionCount,omitempty"`
+	// +immutable
+	// +optional
+	PartitionCount *int64 `json:"partitionCount,omitempty"`
 
 	// The config properties to be set for the new topic.
-	//+immutable
-	//+optional
+	// +immutable
+	// +optional
 	Configs []ConfigCreate `json:"configs,omitempty"`
 }
 
@@ -73,11 +70,12 @@ type ConfigCreate struct {
 	Value string `json:"value,omitempty"`
 }
 
+// TopicObservation are the observable fields of a Topic.
 type TopicObservation struct {
 
 	// The number of partitions.
-	//I think partitions can change, so even though it is
-	//in parameters, should it also be in observation??
+	// I think partitions can change, so even though it is
+	// in parameters, should it also be in observation??
 	Partitions int64 `json:"partitions,omitempty"`
 
 	// The number of replication factor.
@@ -89,6 +87,7 @@ type TopicObservation struct {
 	// The value of config property 'cleanup.policy'.
 	CleanupPolicy string `json:"cleanupPolicy,omitempty"`
 
+	// The config properties of the topic.
 	Configs *TopicConfigs `json:"configs,omitempty"`
 
 	// The replia assignment of the topic.
@@ -135,7 +134,7 @@ type ReplicaAssignmentBrokers struct {
 // A TopicSpec defines the desired state of a Topic.
 type TopicSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	//Connection Templates??
+	// Connection Templates??
 	ForProvider TopicParameters `json:"forProvider"`
 }
 

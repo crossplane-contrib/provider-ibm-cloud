@@ -34,13 +34,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A AccessGroupRule represents an instance of an IAM policy on IBM Cloud
+        description: A AccessGroupRule represents an instance of an IAM policy on
+          IBM Cloud
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -48,13 +53,17 @@ spec:
             description: A AccessGroupRuleSpec defines the desired state of a AccessGroupRule.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: AccessGroupRuleParameters are the configurable fields of a AccessGroupRule.
+                description: AccessGroupRuleParameters are the configurable fields
+                  of a AccessGroupRule.
                 properties:
                   accessGroupId:
                     description: The Access Group identifier.
@@ -72,12 +81,14 @@ spec:
                     description: Selector for AccessGroupID
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                   conditions:
@@ -86,13 +97,17 @@ spec:
                       description: 'RuleCondition : The condition of a rule.'
                       properties:
                         claim:
-                          description: The claim to evaluate against. This will be found in the `ext` claims of a user's login request.
+                          description: The claim to evaluate against. This will be
+                            found in the `ext` claims of a user's login request.
                           type: string
                         operator:
-                          description: The operation to perform on the claim. Valid operators are EQUALS, EQUALS_IGNORE_CASE, IN, NOT_EQUALS_IGNORE_CASE, NOT_EQUALS, and CONTAINS.
+                          description: The operation to perform on the claim. Valid
+                            operators are EQUALS, EQUALS_IGNORE_CASE, IN, NOT_EQUALS_IGNORE_CASE,
+                            NOT_EQUALS, and CONTAINS.
                           type: string
                         value:
-                          description: The stringified JSON value that the claim is compared to using the operator.
+                          description: The stringified JSON value that the claim is
+                            compared to using the operator.
                           type: string
                       required:
                       - claim
@@ -101,7 +116,8 @@ spec:
                       type: object
                     type: array
                   expiration:
-                    description: The number of hours that the rule lives for (Must be between 1 and 24).
+                    description: The number of hours that the rule lives for (Must
+                      be between 1 and 24).
                     format: int64
                     type: integer
                   name:
@@ -120,7 +136,9 @@ spec:
                 - realmName
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -129,7 +147,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -138,7 +158,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -154,10 +178,12 @@ spec:
             - forProvider
             type: object
           status:
-            description: A AccessGroupRuleStatus represents the observed state of a AccessGroupRule.
+            description: A AccessGroupRuleStatus represents the observed state of
+              a AccessGroupRule.
             properties:
               atProvider:
-                description: AccessGroupRuleObservation are the observable fields of a AccessGroupRule.
+                description: AccessGroupRuleObservation are the observable fields
+                  of a AccessGroupRule.
                 properties:
                   accountId:
                     description: The account id that the group is in.
@@ -189,20 +215,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

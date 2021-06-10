@@ -4,18 +4,18 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: policies.iampolicymanagementv1.ibmcloud.crossplane.io
+  name: topics.eventstreamsadminv1.ibmcloud.crossplane.io
 spec:
-  group: iampolicymanagementv1.ibmcloud.crossplane.io
+  group: eventstreamsadminv1.ibmcloud.crossplane.io
   names:
     categories:
     - crossplane
     - managed
     - ibmcloud
-    kind: Policy
-    listKind: PolicyList
-    plural: policies
-    singular: policy
+    kind: Topic
+    listKind: TopicList
+    plural: topics
+    singular: topic
   scope: Cluster
   versions:
   - additionalPrinterColumns:
@@ -34,7 +34,7 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A Policy represents an instance of an IAM policy on IBM Cloud
+        description: A Topic represents an instance of a managed service on IBM Cloud
         properties:
           apiVersion:
             description: 'APIVersion defines the versioned schema of this representation
@@ -49,7 +49,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: A PolicySpec defines the desired state of a Policy.
+            description: A TopicSpec defines the desired state of a Topic.
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying
@@ -61,87 +61,64 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: PolicyParameters are the configurable fields of a Policy.
+                description: Connection Templates??
                 properties:
-                  description:
-                    description: Customer-defined description.
-                    type: string
-                  resources:
-                    description: The resources associated with a policy.
+                  configs:
+                    description: The config properties to be set for the new topic.
                     items:
-                      description: 'PolicyResource : The attributes of the resource.
-                        Note that only one resource is allowed in a policy.'
+                      description: 'ConfigCreate : ConfigCreate struct'
                       properties:
-                        attributes:
-                          description: List of resource attributes.
-                          items:
-                            description: 'ResourceAttribute : An attribute associated
-                              with a resource.'
-                            properties:
-                              name:
-                                description: The name of an attribute.
-                                type: string
-                              operator:
-                                description: The operator of an attribute.
-                                type: string
-                              value:
-                                description: The value of an attribute.
-                                type: string
-                            required:
-                            - name
-                            - value
-                            type: object
-                          type: array
-                      type: object
-                    type: array
-                  roles:
-                    description: A set of role cloud resource names (CRNs) granted
-                      by the policy.
-                    items:
-                      description: 'PolicyRole : A role associated with a policy.'
-                      properties:
-                        roleId:
-                          description: The role cloud resource name granted by the
-                            policy.
+                        name:
+                          description: The name of the config property.
                           type: string
-                      required:
-                      - roleId
+                        value:
+                          description: The value for a config property.
+                          type: string
                       type: object
                     type: array
-                  subjects:
-                    description: The subjects associated with a policy.
-                    items:
-                      description: 'PolicySubject : The subject attribute values that
-                        must match in order for this policy to apply in a permission
-                        decision.'
-                      properties:
-                        attributes:
-                          description: List of subject attributes.
-                          items:
-                            description: 'SubjectAttribute : An attribute associated
-                              with a subject.'
-                            properties:
-                              name:
-                                description: The name of an attribute.
-                                type: string
-                              value:
-                                description: The value of an attribute.
-                                type: string
-                            required:
-                            - name
-                            - value
-                            type: object
-                          type: array
-                      type: object
-                    type: array
-                  type:
-                    description: The policy type; either 'access' or 'authorization'.
+                  kafkaAdminUrl:
+                    description: KafkaAdminURL is the URL to the Event Streams instance
+                      admin endpoint
                     type: string
+                  kafkaAdminUrlRef:
+                    description: A reference to the Event Streams Secret Key used
+                      to set KafkaAdminURL
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  kafkaAdminUrlSelector:
+                    description: SourceSelector selects a reference to a resource
+                      used to set Source
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                  name:
+                    description: The name of topic to be created.
+                    type: string
+                  partitionCount:
+                    description: The number of partitions, this field takes precedence
+                      over 'partitions'. Default value is 1 if not specified.
+                    format: int64
+                    type: integer
+                  partitions:
+                    description: The number of partitions.
+                    format: int64
+                    type: integer
                 required:
-                - resources
-                - roles
-                - subjects
-                - type
+                - name
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that
@@ -186,34 +163,74 @@ spec:
             - forProvider
             type: object
           status:
-            description: A PolicyStatus represents the observed state of a Policy.
+            description: A TopicStatus represents the observed state of a Topic.
             properties:
               atProvider:
-                description: PolicyObservation are the observable fields of a Policy.
+                description: TopicObservation are the observable fields of a Topic.
                 properties:
-                  createdAt:
-                    description: The UTC timestamp when the policy was created.
-                    format: date-time
+                  cleanupPolicy:
+                    description: The value of config property 'cleanup.policy'.
                     type: string
-                  createdById:
-                    description: The iam ID of the entity that created the policy.
-                    type: string
-                  href:
-                    description: The href link back to the policy.
-                    type: string
-                  id:
-                    description: The policy ID.
-                    type: string
-                  lastModifiedAt:
-                    description: The UTC timestamp when the policy was last modified.
-                    format: date-time
-                    type: string
-                  lastModifiedById:
-                    description: The iam ID of the entity that last modified the policy.
-                    type: string
-                  state:
-                    description: The current state of the policy
-                    type: string
+                  configs:
+                    description: by value??
+                    properties:
+                      cleanup.policy:
+                        description: The value of config property 'cleanup.policy'.
+                        type: string
+                      min.insync.replicas:
+                        description: The value of config property 'min.insync.replicas'.
+                        type: string
+                      retention.bytes:
+                        description: The value of config property 'retention.bytes'.
+                        type: string
+                      retention.ms:
+                        description: The value of config property 'retention.ms'.
+                        type: string
+                      segment.bytes:
+                        description: The value of config property 'segment.bytes'.
+                        type: string
+                      segment.index.bytes:
+                        description: The value of config property 'segment.index.bytes'.
+                        type: string
+                      segment.ms:
+                        description: The value of config property 'segment.ms'.
+                        type: string
+                    type: object
+                  partitions:
+                    description: The number of partitions. I think partitions can
+                      change, so even though it is in parameters, should it also be
+                      in observation??
+                    format: int64
+                    type: integer
+                  replicaAssignments:
+                    description: The replia assignment of the topic.
+                    items:
+                      description: 'ReplicaAssignment : ReplicaAssignment struct'
+                      properties:
+                        brokers:
+                          description: 'ReplicaAssignmentBrokers : ReplicaAssignmentBrokers
+                            struct'
+                          properties:
+                            replicas:
+                              items:
+                                format: int64
+                                type: integer
+                              type: array
+                          type: object
+                        id:
+                          description: The ID of the partition.
+                          format: int64
+                          type: integer
+                      type: object
+                    type: array
+                  replicationFactor:
+                    description: The number of replication factor.
+                    format: int64
+                    type: integer
+                  retentionMs:
+                    description: The value of config property 'retention.ms'.
+                    format: int64
+                    type: integer
                 type: object
               conditions:
                 description: Conditions of the resource.
