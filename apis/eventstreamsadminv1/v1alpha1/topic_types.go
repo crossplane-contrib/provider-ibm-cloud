@@ -73,11 +73,6 @@ type ConfigCreate struct {
 // TopicObservation are the observable fields of a Topic.
 type TopicObservation struct {
 
-	// The number of partitions.
-	// I think partitions can change, so even though it is
-	// in parameters, should it also be in observation??
-	Partitions int64 `json:"partitions,omitempty"`
-
 	// The number of replication factor.
 	ReplicationFactor int64 `json:"replicationFactor,omitempty"`
 
@@ -97,25 +92,25 @@ type TopicObservation struct {
 // TopicConfigs : TopicConfigs struct
 type TopicConfigs struct {
 	// The value of config property 'cleanup.policy'.
-	CleanupPolicy string `json:"cleanup.policy,omitempty"`
+	CleanupPolicy string `json:"cleanupPolicy,omitempty"`
 
 	// The value of config property 'min.insync.replicas'.
-	MinInsyncReplicas string `json:"min.insync.replicas,omitempty"`
+	MinInsyncReplicas string `json:"minInsyncReplicas,omitempty"`
 
 	// The value of config property 'retention.bytes'.
-	RetentionBytes string `json:"retention.bytes,omitempty"`
+	RetentionBytes string `json:"retentionBytes,omitempty"`
 
 	// The value of config property 'retention.ms'.
-	RetentionMs string `json:"retention.ms,omitempty"`
+	RetentionMs string `json:"retentionMs,omitempty"`
 
 	// The value of config property 'segment.bytes'.
-	SegmentBytes string `json:"segment.bytes,omitempty"`
+	SegmentBytes string `json:"segmentBytes,omitempty"`
 
 	// The value of config property 'segment.index.bytes'.
-	SegmentIndexBytes string `json:"segment.index.bytes,omitempty"`
+	SegmentIndexBytes string `json:"segmentIndexBytes,omitempty"`
 
 	// The value of config property 'segment.ms'.
-	SegmentMs string `json:"segment.ms,omitempty"`
+	SegmentMs string `json:"segmentMs,omitempty"`
 }
 
 // ReplicaAssignment : ReplicaAssignment struct
@@ -134,8 +129,7 @@ type ReplicaAssignmentBrokers struct {
 // A TopicSpec defines the desired state of a Topic.
 type TopicSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
-	// Connection Templates??
-	ForProvider TopicParameters `json:"forProvider"`
+	ForProvider                  TopicParameters `json:"forProvider"`
 }
 
 // A TopicStatus represents the observed state of a Topic.
