@@ -45,12 +45,10 @@ type TopicParameters struct {
 	KafkaAdminURLSelector *runtimev1alpha1.Selector `json:"kafkaAdminUrlSelector,omitempty"`
 
 	// The number of partitions.
-	// +immutable
 	// +optional
 	Partitions *int64 `json:"partitions,omitempty"`
 
 	// The number of partitions, this field takes precedence over 'partitions'. Default value is 1 if not specified.
-	// +immutable
 	// +optional
 	PartitionCount *int64 `json:"partitionCount,omitempty"`
 

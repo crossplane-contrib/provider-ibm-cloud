@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb
+	github.com/IBM/eventstreams-go-sdk v1.1.0
 	github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655
 	github.com/IBM/go-sdk-core v1.1.0
 	github.com/IBM/go-sdk-core/v4 v4.10.0
@@ -14,10 +15,7 @@ require (
 	github.com/go-openapi/strfmt v0.20.0
 	github.com/google/go-cmp v0.5.2
 	github.com/jeremywohl/flatten v1.0.1
-	github.com/onsi/ginkgo v1.15.1 // indirect
-	github.com/onsi/gomega v1.11.0 // indirect
 	github.com/pkg/errors v0.9.1
-	github.com/stretchr/testify v1.7.0 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	k8s.io/api v0.18.8

@@ -20,6 +20,8 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb h1:ke+JASYimCuuAsmMWw2jmCRakGrKRQqVgIG30eiPI+Y=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb/go.mod h1:gPJbH1etcDj7qS/hBRiLuYW9CY0bRcostSKusa51xR0=
+github.com/IBM/eventstreams-go-sdk v1.1.0 h1:rOLcsraXtBu9nTVwTLMQANWPfu2vD28cG+s/ZQY8L/M=
+github.com/IBM/eventstreams-go-sdk v1.1.0/go.mod h1:u2WTMkRsVsZT/tB9QV2dh9e2o8JCabo/7nzphSPO5is=
 github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655 h1:mM8uCv5CO7MV3jFIwYxJEBqzuGqEVWIHzZWbNNm6e7c=
 github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655/go.mod h1:A4BohhxQR4Hj7h2hzESMDBkC+83bSidxbSMExFgqo/0=
 github.com/IBM/go-sdk-core v1.1.0 h1:pV73lZqr9r1xKb3h08c1uNG3AphwoV5KzUzhS+pfEqY=

@@ -61,7 +61,7 @@ spec:
                 - Delete
                 type: string
               forProvider:
-                description: Connection Templates??
+                description: TopicParameters are the configurable fields of a Topic.
                 properties:
                   configs:
                     description: The config properties to be set for the new topic.
@@ -172,36 +172,30 @@ spec:
                     description: The value of config property 'cleanup.policy'.
                     type: string
                   configs:
-                    description: by value??
+                    description: The config properties of the topic.
                     properties:
-                      cleanup.policy:
+                      cleanupPolicy:
                         description: The value of config property 'cleanup.policy'.
                         type: string
-                      min.insync.replicas:
+                      minInsyncReplicas:
                         description: The value of config property 'min.insync.replicas'.
                         type: string
-                      retention.bytes:
+                      retentionBytes:
                         description: The value of config property 'retention.bytes'.
                         type: string
-                      retention.ms:
+                      retentionMs:
                         description: The value of config property 'retention.ms'.
                         type: string
-                      segment.bytes:
+                      segmentBytes:
                         description: The value of config property 'segment.bytes'.
                         type: string
-                      segment.index.bytes:
+                      segmentIndexBytes:
                         description: The value of config property 'segment.index.bytes'.
                         type: string
-                      segment.ms:
+                      segmentMs:
                         description: The value of config property 'segment.ms'.
                         type: string
                     type: object
-                  partitions:
-                    description: The number of partitions. I think partitions can
-                      change, so even though it is in parameters, should it also be
-                      in observation??
-                    format: int64
-                    type: integer
                   replicaAssignments:
                     description: The replia assignment of the topic.
                     items:
