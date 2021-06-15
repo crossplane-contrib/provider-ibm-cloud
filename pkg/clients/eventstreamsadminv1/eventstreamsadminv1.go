@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package topic
+package eventstreamsadminv1
 
 import (
 	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
@@ -158,7 +158,7 @@ func IsUpToDate(in *v1alpha1.TopicParameters, observed *arv1.TopicDetail) (bool,
 
 	// what is it being compared to, ie which fields should be ignored??
 	return cmp.Equal(desired, actual, cmpopts.EquateEmpty(),
-		cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "KafkaAdminURL", "KafkaAdminURLRef", "KafkaAdminURLSelector"),
+		cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "Configs", "KafkaAdminURL", "KafkaAdminURLRef", "KafkaAdminURLSelector"),
 		cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})), nil
 }
 
@@ -170,17 +170,65 @@ func GenerateTopicParameters(in *arv1.TopicDetail) (*v1alpha1.TopicParameters, e
 		// if in.Partitions is nil make it 1??
 		Partitions:     in.Partitions,
 		PartitionCount: in.Partitions,
-		// Configs: Generatev1alpha1ConfigCreate(in.Configs)
-
+		Configs:        Generatev1alpha1ConfigCreate(in.Configs),
 	}
 	return o, nil
 }
 
-// // Generatev1alpha1ConfigCreate generates []v1alpha1.ConfigCreate from *arv1.TopicConfigs
-// func Generatev1alpha1ConfigCreate(in *arv1.TopicConfigs) []v1alpha1.ConfigCreate {
-// 	if in == nil {
-// 		return nil
-// 	}
-
-// 	return o
-// }
+// Generatev1alpha1ConfigCreate generates []v1alpha1.ConfigCreate from *arv1.TopicConfigs
+func Generatev1alpha1ConfigCreate(in *arv1.TopicConfigs) []v1alpha1.ConfigCreate {
+	o := []v1alpha1.ConfigCreate{}
+	if in == nil {
+		return nil
+	}
+	if in.CleanupPolicy != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "CleanupPolicy",
+			Value: reference.FromPtrValue(in.CleanupPolicy),
+		}
+		o = append(o, c)
+	}
+	if in.MinInsyncReplicas != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "MinInsyncReplicas",
+			Value: reference.FromPtrValue(in.MinInsyncReplicas),
+		}
+		o = append(o, c)
+	}
+	if in.RetentionBytes != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "RetentionBytes",
+			Value: reference.FromPtrValue(in.RetentionBytes),
+		}
+		o = append(o, c)
+	}
+	if in.RetentionMs != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "RetentionMs",
+			Value: reference.FromPtrValue(in.RetentionMs),
+		}
+		o = append(o, c)
+	}
+	if in.SegmentBytes != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "SegmentBytes",
+			Value: reference.FromPtrValue(in.SegmentBytes),
+		}
+		o = append(o, c)
+	}
+	if in.SegmentIndexBytes != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "SegmentIndexBytes",
+			Value: reference.FromPtrValue(in.SegmentIndexBytes),
+		}
+		o = append(o, c)
+	}
+	if in.SegmentMs != nil {
+		c := v1alpha1.ConfigCreate{
+			Name:  "SegmentMs",
+			Value: reference.FromPtrValue(in.SegmentMs),
+		}
+		o = append(o, c)
+	}
+	return o
+}
