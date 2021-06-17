@@ -17,15 +17,17 @@ limitations under the License.
 package eventstreamsadminv1
 
 import (
-	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
+
+	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/eventstreamsadminv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	"github.com/crossplane/crossplane-runtime/pkg/reference"
 )
 
 // LateInitializeSpec fills optional and unassigned fields with the values in *arv1.TopicDetail object.
@@ -79,9 +81,9 @@ func GenerateConfigUpdate(in []v1alpha1.ConfigCreate) []arv1.ConfigUpdate {
 	o := []arv1.ConfigUpdate{}
 	for _, m := range in {
 		item := arv1.ConfigUpdate{
-			Name:  reference.ToPtrValue(m.Name),
-			Value: reference.ToPtrValue(m.Value),
-			//ResetToDefault: needs to be a pointer to a boolean value, should be true or false??
+			Name:           reference.ToPtrValue(m.Name),
+			Value:          reference.ToPtrValue(m.Value),
+			ResetToDefault: ibmc.BoolPtr(false),
 		}
 		o = append(o, item)
 	}
@@ -146,19 +148,17 @@ func GenerateBrokers(in *arv1.ReplicaAssignmentBrokers) *v1alpha1.ReplicaAssignm
 }
 
 // IsUpToDate checks whether current state is up-to-date compared to the given set of parameters.
-func IsUpToDate(in *v1alpha1.TopicParameters, observed *arv1.TopicDetail) (bool, error) {
+func IsUpToDate(in *v1alpha1.TopicParameters, observed *arv1.TopicDetail, l logging.Logger) (bool, error) {
 	desired := in.DeepCopy()
 	actual, err := GenerateTopicParameters(observed)
 	if err != nil {
 		return false, err
 	}
 
-	// it says logger isn't found even when logger is imported??
-	// l.Info(cmp.Diff(desired, actual, cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})))
+	l.Info(cmp.Diff(desired, actual, cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})))
 
-	// what is it being compared to, ie which fields should be ignored??
 	return cmp.Equal(desired, actual, cmpopts.EquateEmpty(),
-		cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "Configs", "KafkaAdminURL", "KafkaAdminURLRef", "KafkaAdminURLSelector"),
+		cmpopts.IgnoreFields(v1alpha1.TopicParameters{}, "KafkaAdminURL", "KafkaAdminURLRef", "KafkaAdminURLSelector"),
 		cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})), nil
 }
 
@@ -166,8 +166,7 @@ func IsUpToDate(in *v1alpha1.TopicParameters, observed *arv1.TopicDetail) (bool,
 func GenerateTopicParameters(in *arv1.TopicDetail) (*v1alpha1.TopicParameters, error) {
 
 	o := &v1alpha1.TopicParameters{
-		Name: reference.FromPtrValue(in.Name),
-		// if in.Partitions is nil make it 1??
+		Name:           reference.FromPtrValue(in.Name),
 		Partitions:     in.Partitions,
 		PartitionCount: in.Partitions,
 		Configs:        Generatev1alpha1ConfigCreate(in.Configs),

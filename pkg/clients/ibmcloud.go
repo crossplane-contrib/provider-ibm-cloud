@@ -36,6 +36,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
@@ -45,8 +46,6 @@ import (
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
-
-	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 )
