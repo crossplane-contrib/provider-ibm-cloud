@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package eventstreamsadminv1
+package topic
 
 import (
 	"github.com/google/go-cmp/cmp"
@@ -92,7 +92,6 @@ func GenerateConfigUpdate(in []v1alpha1.ConfigCreate) []arv1.ConfigUpdate {
 
 // GenerateObservation produces TopicObservation object from *arv1.TopicDetail object.
 func GenerateObservation(in *arv1.TopicDetail) (v1alpha1.TopicObservation, error) {
-
 	o := v1alpha1.TopicObservation{
 		ReplicationFactor:  ibmc.Int64Value(in.ReplicationFactor),
 		RetentionMs:        ibmc.Int64Value(in.RetentionMs),

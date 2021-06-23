@@ -83,7 +83,7 @@ type TopicObservation struct {
 	// The config properties of the topic.
 	Configs *TopicConfigs `json:"configs,omitempty"`
 
-	// The replia assignment of the topic.
+	// The replica assignment of the topic.
 	ReplicaAssignments []ReplicaAssignment `json:"replicaAssignments,omitempty"`
 }
 
