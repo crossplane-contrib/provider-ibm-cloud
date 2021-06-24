@@ -303,17 +303,6 @@ func generateTestarv1Replicas() []int64 {
 	return o
 }
 
-// the error comes when I run the test using none of the generate functions,
-// ie all generate test array functions above are commented and the empty arrays and structs are used instead
-// I think when the tInstance is encoded ie (_ = json.NewEncoder(w).Encode(t)) the empty ReplicaAssignments array is maybe encoded as nil (but I'm not entirely sure)
-// references: https://golang.org/pkg/encoding/json/     https://pkg.go.dev/encoding/json#Encoder.Encode
-// so when
-// instance, _, err := c.client.AdminrestV1().GetTopic(&arv1.GetTopicOptions{TopicName: reference.ToPtrValue(meta.GetExternalName(cr))}) is run in Observe
-// ReplicaAssignments is nil even though it should be an empty array ??
-
-// but the array should never be empty, it should either have values in it or be nil (so the encoder should never encounter an empty array),
-// so I don't think this problem is a big problem
-// also the test works when the arrays are full, ie when the generate array functions are used for ReplicaAssignments etc.
 func TestTopicObserve(t *testing.T) {
 	type args struct {
 		mg resource.Managed
@@ -486,6 +475,354 @@ func TestTopicObserve(t *testing.T) {
 			}
 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestTopicCreate(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		cre managed.ExternalCreation
+		err error
+	}
+	cases := map[string]struct {
+		handlers []handler
+		kube     client.Client
+		args     args
+		want     want
+	}{
+		"Successful": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						// if r.Method == http.MethodGet {
+						// 	// listResourceInstancesNoItems(w, r) I don't think this applies for Topics, but I am not sure ??
+						// 	return
+						// }
+						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusCreated)
+						_ = r.Body.Close()
+						t := tInstance()
+						_ = json.NewEncoder(w).Encode(t)
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithSpec(*tParams())),
+			},
+			want: want{
+				mg: topic(tWithSpec(*tParams()),
+					tWithConditions(cpv1alpha1.Creating()),
+					tWithExternalNameAnnotation(tName)),
+				cre: managed.ExternalCreation{ExternalNameAssigned: true},
+				err: nil,
+			},
+		},
+		// I modeled this test after the access group test and not the resource instance or resource key test ??
+		// if r.Method == http.MethodGet {
+		// 	listResourceInstancesNoItems(w, r)
+		// 	return
+		// }
+
+		// b := map[string]interface{}{
+		// 	"message":     errNoRCDep,
+		// 	"status_code": 400,
+		// }
+		// those tests used the above code which I'm not sure applied to Topics ??
+		"Failed": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+						_ = r.Body.Close()
+						t := tInstance()
+						_ = json.NewEncoder(w).Encode(t)
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithSpec(*tParams())),
+			},
+			want: want{
+				mg: topic(tWithSpec(*tParams()),
+					tWithConditions(cpv1alpha1.Creating())),
+				cre: managed.ExternalCreation{ExternalNameAssigned: false},
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateTopic),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			for _, h := range tc.handlers {
+				mux.HandleFunc(h.path, h.handlerFunc)
+			}
+			server := httptest.NewServer(mux)
+			defer server.Close()
+
+			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
+				BearerToken: bearerTok,
+			}}
+			mClient, _ := ibmc.NewClient(opts)
+			e := topicExternal{
+				kube:   tc.kube,
+				client: mClient,
+				logger: logging.NewNopLogger(),
+			}
+			cre, err := e.Create(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestTopicDelete(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
+	cases := map[string]struct {
+		handlers []handler
+		kube     client.Client
+		args     args
+		want     want
+	}{
+		"Successful": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusAccepted)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithExternalNameAnnotation(tName)),
+			},
+			want: want{
+				mg:  topic(tWithExternalNameAnnotation(tName), tWithConditions(cpv1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"AlreadyGone": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusNotFound)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithExternalNameAnnotation(tName)),
+			},
+			want: want{
+				mg:  topic(tWithExternalNameAnnotation(tName), tWithConditions(cpv1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"Failed": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithExternalNameAnnotation(tName)),
+			},
+			want: want{
+				mg:  topic(tWithExternalNameAnnotation(tName), tWithConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteTopic),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			for _, h := range tc.handlers {
+				mux.HandleFunc(h.path, h.handlerFunc)
+			}
+			server := httptest.NewServer(mux)
+			defer server.Close()
+
+			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
+				BearerToken: bearerTok,
+			}}
+			mClient, _ := ibmc.NewClient(opts)
+			e := topicExternal{
+				kube:   tc.kube,
+				client: mClient,
+				logger: logging.NewNopLogger(),
+			}
+			err := e.Delete(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestTopicUpdate(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		upd managed.ExternalUpdate
+		err error
+	}
+	cases := map[string]struct {
+		handlers []handler
+		kube     client.Client
+		args     args
+		want     want
+	}{
+		"Successful": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+						_ = r.Body.Close()
+						t := tInstance()
+						_ = json.NewEncoder(w).Encode(t)
+					},
+				},
+			},
+			args: args{
+				mg: topic(tWithSpec(*tParams())),
+			},
+			want: want{
+				mg:  topic(tWithSpec(*tParams())),
+				upd: managed.ExternalUpdate{ConnectionDetails: nil},
+				err: nil,
+			},
+		},
+		"PatchFails": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+						_ = r.Body.Close()
+					},
+				},
+			},
+
+			args: args{
+				mg: topic(tWithSpec(*tParams())),
+			},
+			want: want{
+				mg:  topic(tWithSpec(*tParams())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdTopic),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			for _, h := range tc.handlers {
+				mux.HandleFunc(h.path, h.handlerFunc)
+			}
+			server := httptest.NewServer(mux)
+			defer server.Close()
+
+			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
+				BearerToken: bearerTok,
+			}}
+			mClient, _ := ibmc.NewClient(opts)
+			e := topicExternal{
+				kube:   tc.kube,
+				client: mClient,
+				logger: logging.NewNopLogger(),
+			}
+			upd, err := e.Update(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+			}
+			if tc.want.err == nil {
+				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
+				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
+					t.Errorf("Update(...): -want, +got:\n%s", diff)
+				}
 			}
 		})
 	}

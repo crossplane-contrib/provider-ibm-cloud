@@ -167,13 +167,7 @@ func (c *topicExternal) Create(ctx context.Context, mg resource.Managed) (manage
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateTopic)
 	}
 
-	// create topic doesn't return an instance so have to get one (unlike access group or resource key) ??
-	instance, _, err := c.client.AdminrestV1().GetTopic(&arv1.GetTopicOptions{TopicName: reference.ToPtrValue(meta.GetExternalName(cr))})
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetTopicFailed)
-	}
-
-	meta.SetExternalName(cr, reference.FromPtrValue(instance.Name))
+	meta.SetExternalName(cr, cr.Spec.ForProvider.Name)
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
@@ -204,8 +198,6 @@ func (c *topicExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	cr.SetConditions(runtimev1alpha1.Deleting())
 
-	// used reference.ToPtrValue(meta.GetExternalName(cr) instead of &cr.Status.AtProvider. (unlike resourcekey or resourceinstance or accessgroup) ??
-	// because name isn't in Status
 	_, err := c.client.AdminrestV1().DeleteTopic(&arv1.DeleteTopicOptions{TopicName: reference.ToPtrValue(meta.GetExternalName(cr))})
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteTopic)
