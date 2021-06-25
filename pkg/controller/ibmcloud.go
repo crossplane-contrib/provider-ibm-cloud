@@ -21,6 +21,7 @@ import (
 	ctrl "sigs.k8s.io/controller-runtime"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/eventstreamsadminv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iamaccessgroupsv2"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iampolicymanagementv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/ibmclouddatabasesv5"
@@ -43,6 +44,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		iamaccessgroupsv2.SetupAccessGroup,
 		iamaccessgroupsv2.SetupGroupMembership,
 		iamaccessgroupsv2.SetupAccessGroupRule,
+		eventstreamsadminv1.SetupTopic,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

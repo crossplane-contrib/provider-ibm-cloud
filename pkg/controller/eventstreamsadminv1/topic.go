@@ -18,6 +18,7 @@ package eventstreamsadminv1
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -87,6 +88,13 @@ func (c *topicConnector) Connect(ctx context.Context, mg resource.Managed) (mana
 		return nil, errors.Wrap(err, ibmc.ErrGetAuth)
 	}
 
+	cr, ok := mg.(*v1alpha1.Topic)
+	if !ok {
+		return nil, errors.New(errNotTopic)
+	}
+
+	opts.URL = reference.FromPtrValue(cr.Spec.ForProvider.KafkaAdminURL)
+
 	service, err := c.clientFn(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, ibmc.ErrNewClient)
@@ -116,9 +124,13 @@ func (c *topicExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 	}
 
 	instance, _, err := c.client.AdminrestV1().GetTopic(&arv1.GetTopicOptions{TopicName: reference.ToPtrValue(meta.GetExternalName(cr))})
-
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetTopicFailed)
+	}
+
+	fmt.Println("--------------going to return false is state not active", cr.Status.AtProvider.State)
+	if !(cr.Status.AtProvider.State == "active") {
+		return managed.ExternalObservation{ResourceExists: false}, nil
 	}
 
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
@@ -131,11 +143,22 @@ func (c *topicExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
+	// there is probably a better way to preserve the state ??
+	state := cr.Status.AtProvider.State
+
 	cr.Status.AtProvider, err = ibmct.GenerateObservation(instance)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 	}
 
+	cr.Status.AtProvider.State = state
+
+	switch cr.Status.AtProvider.State {
+	case "active":
+		cr.Status.SetConditions(runtimev1alpha1.Available())
+	default:
+		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
+	}
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
 	upToDate, err := ibmct.IsUpToDate(&cr.Spec.ForProvider, instance, c.logger)
@@ -168,6 +191,9 @@ func (c *topicExternal) Create(ctx context.Context, mg resource.Managed) (manage
 	}
 
 	meta.SetExternalName(cr, cr.Spec.ForProvider.Name)
+	fmt.Println("-------------------state", cr.Status.AtProvider.State)
+	cr.Status.AtProvider.State = "active"
+	fmt.Println("-------------------state", cr.Status.AtProvider.State)
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
@@ -202,5 +228,7 @@ func (c *topicExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteTopic)
 	}
+	cr.Status.AtProvider.State = "terminating"
+
 	return nil
 }

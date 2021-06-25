@@ -85,6 +85,9 @@ type TopicObservation struct {
 
 	// The replica assignment of the topic.
 	ReplicaAssignments []ReplicaAssignment `json:"replicaAssignments,omitempty"`
+
+	// The current state of the topic. For example, if the topic is deleted, it will return removed.
+	State string `json:"state,omitempty"`
 }
 
 // TopicConfigs : TopicConfigs struct

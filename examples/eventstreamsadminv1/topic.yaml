@@ -1,0 +1,10 @@
+apiVersion: eventstreamsadminv1.ibmcloud.crossplane.io/v1alpha1
+kind: Topic
+metadata:
+  name: mytopic
+spec:
+  forProvider:
+    name: mytopic
+    kafkaAdminUrl: https://hxp8rfdvm2k0jr9k.svc09.us-south.eventstreams.cloud.ibm.com
+  providerConfigRef:
+    name: ibm-cloud

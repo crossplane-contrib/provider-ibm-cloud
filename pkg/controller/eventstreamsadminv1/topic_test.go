@@ -161,6 +161,22 @@ func generateTestv1alpha1ConfigCreate() []v1alpha1.ConfigCreate {
 	return o
 }
 
+func tEmptyObservation(m ...func(*v1alpha1.TopicObservation)) *v1alpha1.TopicObservation {
+	o := &v1alpha1.TopicObservation{
+		ReplicationFactor:  0,
+		RetentionMs:        0,
+		CleanupPolicy:      "",
+		Configs:            nil,
+		ReplicaAssignments: nil,
+		State:              "",
+	}
+
+	for _, f := range m {
+		f(o)
+	}
+	return o
+}
+
 func tObservation(m ...func(*v1alpha1.TopicObservation)) *v1alpha1.TopicObservation {
 	o := &v1alpha1.TopicObservation{
 		ReplicationFactor: int64(2),
@@ -170,6 +186,7 @@ func tObservation(m ...func(*v1alpha1.TopicObservation)) *v1alpha1.TopicObservat
 		Configs: generateTestv1alpha1TopicConfigs(),
 		// ReplicaAssignments: []v1alpha1.ReplicaAssignment{},
 		ReplicaAssignments: generateTestv1alpha1ReplicaAssignments(),
+		State:              "active",
 	}
 
 	for _, f := range m {
@@ -387,6 +404,7 @@ func TestTopicObserve(t *testing.T) {
 				mg: topic(
 					tWithExternalNameAnnotation(tName),
 					tWithSpec(*tParams()),
+					tWithStatus(*tEmptyObservation(func(p *v1alpha1.TopicObservation) { p.State = "active" })),
 				),
 			},
 			want: want{
@@ -425,6 +443,7 @@ func TestTopicObserve(t *testing.T) {
 				mg: topic(
 					tWithExternalNameAnnotation(tName),
 					tWithSpec(*tParams()),
+					tWithStatus(*tEmptyObservation(func(p *v1alpha1.TopicObservation) { p.State = "active" })),
 				),
 			},
 			want: want{
@@ -521,7 +540,8 @@ func TestTopicCreate(t *testing.T) {
 			want: want{
 				mg: topic(tWithSpec(*tParams()),
 					tWithConditions(cpv1alpha1.Creating()),
-					tWithExternalNameAnnotation(tName)),
+					tWithExternalNameAnnotation(tName),
+					tWithStatus(*tEmptyObservation(func(p *v1alpha1.TopicObservation) { p.State = "active" }))),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
@@ -636,7 +656,7 @@ func TestTopicDelete(t *testing.T) {
 				mg: topic(tWithExternalNameAnnotation(tName)),
 			},
 			want: want{
-				mg:  topic(tWithExternalNameAnnotation(tName), tWithConditions(cpv1alpha1.Deleting())),
+				mg:  topic(tWithExternalNameAnnotation(tName), tWithConditions(cpv1alpha1.Deleting()), tWithStatus(*tEmptyObservation(func(p *v1alpha1.TopicObservation) { p.State = "terminating" }))),
 				err: nil,
 			},
 		},

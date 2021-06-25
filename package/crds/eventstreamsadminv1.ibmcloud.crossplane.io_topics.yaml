@@ -197,7 +197,7 @@ spec:
                         type: string
                     type: object
                   replicaAssignments:
-                    description: The replia assignment of the topic.
+                    description: The replica assignment of the topic.
                     items:
                       description: 'ReplicaAssignment : ReplicaAssignment struct'
                       properties:
@@ -225,6 +225,10 @@ spec:
                     description: The value of config property 'retention.ms'.
                     format: int64
                     type: integer
+                  state:
+                    description: The current state of the topic. For example, if the
+                      topic is deleted, it will return removed.
+                    type: string
                 type: object
               conditions:
                 description: Conditions of the resource.
