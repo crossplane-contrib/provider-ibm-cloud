@@ -67,6 +67,7 @@ const (
 	errParseTok           = "error parsig IAM access token"
 	errNotFound           = "Not Found"
 	errFailedToFind       = "Failed to find"
+	errUnableToGet        = "unable to get"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -486,7 +487,8 @@ func IsResourceInactive(err error) bool {
 // IsResourceNotFound returns true if the SDK returns a not found error
 func IsResourceNotFound(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
-		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind))
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted

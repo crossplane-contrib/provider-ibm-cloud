@@ -18,7 +18,6 @@ package eventstreamsadminv1
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -127,12 +126,6 @@ func (c *topicExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetTopicFailed)
 	}
-
-	fmt.Println("--------------going to return false is state not active", cr.Status.AtProvider.State)
-	if !(cr.Status.AtProvider.State == "active") {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
-
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	if err = ibmct.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
@@ -143,15 +136,12 @@ func (c *topicExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 		}
 	}
 
-	// there is probably a better way to preserve the state ??
-	state := cr.Status.AtProvider.State
-
 	cr.Status.AtProvider, err = ibmct.GenerateObservation(instance)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 	}
 
-	cr.Status.AtProvider.State = state
+	cr.Status.AtProvider.State = "active"
 
 	switch cr.Status.AtProvider.State {
 	case "active":
@@ -165,7 +155,6 @@ func (c *topicExternal) Observe(ctx context.Context, mg resource.Managed) (manag
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrCheckUpToDate)
 	}
-
 	return managed.ExternalObservation{
 		ResourceExists:    true,
 		ResourceUpToDate:  upToDate,
@@ -191,9 +180,7 @@ func (c *topicExternal) Create(ctx context.Context, mg resource.Managed) (manage
 	}
 
 	meta.SetExternalName(cr, cr.Spec.ForProvider.Name)
-	fmt.Println("-------------------state", cr.Status.AtProvider.State)
-	cr.Status.AtProvider.State = "active"
-	fmt.Println("-------------------state", cr.Status.AtProvider.State)
+
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
@@ -203,16 +190,19 @@ func (c *topicExternal) Update(ctx context.Context, mg resource.Managed) (manage
 		return managed.ExternalUpdate{}, errors.New(errNotTopic)
 	}
 
-	updInstanceOpts := &arv1.UpdateTopicOptions{}
-	if err := ibmct.GenerateUpdateTopicOptions(cr.Spec.ForProvider, updInstanceOpts); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdTopic)
+	instance, _, err := c.client.AdminrestV1().GetTopic(&arv1.GetTopicOptions{TopicName: reference.ToPtrValue(meta.GetExternalName(cr))})
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetTopicFailed)
 	}
 
-	_, err := c.client.AdminrestV1().UpdateTopic(updInstanceOpts)
+	updInstanceOpts := &arv1.UpdateTopicOptions{}
+	if err = ibmct.GenerateUpdateTopicOptions(instance.Partitions, cr.Spec.ForProvider, updInstanceOpts); err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdTopic)
+	}
+	_, err = c.client.AdminrestV1().UpdateTopic(updInstanceOpts)
 	if err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdTopic)
 	}
-
 	return managed.ExternalUpdate{}, nil
 }
 

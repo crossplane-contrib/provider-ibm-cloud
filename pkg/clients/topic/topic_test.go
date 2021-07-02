@@ -54,37 +54,32 @@ func generateTestv1alpha1ConfigCreate() []v1alpha1.ConfigCreate {
 	o := []v1alpha1.ConfigCreate{}
 
 	c := v1alpha1.ConfigCreate{
-		Name:  "CleanupPolicy",
+		Name:  "cleanup.policy",
 		Value: "myCleanupPolicy",
 	}
 	o = append(o, c)
 	c = v1alpha1.ConfigCreate{
-		Name:  "MinInsyncReplicas",
-		Value: "myMinInsyncReplicas",
-	}
-	o = append(o, c)
-	c = v1alpha1.ConfigCreate{
-		Name:  "RetentionBytes",
+		Name:  "retention.bytes",
 		Value: "myRetentionBytes",
 	}
 	o = append(o, c)
 	c = v1alpha1.ConfigCreate{
-		Name:  "RetentionMs",
+		Name:  "retention.ms",
 		Value: "myRetentionMs",
 	}
 	o = append(o, c)
 	c = v1alpha1.ConfigCreate{
-		Name:  "SegmentBytes",
+		Name:  "segment.bytes",
 		Value: "mySegmentBytes",
 	}
 	o = append(o, c)
 	c = v1alpha1.ConfigCreate{
-		Name:  "SegmentIndexBytes",
+		Name:  "segment.index.bytes",
 		Value: "mySegmentIndexBytes",
 	}
 	o = append(o, c)
 	c = v1alpha1.ConfigCreate{
-		Name:  "SegmentMs",
+		Name:  "segment.ms",
 		Value: "mySegmentMs",
 	}
 	o = append(o, c)
@@ -252,37 +247,32 @@ func generateTestarv1ConfigCreate() []arv1.ConfigCreate {
 	o := []arv1.ConfigCreate{}
 
 	c := arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("CleanupPolicy"),
+		Name:  reference.ToPtrValue("cleanup.policy"),
 		Value: reference.ToPtrValue("myCleanupPolicy"),
 	}
 	o = append(o, c)
 	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("MinInsyncReplicas"),
-		Value: reference.ToPtrValue("myMinInsyncReplicas"),
-	}
-	o = append(o, c)
-	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("RetentionBytes"),
+		Name:  reference.ToPtrValue("retention.bytes"),
 		Value: reference.ToPtrValue("myRetentionBytes"),
 	}
 	o = append(o, c)
 	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("RetentionMs"),
+		Name:  reference.ToPtrValue("retention.ms"),
 		Value: reference.ToPtrValue("myRetentionMs"),
 	}
 	o = append(o, c)
 	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("SegmentBytes"),
+		Name:  reference.ToPtrValue("segment.bytes"),
 		Value: reference.ToPtrValue("mySegmentBytes"),
 	}
 	o = append(o, c)
 	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("SegmentIndexBytes"),
+		Name:  reference.ToPtrValue("segment.index.bytes"),
 		Value: reference.ToPtrValue("mySegmentIndexBytes"),
 	}
 	o = append(o, c)
 	c = arv1.ConfigCreate{
-		Name:  reference.ToPtrValue("SegmentMs"),
+		Name:  reference.ToPtrValue("segment.ms"),
 		Value: reference.ToPtrValue("mySegmentMs"),
 	}
 	o = append(o, c)
@@ -307,43 +297,37 @@ func generateTestarv1ConfigUpdate() []arv1.ConfigUpdate {
 	o := []arv1.ConfigUpdate{}
 
 	c := arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("CleanupPolicy"),
+		Name:           reference.ToPtrValue("cleanup.policy"),
 		Value:          reference.ToPtrValue("myCleanupPolicy"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
 	o = append(o, c)
 	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("MinInsyncReplicas"),
-		Value:          reference.ToPtrValue("myMinInsyncReplicas"),
-		ResetToDefault: ibmc.BoolPtr(false),
-	}
-	o = append(o, c)
-	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("RetentionBytes"),
+		Name:           reference.ToPtrValue("retention.bytes"),
 		Value:          reference.ToPtrValue("myRetentionBytes"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
 	o = append(o, c)
 	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("RetentionMs"),
+		Name:           reference.ToPtrValue("retention.ms"),
 		Value:          reference.ToPtrValue("myRetentionMs"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
 	o = append(o, c)
 	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("SegmentBytes"),
+		Name:           reference.ToPtrValue("segment.bytes"),
 		Value:          reference.ToPtrValue("mySegmentBytes"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
 	o = append(o, c)
 	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("SegmentIndexBytes"),
+		Name:           reference.ToPtrValue("segment.index.bytes"),
 		Value:          reference.ToPtrValue("mySegmentIndexBytes"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
 	o = append(o, c)
 	c = arv1.ConfigUpdate{
-		Name:           reference.ToPtrValue("SegmentMs"),
+		Name:           reference.ToPtrValue("segment.ms"),
 		Value:          reference.ToPtrValue("mySegmentMs"),
 		ResetToDefault: ibmc.BoolPtr(false),
 	}
@@ -409,7 +393,7 @@ func TestGenerateUpdateTopicOptions(t *testing.T) {
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			r := &arv1.UpdateTopicOptions{}
-			GenerateUpdateTopicOptions(tc.args.params, r)
+			GenerateUpdateTopicOptions(ibmc.Int64Ptr(1), tc.args.params, r)
 			if diff := cmp.Diff(tc.want.instance, r); diff != "" {
 				t.Errorf("GenerateUpdateTopicOptions(...): -want, +got:\n%s", diff)
 			}
