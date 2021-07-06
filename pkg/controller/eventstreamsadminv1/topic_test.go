@@ -128,11 +128,6 @@ func generateTestv1alpha1ConfigCreate() []v1alpha1.ConfigCreate {
 		Value: "myCleanupPolicy",
 	}
 	o = append(o, c)
-	// c = v1alpha1.ConfigCreate{
-	// 	Name:  "MinInsyncReplicas",
-	// 	Value: "myMinInsyncReplicas",
-	// }
-	// o = append(o, c)
 	c = v1alpha1.ConfigCreate{
 		Name:  "retention.bytes",
 		Value: "myRetentionBytes",
@@ -519,10 +514,6 @@ func TestTopicCreate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						// if r.Method == http.MethodGet {
-						// 	// listResourceInstancesNoItems(w, r) I don't think this applies for Topics, but I am not sure ??
-						// 	return
-						// }
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -545,17 +536,6 @@ func TestTopicCreate(t *testing.T) {
 				err: nil,
 			},
 		},
-		// I modeled this test after the access group test and not the resource instance or resource key test ??
-		// if r.Method == http.MethodGet {
-		// 	listResourceInstancesNoItems(w, r)
-		// 	return
-		// }
-
-		// b := map[string]interface{}{
-		// 	"message":     errNoRCDep,
-		// 	"status_code": 400,
-		// }
-		// those tests used the above code which I'm not sure applied to Topics ??
 		"Failed": {
 			handlers: []handler{
 				{
@@ -761,9 +741,6 @@ func TestTopicUpdate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						// this works because there are two http requests (one for get and one for update),
-						// so on the update call it just returns so it doesn't create another instance
-						// but no error reporting for right now ??
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff == "" {
 							return
 						}
@@ -789,7 +766,6 @@ func TestTopicUpdate(t *testing.T) {
 				{
 					path: "/",
 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						// this works its called twice, but no error reporting for right now ??
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff == "" {
 							return
 						}
@@ -804,9 +780,7 @@ func TestTopicUpdate(t *testing.T) {
 				mg: topic(tWithSpec(*tParams())),
 			},
 			want: want{
-				mg: topic(tWithSpec(*tParams())),
-				// err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdTopic),
-				// topic is gotten first and then updated so the bad request is on getting the topic (not updating the topic) could potentially change this ??
+				mg:  topic(tWithSpec(*tParams())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetTopicFailed),
 			},
 		},
