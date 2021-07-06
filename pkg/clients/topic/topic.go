@@ -45,7 +45,6 @@ func LateInitializeSpec(spec *v1alpha1.TopicParameters, in *arv1.TopicDetail) er
 		spec.PartitionCount = in.Partitions
 	}
 
-	// this works but it still updates configs everytime ?? could potentially optimize but would be difficult and probably increase cyclomatic complexity ??
 	spec.Configs = Generatev1alpha1ConfigCreateLateInitializeSpec(spec.Configs, in.Configs)
 
 	return nil
