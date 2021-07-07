@@ -1,0 +1,31 @@
+apiVersion: eventstreamsadminv1.ibmcloud.crossplane.io/v1alpha1
+kind: Topic
+metadata:
+  name: mytopic
+spec:
+  forProvider:
+    name: mytopic
+    kafkaAdminUrl: https://example.eventstreams.cloud.ibm.com
+    partitions: 1
+    partitionCount: 1
+    configs: 
+      -
+        name: cleanup.policy
+        value: compact
+      -
+        name: segment.ms
+        value: '86400002'
+      -
+        name: retention.bytes
+        value: '104857599'
+      -
+        name: retention.ms
+        value: '86400002'
+      -
+        name: segment.bytes
+        value: '536870822'
+      -
+        name: segment.index.bytes
+        value: '102422'
+  providerConfigRef:
+    name: ibm-cloud

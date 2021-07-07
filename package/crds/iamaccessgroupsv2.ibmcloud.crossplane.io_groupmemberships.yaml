@@ -34,13 +34,18 @@ spec:
     name: v1alpha1
     schema:
       openAPIV3Schema:
-        description: A GroupMembership represents an instance of an IAM policy on IBM Cloud
+        description: A GroupMembership represents an instance of an IAM policy on
+          IBM Cloud
         properties:
           apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
             type: string
           kind:
-            description: 'Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
             type: string
           metadata:
             type: object
@@ -48,13 +53,17 @@ spec:
             description: A GroupMembershipSpec defines the desired state of a GroupMembership.
             properties:
               deletionPolicy:
-                description: DeletionPolicy specifies what will happen to the underlying external when this managed resource is deleted - either "Delete" or "Orphan" the external resource. The "Delete" policy is the default when no policy is specified.
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
                 enum:
                 - Orphan
                 - Delete
                 type: string
               forProvider:
-                description: GroupMembershipParameters are the configurable fields of a GroupMembership.
+                description: GroupMembershipParameters are the configurable fields
+                  of a GroupMembership.
                 properties:
                   accessGroupId:
                     description: The Access Group identifier.
@@ -72,24 +81,28 @@ spec:
                     description: Selector for AccessGroupID
                     properties:
                       matchControllerRef:
-                        description: MatchControllerRef ensures an object with the same controller reference as the selecting object is selected.
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
                         type: boolean
                       matchLabels:
                         additionalProperties:
                           type: string
-                        description: MatchLabels ensures an object with matching labels is selected.
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
                         type: object
                     type: object
                   members:
                     description: An array of member objects to add to an access group.
                     items:
-                      description: 'AddGroupMembersRequestMembersItem : AddGroupMembersRequestMembersItem struct'
+                      description: 'AddGroupMembersRequestMembersItem : AddGroupMembersRequestMembersItem
+                        struct'
                       properties:
                         iamId:
                           description: The IBMid or Service Id of the member.
                           type: string
                         type:
-                          description: The type of the member, must be either "user" or "service".
+                          description: The type of the member, must be either "user"
+                            or "service".
                           type: string
                       required:
                       - iamId
@@ -103,7 +116,9 @@ spec:
                 - members
                 type: object
               providerConfigRef:
-                description: ProviderConfigReference specifies how the provider that will be used to create, observe, update, and delete this managed resource should be configured.
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -112,7 +127,9 @@ spec:
                 - name
                 type: object
               providerRef:
-                description: 'ProviderReference specifies the provider that will be used to create, observe, update, and delete this managed resource. Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
                 properties:
                   name:
                     description: Name of the referenced object.
@@ -121,7 +138,11 @@ spec:
                 - name
                 type: object
               writeConnectionSecretToRef:
-                description: WriteConnectionSecretToReference specifies the namespace and name of a Secret to which any connection details for this managed resource should be written. Connection details frequently include the endpoint, username, and password required to connect to the managed resource.
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
                 properties:
                   name:
                     description: Name of the secret.
@@ -137,28 +158,34 @@ spec:
             - forProvider
             type: object
           status:
-            description: A GroupMembershipStatus represents the observed state of a GroupMembership.
+            description: A GroupMembershipStatus represents the observed state of
+              a GroupMembership.
             properties:
               atProvider:
-                description: GroupMembershipObservation are the observable fields of a GroupMembership.
+                description: GroupMembershipObservation are the observable fields
+                  of a GroupMembership.
                 properties:
                   members:
                     description: The members of an access group.
                     items:
-                      description: 'ListGroupMembersResponseMember : A single member of an access group in a list.'
+                      description: 'ListGroupMembersResponseMember : A single member
+                        of an access group in a list.'
                       properties:
                         createdAt:
                           description: The timestamp the membership was created at.
                           format: date-time
                           type: string
                         createdById:
-                          description: The `iam_id` of the entity that created the membership.
+                          description: The `iam_id` of the entity that created the
+                            membership.
                           type: string
                         description:
-                          description: If the member type is service, this is the service id's description.
+                          description: If the member type is service, this is the
+                            service id's description.
                           type: string
                         email:
-                          description: If the member type is user, this is the user's email.
+                          description: If the member type is user, this is the user's
+                            email.
                           type: string
                         href:
                           description: A url to the given member resource.
@@ -184,20 +211,25 @@ spec:
                   description: A Condition that may apply to a resource.
                   properties:
                     lastTransitionTime:
-                      description: LastTransitionTime is the last time this condition transitioned from one status to another.
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
                       format: date-time
                       type: string
                     message:
-                      description: A Message containing details about this condition's last transition from one status to another, if any.
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
                       type: string
                     reason:
-                      description: A Reason for this condition's last transition from one status to another.
+                      description: A Reason for this condition's last transition from
+                        one status to another.
                       type: string
                     status:
-                      description: Status of this condition; is it currently True, False, or Unknown?
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
                       type: string
                     type:
-                      description: Type of this condition. At most one of each condition type may apply to a resource at any point in time.
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
                       type: string
                   required:
                   - lastTransitionTime

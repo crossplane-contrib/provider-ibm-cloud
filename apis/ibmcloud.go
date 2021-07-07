@@ -20,6 +20,7 @@ package apis
 import (
 	"k8s.io/apimachinery/pkg/runtime"
 
+	esav1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/eventstreamsadminv1/v1alpha1"
 	iamagv2 "github.com/crossplane-contrib/provider-ibm-cloud/apis/iamaccessgroupsv2/v1alpha1"
 	iampmv1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/iampolicymanagementv1/v1alpha1"
 	icdv5 "github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
@@ -35,6 +36,7 @@ func init() {
 		icdv5.SchemeBuilder.AddToScheme,
 		iampmv1.SchemeBuilder.AddToScheme,
 		iamagv2.SchemeBuilder.AddToScheme,
+		esav1.SchemeBuilder.AddToScheme,
 	)
 }
 

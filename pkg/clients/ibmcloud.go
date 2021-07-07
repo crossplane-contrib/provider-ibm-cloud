@@ -36,6 +36,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
@@ -66,6 +67,7 @@ const (
 	errParseTok           = "error parsig IAM access token"
 	errNotFound           = "Not Found"
 	errFailedToFind       = "Failed to find"
+	errUnableToGet        = "unable to get"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -229,6 +231,17 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	arv1Opts := &arv1.AdminrestV1Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+
+	cs.adminrestV1, err = arv1.NewAdminrestV1(arv1Opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
 	return &cs, err
 }
 
@@ -241,6 +254,7 @@ type ClientSession interface {
 	IbmCloudDatabasesV5() *icdv5.IbmCloudDatabasesV5
 	IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1
 	IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2
+	AdminrestV1() *arv1.AdminrestV1
 }
 
 type clientSessionImpl struct {
@@ -251,6 +265,7 @@ type clientSessionImpl struct {
 	ibmCloudDatabasesV5   *icdv5.IbmCloudDatabasesV5
 	iamPolicyManagementV1 *iampmv1.IamPolicyManagementV1
 	iamAccessGroupsV2     *iamagv2.IamAccessGroupsV2
+	adminrestV1           *arv1.AdminrestV1
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -279,6 +294,10 @@ func (c *clientSessionImpl) IamPolicyManagementV1() *iampmv1.IamPolicyManagement
 
 func (c *clientSessionImpl) IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2 {
 	return c.iamAccessGroupsV2
+}
+
+func (c *clientSessionImpl) AdminrestV1() *arv1.AdminrestV1 {
+	return c.adminrestV1
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array
@@ -468,7 +487,8 @@ func IsResourceInactive(err error) bool {
 // IsResourceNotFound returns true if the SDK returns a not found error
 func IsResourceNotFound(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
-		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind))
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted
