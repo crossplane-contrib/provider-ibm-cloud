@@ -25,26 +25,27 @@ import (
 // CloudantDatabaseParameters are the configurable fields of a CloudantDatabase.
 type CloudantDatabaseParameters struct {
 
+	// should this json tag be 'json:"db"' ??
 	// The name of the database
 	// +immutable
 	Db string `validate:"required,ne="`
 
 	// Query parameter to specify whether to enable database partitions when creating a database.
-	// +immutable not doing update so these are immutable right ??
+	// +immutable
 	// +optional
 	Partitioned *bool `json:"partitioned,omitempty"`
 
 	// The number of shards in the database. Each shard is a partition of the hash value range. Default is 8, unless
 	// overridden in the `cluster config`.
-	// +immutable not doing update so these are immutable right ??
+	// +immutable
 	// +optional
 	Q *int64 `json:"q,omitempty"`
 }
 
 // CloudantDatabaseObservation are the observable fields of a CloudantDatabase.
+// are the json tags correct or should they all be omitempty for observation ??
 type CloudantDatabaseObservation struct {
 
-	// should the json be omitempty here and all other validate:"required" in observation ??
 	// Schema for database cluster information.
 	Cluster *DatabaseInformationCluster `json:"cluster" validate:"required"`
 
@@ -56,10 +57,6 @@ type CloudantDatabaseObservation struct {
 
 	// An opaque string that describes the compaction state of the database.
 	CompactedSeq string `json:"compactedSeq,omitempty"`
-
-	// name is in parameters so it shouldn't be here right ??
-	// // The name of the database.
-	// DbName *string `json:"db_name" validate:"required"`
 
 	// The version of the physical format used for the data when it is stored on disk.
 	DiskFormatVersion int64 `json:"diskFormatVersion" validate:"required"`
@@ -91,10 +88,6 @@ type CloudantDatabaseObservation struct {
 type DatabaseInformationCluster struct {
 	// Schema for the number of replicas of a database in a cluster.
 	N int64 `json:"n" validate:"required"`
-
-	// shards is in parameters so it shouldn't be here right ??
-	// // Schema for the number of shards in a database. Each shard is a partition of the hash value range.
-	// Q int64 `json:"q" validate:"required"`
 
 	// Read quorum. The number of consistent copies of a document that need to be read before a successful reply.
 	R int64 `json:"r" validate:"required"`
