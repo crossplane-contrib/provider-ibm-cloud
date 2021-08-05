@@ -78,8 +78,8 @@ type CloudantDatabaseObservation struct {
 	// updates.
 	UpdateSeq string `json:"updateSeq,omitempty"`
 
+	// uuid in tag should be all lowercase right ??
 	// The UUID of the database.
-	// uuid in tag should be all lowercase right ?? 
 	UUID string `json:"uuid,omitempty"`
 }
 
@@ -96,7 +96,7 @@ type DatabaseInformationCluster struct {
 }
 
 // DatabaseInformationProps : Schema for database properties.
-// this shouldn't be included because its in parameters right ?? 
+// this shouldn't be included because its in parameters right ??
 type DatabaseInformationProps struct {
 	// The value is `true` for a partitioned database.
 	Partitioned bool `json:"partitioned,omitempty"`

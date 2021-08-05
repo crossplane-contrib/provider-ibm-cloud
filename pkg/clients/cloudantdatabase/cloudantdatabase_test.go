@@ -178,7 +178,7 @@ func TestGenerateCreateCloudantDatabaseOptions(t *testing.T) {
 			r := &cv1.PutDatabaseOptions{}
 			GenerateCreateCloudantDatabaseOptions(tc.args.params, r)
 			if diff := cmp.Diff(tc.want.instance, r); diff != "" {
-				t.Errorf("GenerateCreateTopicOptions(...): -want, +got:\n%s", diff)
+				t.Errorf("GenerateCreateCloudantDatabaseOptions(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -229,7 +229,7 @@ func TestLateInitializeSpecs(t *testing.T) {
 }
 
 // Test GenerateObservation method
-func TestTopicGenerateObservation(t *testing.T) {
+func TestCloudantDatabaseGenerateObservation(t *testing.T) {
 	type args struct {
 		instance *cv1.DatabaseInformation
 	}

@@ -155,7 +155,7 @@ func getBearerFromAccessToken(aTok string) (string, error) {
 }
 
 // NewClient returns an IBM API client
-func NewClient(opts ClientOptions) (ClientSession, error) {
+func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 	var err error
 	cs := clientSessionImpl{}
 
