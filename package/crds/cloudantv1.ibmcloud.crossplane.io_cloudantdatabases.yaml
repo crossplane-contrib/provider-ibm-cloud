@@ -1,0 +1,262 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: cloudantdatabases.cloudantv1.ibmcloud.crossplane.io
+spec:
+  group: cloudantv1.ibmcloud.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
+    kind: CloudantDatabase
+    listKind: CloudantDatabaseList
+    plural: cloudantdatabases
+    singular: cloudantdatabase
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: A CloudantDatabase represents an instance of a managed service
+          on IBM Cloud
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: A CloudantDatabaseSpec defines the desired state of a CloudantDatabase.
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: CloudantDatabaseParameters are the configurable fields
+                  of a CloudantDatabase.
+                properties:
+                  db:
+                    description: The name of the database
+                    type: string
+                  partitioned:
+                    description: Query parameter to specify whether to enable database
+                      partitions when creating a database.
+                    type: boolean
+                  q:
+                    description: The number of shards in the database. Each shard
+                      is a partition of the hash value range. Default is 8, unless
+                      overridden in the `cluster config`.
+                    format: int64
+                    type: integer
+                required:
+                - db
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: A CloudantDatabaseStatus represents the observed state of
+              a CloudantDatabase.
+            properties:
+              atProvider:
+                description: CloudantDatabaseObservation are the observable fields
+                  of a CloudantDatabase.
+                properties:
+                  cluster:
+                    description: Schema for database cluster information.
+                    properties:
+                      "n":
+                        description: Schema for the number of replicas of a database
+                          in a cluster.
+                        format: int64
+                        type: integer
+                      r:
+                        description: Read quorum. The number of consistent copies
+                          of a document that need to be read before a successful reply.
+                        format: int64
+                        type: integer
+                      w:
+                        description: Write quorum. The number of copies of a document
+                          that need to be written before a successful reply.
+                        format: int64
+                        type: integer
+                    type: object
+                  committedUpdateSeq:
+                    description: An opaque string that describes the committed state
+                      of the database.
+                    type: string
+                  compactRunning:
+                    description: True if the database compaction routine is operating
+                      on this database.
+                    type: boolean
+                  compactedSeq:
+                    description: An opaque string that describes the compaction state
+                      of the database.
+                    type: string
+                  diskFormatVersion:
+                    description: The version of the physical format used for the data
+                      when it is stored on disk.
+                    format: int64
+                    type: integer
+                  docCount:
+                    description: A count of the documents in the specified database.
+                    format: int64
+                    type: integer
+                  docDelCount:
+                    description: Number of deleted documents.
+                    format: int64
+                    type: integer
+                  engine:
+                    description: The engine used for the database.
+                    type: string
+                  props:
+                    description: Schema for database properties.
+                    properties:
+                      partitioned:
+                        description: The value is `true` for a partitioned database.
+                        type: boolean
+                    type: object
+                  sizes:
+                    description: Schema for size information of content.
+                    properties:
+                      active:
+                        description: The active size of the content, in bytes.
+                        format: int64
+                        type: integer
+                      external:
+                        description: The total uncompressed size of the content, in
+                          bytes.
+                        format: int64
+                        type: integer
+                      file:
+                        description: The total size of the content as stored on disk,
+                          in bytes.
+                        format: int64
+                        type: integer
+                    type: object
+                  updateSeq:
+                    description: An opaque string that describes the state of the
+                      database. Do not rely on this string for counting the number
+                      of updates.
+                    type: string
+                  uuid:
+                    description: The UUID of the database. uuid in tag should be all
+                      lowercase right ??
+                    type: string
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

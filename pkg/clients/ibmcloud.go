@@ -36,6 +36,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	cv1 "github.com/IBM/cloudant-go-sdk/cloudantv1"
 	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
@@ -242,6 +243,17 @@ func NewClient(opts ClientOptions) (ClientSession, error) {
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	cv1Opts := &cv1.CloudantV1Options{
+		ServiceName:   opts.ServiceName,
+		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
+	}
+
+	cs.cloudantV1, err = cv1.NewCloudantV1(cv1Opts)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
 	return &cs, err
 }
 
@@ -255,6 +267,7 @@ type ClientSession interface {
 	IamPolicyManagementV1() *iampmv1.IamPolicyManagementV1
 	IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2
 	AdminrestV1() *arv1.AdminrestV1
+	CloudantV1() *cv1.CloudantV1
 }
 
 type clientSessionImpl struct {
@@ -266,6 +279,7 @@ type clientSessionImpl struct {
 	iamPolicyManagementV1 *iampmv1.IamPolicyManagementV1
 	iamAccessGroupsV2     *iamagv2.IamAccessGroupsV2
 	adminrestV1           *arv1.AdminrestV1
+	cloudantV1            *cv1.CloudantV1
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -298,6 +312,10 @@ func (c *clientSessionImpl) IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2 {
 
 func (c *clientSessionImpl) AdminrestV1() *arv1.AdminrestV1 {
 	return c.adminrestV1
+}
+
+func (c *clientSessionImpl) CloudantV1() *cv1.CloudantV1 {
+	return c.cloudantV1
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array
