@@ -65,6 +65,36 @@ spec:
                 description: CloudantDatabaseParameters are the configurable fields
                   of a CloudantDatabase.
                 properties:
+                  cloudantAdminUrl:
+                    description: should I include the selector like for topics ??
+                      and instead of kafkaadminurl what should I call them ?? CloudantAdminURL
+                      is the URL to the Cloudant instance admin endpoint
+                    type: string
+                  cloudantAdminUrlRef:
+                    description: A reference to the Cloudant Secret Key used to set
+                      CloudantAdminURL
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  cloudantAdminUrlSelector:
+                    description: SourceSelector selects a reference to a resource
+                      used to set Source
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
                   db:
                     description: The name of the database
                     type: string

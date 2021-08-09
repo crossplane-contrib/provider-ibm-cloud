@@ -5,5 +5,6 @@ metadata:
 spec:
   forProvider:
     db: mycloudantdatabase
+    cloudantAdminUrl: https://0f8760bd-07b8-4af3-a89b-504ada945da7-bluemix.cloudantnosqldb.appdomain.cloud
   providerConfigRef:
     name: ibm-cloud

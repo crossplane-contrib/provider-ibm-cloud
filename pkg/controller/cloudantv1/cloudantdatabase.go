@@ -86,6 +86,13 @@ func (c *cloudantdatabaseConnector) Connect(ctx context.Context, mg resource.Man
 		return nil, errors.Wrap(err, ibmc.ErrGetAuth)
 	}
 
+	cr, ok := mg.(*v1alpha1.CloudantDatabase)
+	if !ok {
+		return nil, errors.New(errNotCloudantDatabase)
+	}
+
+	opts.URL = reference.FromPtrValue(cr.Spec.ForProvider.CloudantAdminURL)
+
 	service, err := c.clientFn(opts)
 	if err != nil {
 		return nil, errors.Wrap(err, ibmc.ErrNewClient)
@@ -194,7 +201,6 @@ func (c *cloudantdatabaseExternal) Delete(ctx context.Context, mg resource.Manag
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteCloudantDatabase)
 	}
-
 	cr.Status.AtProvider.State = "terminating"
 
 	return nil

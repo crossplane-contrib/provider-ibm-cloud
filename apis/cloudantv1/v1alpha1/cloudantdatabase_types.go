@@ -29,6 +29,22 @@ type CloudantDatabaseParameters struct {
 	// +immutable
 	Db string `json:"db"`
 
+	// should I include the selector like for topics ?? and instead of kafkaadminurl what should I call them ??
+	// CloudantAdminURL is the URL to the Cloudant instance admin endpoint
+	// +immutable
+	// +optional
+	CloudantAdminURL *string `json:"cloudantAdminUrl,omitempty"`
+
+	// A reference to the Cloudant Secret Key used to set CloudantAdminURL
+	// +immutable
+	// +optional
+	CloudantAdminURLRef *runtimev1alpha1.Reference `json:"cloudantAdminUrlRef,omitempty"`
+
+	// SourceSelector selects a reference to a resource used to set Source
+	// +immutable
+	// +optional
+	CloudantAdminURLSelector *runtimev1alpha1.Selector `json:"cloudantAdminUrlSelector,omitempty"`
+
 	// Query parameter to specify whether to enable database partitions when creating a database.
 	// +immutable
 	// +optional
