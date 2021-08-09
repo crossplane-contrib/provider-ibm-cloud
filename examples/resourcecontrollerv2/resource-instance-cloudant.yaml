@@ -7,7 +7,7 @@ spec:
     name: mycloudant
     target: us-south
     serviceName: cloudantnosqldb
-    resourcePlanName: standard
+    resourcePlanName: lite
     tags:
       - dev
   providerConfigRef:

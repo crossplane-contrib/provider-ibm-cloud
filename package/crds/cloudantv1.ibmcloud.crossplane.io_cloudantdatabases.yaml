@@ -178,13 +178,6 @@ spec:
                   engine:
                     description: The engine used for the database.
                     type: string
-                  props:
-                    description: Schema for database properties.
-                    properties:
-                      partitioned:
-                        description: The value is `true` for a partitioned database.
-                        type: boolean
-                    type: object
                   sizes:
                     description: Schema for size information of content.
                     properties:
@@ -203,14 +196,17 @@ spec:
                         format: int64
                         type: integer
                     type: object
+                  state:
+                    description: The current state of the cloudantdatabase. For example,
+                      if the cloudantdatabase is deleted, it will return terminating.
+                    type: string
                   updateSeq:
                     description: An opaque string that describes the state of the
                       database. Do not rely on this string for counting the number
                       of updates.
                     type: string
                   uuid:
-                    description: The UUID of the database. uuid in tag should be all
-                      lowercase right ??
+                    description: The UUID of the database.
                     type: string
                 type: object
               conditions:

@@ -32,7 +32,7 @@ import (
 
 func params(m ...func(*v1alpha1.CloudantDatabaseParameters)) *v1alpha1.CloudantDatabaseParameters {
 	p := &v1alpha1.CloudantDatabaseParameters{
-		Db:          "myDatabase",
+		Db:          "mydatabase",
 		Partitioned: ibmc.BoolPtr(false),
 		Q:           ibmc.Int64Ptr(int64(2)),
 	}
@@ -53,11 +53,9 @@ func observation(m ...func(*v1alpha1.CloudantDatabaseObservation)) *v1alpha1.Clo
 		DocCount:           int64(2),
 		DocDelCount:        int64(2),
 		Engine:             "myEngine",
-		// not including props for now because I don't think it should be in the API ??
-		// Props: in.Props,
-		Sizes:     generateTestv1alpha1ContentInformationSizes(),
-		UpdateSeq: "myUpdateSeq",
-		UUID:      "myUUID",
+		Sizes:              generateTestv1alpha1ContentInformationSizes(),
+		UpdateSeq:          "myUpdateSeq",
+		UUID:               "myUUID",
 	}
 
 	for _, f := range m {
@@ -90,7 +88,7 @@ func instance(m ...func(*cv1.DatabaseInformation)) *cv1.DatabaseInformation {
 		CommittedUpdateSeq: reference.ToPtrValue("myCommittedUpdateSeq"),
 		CompactRunning:     ibmc.BoolPtr(false),
 		CompactedSeq:       reference.ToPtrValue("myCompactedSeq"),
-		DbName:             reference.ToPtrValue("myDatabase"),
+		DbName:             reference.ToPtrValue("mydatabase"),
 		DiskFormatVersion:  ibmc.Int64Ptr(int64(2)),
 		DocCount:           ibmc.Int64Ptr(int64(2)),
 		DocDelCount:        ibmc.Int64Ptr(int64(2)),
@@ -135,7 +133,7 @@ func generateTestcv1ContentInformationSizes() *cv1.ContentInformationSizes {
 
 func instanceOpts(m ...func(*cv1.PutDatabaseOptions)) *cv1.PutDatabaseOptions {
 	i := &cv1.PutDatabaseOptions{
-		Db:          reference.ToPtrValue("myDatabase"),
+		Db:          reference.ToPtrValue("mydatabase"),
 		Partitioned: ibmc.BoolPtr(false),
 		Q:           ibmc.Int64Ptr(int64(2)),
 	}

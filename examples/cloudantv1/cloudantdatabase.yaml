@@ -1,0 +1,9 @@
+apiVersion: cloudantv1.ibmcloud.crossplane.io/v1alpha1
+kind: CloudantDatabase
+metadata:
+  name: mycloudantdatabase
+spec:
+  forProvider:
+    db: mycloudantdatabase
+  providerConfigRef:
+    name: ibm-cloud

@@ -119,23 +119,11 @@ func (c *cloudantdatabaseExternal) Observe(ctx context.Context, mg resource.Mana
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetCloudantDatabaseFailed)
 	}
 
-	// is updateSeq the correct thing to use for state ??
-	// is there anything returned in databaseinformation that could be used for state or 
-	// should I define state similar to the way I did for topic
-	// I don't know what the options for updateseq are right now so I'm leaving "active",
-	// "inactive", and "provisioning", ??
-	if !(reference.FromPtrValue(instance.UpdateSeq) == "active" ||
-		reference.FromPtrValue(instance.UpdateSeq) == "inactive" ||
-		reference.FromPtrValue(instance.UpdateSeq) == "provisioning") {
-		return managed.ExternalObservation{ResourceExists: false}, nil
-	}
-
 	currentSpec := cr.Spec.ForProvider.DeepCopy()
 	if err = ibmccdb.LateInitializeSpec(&cr.Spec.ForProvider, instance); err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
 	}
 	if !cmp.Equal(currentSpec, &cr.Spec.ForProvider) {
-		// if there is no update what should be called here ??
 		if err := c.kube.Update(ctx, cr); err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
 		}
@@ -146,18 +134,17 @@ func (c *cloudantdatabaseExternal) Observe(ctx context.Context, mg resource.Mana
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 	}
 
-	switch cr.Status.AtProvider.UpdateSeq {
+	cr.Status.AtProvider.State = "active"
+
+	switch cr.Status.AtProvider.State {
 	case "active":
 		cr.Status.SetConditions(runtimev1alpha1.Available())
-	case "inactive":
-		cr.Status.SetConditions(runtimev1alpha1.Creating())
-	case "provisioning":
-		cr.Status.SetConditions(runtimev1alpha1.Creating())
 	default:
 		cr.Status.SetConditions(runtimev1alpha1.Unavailable())
 	}
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
+	// have to ensure isuptodate always return true ?? just a note
 	upToDate, err := ibmccdb.IsUpToDate(&cr.Spec.ForProvider, instance, c.logger)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrCheckUpToDate)
@@ -192,7 +179,6 @@ func (c *cloudantdatabaseExternal) Create(ctx context.Context, mg resource.Manag
 }
 
 func (c *cloudantdatabaseExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	// what should I do here if there is no update ??
 	return managed.ExternalUpdate{}, nil
 }
 
@@ -208,6 +194,8 @@ func (c *cloudantdatabaseExternal) Delete(ctx context.Context, mg resource.Manag
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteCloudantDatabase)
 	}
+
+	cr.Status.AtProvider.State = "terminating"
 
 	return nil
 }

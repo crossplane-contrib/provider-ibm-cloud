@@ -63,11 +63,9 @@ func GenerateObservation(in *cv1.DatabaseInformation) (v1alpha1.CloudantDatabase
 		DocCount:           ibmc.Int64Value(in.DocCount),
 		DocDelCount:        ibmc.Int64Value(in.DocDelCount),
 		Engine:             reference.FromPtrValue(in.Engine),
-		// not including props for now because I don't think it should be in the API ??
-		// Props: in.Props,
-		Sizes:     Generatev1alpha1ContentInformationSizes(in.Sizes),
-		UpdateSeq: reference.FromPtrValue(in.UpdateSeq),
-		UUID:      reference.FromPtrValue(in.UUID),
+		Sizes:              Generatev1alpha1ContentInformationSizes(in.Sizes),
+		UpdateSeq:          reference.FromPtrValue(in.UpdateSeq),
+		UUID:               reference.FromPtrValue(in.UUID),
 	}
 	return o, nil
 }
@@ -105,7 +103,7 @@ func IsUpToDate(in *v1alpha1.CloudantDatabaseParameters, observed *cv1.DatabaseI
 	if err != nil {
 		return false, err
 	}
-	// is this right ??
+
 	diff := (cmp.Diff(desired, actual,
 		cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(v1alpha1.CloudantDatabaseParameters{}), cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})))

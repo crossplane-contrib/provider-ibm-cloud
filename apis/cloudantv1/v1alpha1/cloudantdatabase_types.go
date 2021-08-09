@@ -68,9 +68,6 @@ type CloudantDatabaseObservation struct {
 	// The engine used for the database.
 	Engine string `json:"engine,omitempty"`
 
-	// Schema for database properties.
-	Props *DatabaseInformationProps `json:"props,omitempty"`
-
 	// Schema for size information of content.
 	Sizes *ContentInformationSizes `json:"sizes,omitempty"`
 
@@ -78,9 +75,11 @@ type CloudantDatabaseObservation struct {
 	// updates.
 	UpdateSeq string `json:"updateSeq,omitempty"`
 
-	// uuid in tag should be all lowercase right ??
 	// The UUID of the database.
 	UUID string `json:"uuid,omitempty"`
+
+	// The current state of the cloudantdatabase. For example, if the cloudantdatabase is deleted, it will return terminating.
+	State string `json:"state,omitempty"`
 }
 
 // DatabaseInformationCluster : Schema for database cluster information.
@@ -93,13 +92,6 @@ type DatabaseInformationCluster struct {
 
 	// Write quorum. The number of copies of a document that need to be written before a successful reply.
 	W int64 `json:"w,omitempty"`
-}
-
-// DatabaseInformationProps : Schema for database properties.
-// this shouldn't be included because its in parameters right ??
-type DatabaseInformationProps struct {
-	// The value is `true` for a partitioned database.
-	Partitioned bool `json:"partitioned,omitempty"`
 }
 
 // ContentInformationSizes : Schema for size information of content.
