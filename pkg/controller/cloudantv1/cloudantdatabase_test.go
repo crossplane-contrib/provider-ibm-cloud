@@ -513,120 +513,120 @@ func TestCloudantDatabaseCreate(t *testing.T) {
 	}
 }
 
-// func TestCloudantDatabaseDelete(t *testing.T) {
-// 	type args struct {
-// 		mg resource.Managed
-// 	}
-// 	type want struct {
-// 		mg  resource.Managed
-// 		err error
-// 	}
-// 	cases := map[string]struct {
-// 		handlers []handler
-// 		kube     client.Client
-// 		args     args
-// 		want     want
-// 	}{
-// 		"Successful": {
-// 			handlers: []handler{
-// 				{
-// 					path: "/",
-// 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-// 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 							t.Errorf("r: -want, +got:\n%s", diff)
-// 						}
-// 						w.Header().Set("Content-Type", "application/json")
-// 						w.WriteHeader(http.StatusAccepted)
-// 						_ = r.Body.Close()
-// 					},
-// 				},
-// 			},
-// 			args: args{
-// 				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
-// 			},
-// 			want: want{
-// 				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting()), cdbWithStatus(*cdbEmptyObservation(func(p *v1alpha1.CloudantDatabaseObservation) { p.State = "terminating" }))),
-// 				err: nil,
-// 			},
-// 		},
-// 		"AlreadyGone": {
-// 			handlers: []handler{
-// 				{
-// 					path: "/",
-// 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-// 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 							t.Errorf("r: -want, +got:\n%s", diff)
-// 						}
-// 						w.Header().Set("Content-Type", "application/json")
-// 						w.WriteHeader(http.StatusNotFound)
-// 						_ = r.Body.Close()
-// 					},
-// 				},
-// 			},
-// 			args: args{
-// 				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
-// 			},
-// 			want: want{
-// 				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting())),
-// 				err: nil,
-// 			},
-// 		},
-// 		"Failed": {
-// 			handlers: []handler{
-// 				{
-// 					path: "/",
-// 					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-// 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
-// 							t.Errorf("r: -want, +got:\n%s", diff)
-// 						}
-// 						w.Header().Set("Content-Type", "application/json")
-// 						w.WriteHeader(http.StatusBadRequest)
-// 						_ = r.Body.Close()
-// 					},
-// 				},
-// 			},
-// 			args: args{
-// 				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
-// 			},
-// 			want: want{
-// 				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting())),
-// 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteCloudantDatabase),
-// 			},
-// 		},
-// 	}
+func TestCloudantDatabaseDelete(t *testing.T) {
+	type args struct {
+		mg resource.Managed
+	}
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
+	cases := map[string]struct {
+		handlers []handler
+		kube     client.Client
+		args     args
+		want     want
+	}{
+		"Successful": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusAccepted)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
+			},
+			want: want{
+				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting()), cdbWithStatus(*cdbEmptyObservation(func(p *v1alpha1.CloudantDatabaseObservation) { p.State = "terminating" }))),
+				err: nil,
+			},
+		},
+		"AlreadyGone": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusNotFound)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
+			},
+			want: want{
+				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"Failed": {
+			handlers: []handler{
+				{
+					path: "/",
+					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+						_ = r.Body.Close()
+					},
+				},
+			},
+			args: args{
+				mg: cloudantdatabase(cdbWithExternalNameAnnotation(cdbName)),
+			},
+			want: want{
+				mg:  cloudantdatabase(cdbWithExternalNameAnnotation(cdbName), cdbWithConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteCloudantDatabase),
+			},
+		},
+	}
 
-// 	for name, tc := range cases {
-// 		t.Run(name, func(t *testing.T) {
-// 			mux := http.NewServeMux()
-// 			for _, h := range tc.handlers {
-// 				mux.HandleFunc(h.path, h.handlerFunc)
-// 			}
-// 			server := httptest.NewServer(mux)
-// 			defer server.Close()
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			mux := http.NewServeMux()
+			for _, h := range tc.handlers {
+				mux.HandleFunc(h.path, h.handlerFunc)
+			}
+			server := httptest.NewServer(mux)
+			defer server.Close()
 
-// 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-// 				BearerToken: bearerTok,
-// 			}}
-// 			mClient, _ := ibmc.NewClient(opts)
-// 			e := cloudantdatabaseExternal{
-// 				kube:   tc.kube,
-// 				client: mClient,
-// 				logger: logging.NewNopLogger(),
-// 			}
-// 			err := e.Delete(context.Background(), tc.args.mg)
-// 			if tc.want.err != nil && err != nil {
-// 				// the case where our mock server returns error.
-// 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-// 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 				}
-// 			} else {
-// 				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-// 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 				}
-// 			}
-// 			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
-// 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
-// 			}
-// 		})
-// 	}
-// }
+			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
+				BearerToken: bearerTok,
+			}}
+			mClient, _ := ibmc.NewClient(opts)
+			e := cloudantdatabaseExternal{
+				kube:   tc.kube,
+				client: mClient,
+				logger: logging.NewNopLogger(),
+			}
+			err := e.Delete(context.Background(), tc.args.mg)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error.
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			} else {
+				if diff := cmp.Diff(tc.want.err, err); diff != "" {
+					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				}
+			}
+			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}

@@ -96,6 +96,7 @@ func Generatev1alpha1ContentInformationSizes(in *cv1.ContentInformationSizes) *v
 	return o
 }
 
+// how should I ensure isuptodate always returns true, is this good enough ?? 
 // IsUpToDate checks whether current state is up-to-date compared to the given set of parameters.
 func IsUpToDate(in *v1alpha1.CloudantDatabaseParameters, observed *cv1.DatabaseInformation, l logging.Logger) (bool, error) {
 	desired := in.DeepCopy()

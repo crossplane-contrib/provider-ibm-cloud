@@ -1,0 +1,10 @@
+apiVersion: cloudantv1.ibmcloud.crossplane.io/v1alpha1
+kind: CloudantDatabase
+metadata:
+  name: mycloudantdatabase
+spec:
+  forProvider:
+    db: mycloudantdatabase
+    cloudantAdminUrl: https://example.cloudantnosqldb.appdomain.cloud
+  providerConfigRef:
+    name: ibm-cloud
