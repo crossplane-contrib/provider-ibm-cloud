@@ -29,7 +29,6 @@ type CloudantDatabaseParameters struct {
 	// +immutable
 	Db string `json:"db"`
 
-	// should I include the selector like for topics ?? and instead of kafkaadminurl what should I call them ??
 	// CloudantAdminURL is the URL to the Cloudant instance admin endpoint
 	// +immutable
 	// +optional

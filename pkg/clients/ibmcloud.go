@@ -59,17 +59,16 @@ const (
 	// DefaultICDEndpoint is the default endpoint for the ICD service
 	DefaultICDEndpoint = "https://api.us-south.databases.cloud.ibm.com/v5/ibm"
 
-	errTokNotFound    = "IAM access token key not found in provider config secret"
-	errGetSecret      = "cannot get credentials secret"
-	errGetTracker     = "error setting up provider config usage tracker"
-	errGetProviderCfg = "error getting provider config"
-	errNoSecret       = "no credentials secret reference was provided"
-	errInitClient     = "error initializing client"
-	errParseTok       = "error parsig IAM access token"
-	errNotFound       = "Not Found"
-	errFailedToFind   = "Failed to find"
-	errUnableToGet    = "unable to get"
-	// not sure if this is right ??
+	errTokNotFound        = "IAM access token key not found in provider config secret"
+	errGetSecret          = "cannot get credentials secret"
+	errGetTracker         = "error setting up provider config usage tracker"
+	errGetProviderCfg     = "error getting provider config"
+	errNoSecret           = "no credentials secret reference was provided"
+	errInitClient         = "error initializing client"
+	errParseTok           = "error parsig IAM access token"
+	errNotFound           = "Not Found"
+	errFailedToFind       = "Failed to find"
+	errUnableToGet        = "unable to get"
 	errNotFound2          = "not_found"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
@@ -509,7 +508,6 @@ func IsResourceNotFound(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet)) ||
-		// this could be wrong ??
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound2))
 }
 

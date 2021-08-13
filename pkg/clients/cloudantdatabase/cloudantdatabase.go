@@ -96,15 +96,14 @@ func Generatev1alpha1ContentInformationSizes(in *cv1.ContentInformationSizes) *v
 	return o
 }
 
-// how should I ensure isuptodate always returns true, is this good enough ?? 
 // IsUpToDate checks whether current state is up-to-date compared to the given set of parameters.
+// The testing needs more investigation
 func IsUpToDate(in *v1alpha1.CloudantDatabaseParameters, observed *cv1.DatabaseInformation, l logging.Logger) (bool, error) {
 	desired := in.DeepCopy()
 	actual, err := GenerateCloudantDatabaseParameters(observed)
 	if err != nil {
 		return false, err
 	}
-
 	diff := (cmp.Diff(desired, actual,
 		cmpopts.EquateEmpty(),
 		cmpopts.IgnoreFields(v1alpha1.CloudantDatabaseParameters{}, "CloudantAdminURL", "CloudantAdminURLRef", "CloudantAdminURLSelector"), cmpopts.IgnoreTypes(&runtimev1alpha1.Reference{}, &runtimev1alpha1.Selector{}, []runtimev1alpha1.Reference{})))
@@ -113,7 +112,6 @@ func IsUpToDate(in *v1alpha1.CloudantDatabaseParameters, observed *cv1.DatabaseI
 		l.Info("IsUpToDate", "Diff", diff)
 		return false, nil
 	}
-
 	return true, nil
 }
 

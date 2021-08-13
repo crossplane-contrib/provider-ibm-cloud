@@ -66,9 +66,8 @@ spec:
                   of a CloudantDatabase.
                 properties:
                   cloudantAdminUrl:
-                    description: should I include the selector like for topics ??
-                      and instead of kafkaadminurl what should I call them ?? CloudantAdminURL
-                      is the URL to the Cloudant instance admin endpoint
+                    description: CloudantAdminURL is the URL to the Cloudant instance
+                      admin endpoint
                     type: string
                   cloudantAdminUrlRef:
                     description: A reference to the Cloudant Secret Key used to set

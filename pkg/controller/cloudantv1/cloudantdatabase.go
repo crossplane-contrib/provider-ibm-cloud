@@ -18,6 +18,7 @@ package cloudantv1
 
 import (
 	"context"
+	"net/http"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
@@ -114,13 +115,13 @@ func (c *cloudantdatabaseExternal) Observe(ctx context.Context, mg resource.Mana
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errNotCloudantDatabase)
 	}
-	
+
 	if meta.GetExternalName(cr) == "" {
 		return managed.ExternalObservation{
 			ResourceExists: false,
 		}, nil
 	}
-	
+
 	instance, _, err := c.client.CloudantV1().GetDatabaseInformation(&cv1.GetDatabaseInformationOptions{Db: reference.ToPtrValue(meta.GetExternalName(cr))})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetCloudantDatabaseFailed)
@@ -151,7 +152,6 @@ func (c *cloudantdatabaseExternal) Observe(ctx context.Context, mg resource.Mana
 	}
 	cr.Status.SetConditions(runtimev1alpha1.Available())
 
-	// have to ensure isuptodate always return true ?? just a note
 	upToDate, err := ibmccdb.IsUpToDate(&cr.Spec.ForProvider, instance, c.logger)
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrCheckUpToDate)
@@ -198,8 +198,7 @@ func (c *cloudantdatabaseExternal) Delete(ctx context.Context, mg resource.Manag
 	cr.SetConditions(runtimev1alpha1.Deleting())
 
 	_, response, err := c.client.CloudantV1().DeleteDatabase(&cv1.DeleteDatabaseOptions{Db: reference.ToPtrValue(meta.GetExternalName(cr))})
-	// there might be a better way to stop the 202 problem ?? but this works for now
-	if err != nil && response.StatusCode != 202 {
+	if err != nil && response.StatusCode != http.StatusAccepted {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceGone, err), errDeleteCloudantDatabase)
 	}
 	cr.Status.AtProvider.State = "terminating"
