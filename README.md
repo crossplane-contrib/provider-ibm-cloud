@@ -114,6 +114,3 @@ as the core Crossplane project.
 ## Licensing
 
 provider-ibm-cloud is under the Apache 2.0 license.
-
-[![FOSSA
-Status](https://app.fossa.io/api/projects/git%2Bgithub.com%2Fcrossplane-contrib/%2Fprovider-ibm-cloud.svg?type=large)](https://app.fossa.io/projects/git%2Bgithub.com%2Fcrossplane-contrib%2Fprovider-ibm-cloud?ref=badge_large)
