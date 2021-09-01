@@ -1,0 +1,11 @@
+apiVersion: cloudantv1.ibmcloud.crossplane.io/v1alpha1
+kind: CloudantDatabase
+metadata:
+  name: mycloudantdatabase
+spec:
+  forProvider:
+    db: mycloudantdatabase
+    cloudantAdminUrlRef: 
+      name: mycloudant-creds
+  providerConfigRef:
+    name: ibm-cloud
