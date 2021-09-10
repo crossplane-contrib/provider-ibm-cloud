@@ -5,7 +5,7 @@ from the IBM Cloud Catalog (85+ RC-compatible services).
 
 # Importing Existing Resource Instances
 
-Crossplane allows to [import and manage resources created outside Crossplane](https://github.com/crossplane/crossplane.github.io/blob/master/docs/master/introduction/managed-resources.md#importing-existing-resources).
+Crossplane allows to [import and manage resources created outside Crossplane](https://github.com/crossplane/crossplane-runtime/issues/22).
 
 For example, to import a resource instance created outside Crossplane
 you may retrieve the ID and the required parameters for the resource with the

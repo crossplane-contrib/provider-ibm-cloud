@@ -22,7 +22,7 @@ our [Documentation](https://crossplane.io/docs/latest).
 To use the IBM Cloud Provider you'll need an IBM Cloud account. You may sign up 
 for a [free IBM Cloud account](https://cloud.ibm.com/registration). You'll need also an IBM 
 Cloud CLI which needs to be [installed and configured](https://cloud.ibm.com/docs/cli).
-Make sure you have a Kubernetes cluster and [installed Crossplane](https://crossplane.io/docs/v0.14/getting-started/install-configure.html), then:
+Make sure you have a Kubernetes cluster and [installed a Self-Hosted Crossplane](https://crossplane.github.io/docs), then:
 
 ### Install IBM Cloud Provider
 
