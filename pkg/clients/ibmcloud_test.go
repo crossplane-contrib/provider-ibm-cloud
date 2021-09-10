@@ -72,6 +72,7 @@ func getInitializedMockClient(t *testing.T) client.Client {
 		Data: map[string][]byte{
 			key:            []byte(creds),
 			AccessTokenKey: []byte(fakeTok),
+			APIKey:         []byte(key),
 		},
 	}
 	err := c.Create(context.TODO(), secret)

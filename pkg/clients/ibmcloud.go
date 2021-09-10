@@ -41,6 +41,10 @@ import (
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
+	"github.com/IBM/ibm-cos-sdk-go/aws"
+	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam"
+	"github.com/IBM/ibm-cos-sdk-go/aws/session"
+	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
@@ -54,10 +58,16 @@ import (
 const (
 	// AccessTokenKey key for IBM Cloud API access token
 	AccessTokenKey = "access_token"
+	// APIKey for IBM Cloud API
+	APIKey = "credentials"
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
 	// DefaultICDEndpoint is the default endpoint for the ICD service
 	DefaultICDEndpoint = "https://api.us-south.databases.cloud.ibm.com/v5/ibm"
+	// COSServiceEndpoint endpoint on US region for COS service
+	COSServiceEndpoint = "https://s3-api.us-geo.objectstorage.softlayer.net"
+	// AuthEndpoint endpoint for auth
+	AuthEndpoint = "https://iam.cloud.ibm.com/identity/token"
 
 	errTokNotFound        = "IAM access token key not found in provider config secret"
 	errGetSecret          = "cannot get credentials secret"
@@ -98,10 +108,11 @@ type ClientOptions struct {
 	ServiceName   string
 	URL           string
 	Authenticator core.Authenticator
+	APIKey        string
 }
 
 // GetAuthInfo returns the necessary authentication information that is necessary
-// to use when the controller connects to GCP API in order to reconcile the managed
+// to use when the controller connects to cloud API in order to reconcile the managed
 // resource.
 func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opts ClientOptions, err error) {
 	pc := &v1beta1.ProviderConfig{}
@@ -127,7 +138,12 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 		return ClientOptions{}, err
 	}
 
-	return ClientOptions{Authenticator: authenticator}, nil
+	apiKey, ok := s.Data[APIKey]
+	if !ok {
+		return ClientOptions{}, errors.New(errTokNotFound)
+	}
+
+	return ClientOptions{Authenticator: authenticator, APIKey: string(apiKey)}, nil
 }
 
 func getAuthenticator(s *v1.Secret) (core.Authenticator, error) {
@@ -255,6 +271,14 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	conf := aws.NewConfig().
+		WithEndpoint(COSServiceEndpoint).
+		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
+			AuthEndpoint, opts.APIKey, opts.URL)).
+		WithS3ForcePathStyle(true)
+	sess := session.Must(session.NewSession())
+	cs.s3client = s3.New(sess, conf)
+
 	return &cs, err
 }
 
@@ -269,6 +293,7 @@ type ClientSession interface {
 	IamAccessGroupsV2() *iamagv2.IamAccessGroupsV2
 	AdminrestV1() *arv1.AdminrestV1
 	CloudantV1() *cv1.CloudantV1
+	S3Client() *s3.S3
 }
 
 type clientSessionImpl struct {
@@ -281,6 +306,7 @@ type clientSessionImpl struct {
 	iamAccessGroupsV2     *iamagv2.IamAccessGroupsV2
 	adminrestV1           *arv1.AdminrestV1
 	cloudantV1            *cv1.CloudantV1
+	s3client              *s3.S3
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -317,6 +343,10 @@ func (c *clientSessionImpl) AdminrestV1() *arv1.AdminrestV1 {
 
 func (c *clientSessionImpl) CloudantV1() *cv1.CloudantV1 {
 	return c.cloudantV1
+}
+
+func (c *clientSessionImpl) S3Client() *s3.S3 {
+	return c.s3client
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array

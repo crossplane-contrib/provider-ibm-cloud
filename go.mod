@@ -9,6 +9,7 @@ require (
 	github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655
 	github.com/IBM/go-sdk-core v1.1.0
 	github.com/IBM/go-sdk-core/v4 v4.10.0
+	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/platform-services-go-sdk v0.17.18
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
