@@ -1,0 +1,20 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: Bucket
+metadata:
+  name: crossplane-encr-1
+  annotations:
+    
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    bucket: crossplane-encr-1
+    ibmServiceInstanceID: 'crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a003340000000000000000000000000-ffac-41ef-a350-cfd49849ec64::'
+    ibmServiceInstanceIDRef: 
+        name: ''
+    ibmServiceInstanceIDSelector:
+    ibmSSEKpCustomerRootKeyCrn: 'crn:v1:bluemix:public:kms:us-south:a/000000000011100000000000:2ac21811-cf0a-4eba-a52a-c7dddd0:key:3b4c2876-7c83-48f5-a609-whooaa'
+    ibmSSEKpEncryptionAlgorithm: 'AES256'
+    locationConstraint: us-cold
+  providerConfigRef:
+    name: ibm-cloud
+
