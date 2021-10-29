@@ -1,0 +1,20 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: Bucket
+metadata:
+  name: ui-encr-1
+  annotations:
+    crossplane.io/external-name: "ui-encr-1"
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    bucket: ui-encr-1
+    ibmServiceInstanceID: ''
+    ibmServiceInstanceIDRef: 
+        name: 'kube-name-of-containing-resource-instance'
+    ibmServiceInstanceIDSelector:
+    ibmSSEKpCustomerRootKeyCrn: ''
+    ibmSSEKpEncryptionAlgorithm: ''
+    locationConstraint: us-cold
+  providerConfigRef:
+    name: ibm-cloud
+

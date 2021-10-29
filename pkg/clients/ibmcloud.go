@@ -80,6 +80,7 @@ const (
 	errFailedToFind       = "Failed to find"
 	errUnableToGet        = "unable to get"
 	errNotFound2          = "not_found"
+	errNotFound3          = "does not exist"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -271,8 +272,15 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	var serviceEndPoint string
+	if opts.URL != "" {
+		serviceEndPoint = opts.URL
+	} else {
+		serviceEndPoint = COSServiceEndpoint
+	}
+
 	conf := aws.NewConfig().
-		WithEndpoint(COSServiceEndpoint).
+		WithEndpoint(serviceEndPoint).
 		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
 			AuthEndpoint, opts.APIKey, opts.URL)).
 		WithS3ForcePathStyle(true)
@@ -538,7 +546,8 @@ func IsResourceNotFound(err error) bool {
 	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet)) ||
-		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound2))
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound2)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound3))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted

@@ -22,6 +22,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/cloudantv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/config"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/cos"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/eventstreamsadminv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iamaccessgroupsv2"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iampolicymanagementv1"
@@ -47,6 +48,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		iamaccessgroupsv2.SetupAccessGroupRule,
 		eventstreamsadminv1.SetupTopic,
 		cloudantv1.SetupCloudantDatabase,
+		cos.SetupBucket,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

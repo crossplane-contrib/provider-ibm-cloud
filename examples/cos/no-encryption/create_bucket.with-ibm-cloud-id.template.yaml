@@ -1,0 +1,22 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: Bucket
+metadata:
+  name: cloud-name-standard-1
+  annotations:
+    
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    bucket: cloud-name-standard-1
+    ibmServiceInstanceID: 'crn:v1:bluemix:public:cloud-object-storage:global:a/0b5a003340000000000000000000000000-ffac-41ef-a350-cfd49849ec64::'
+    ibmServiceInstanceIDRef: 
+        name: ''
+    ibmServiceInstanceIDSelector:
+    ibmSSEKpCustomerRootKeyCrn: ''
+    ibmSSEKpEncryptionAlgorithm: ''
+    locationConstraint: 'us-standard'
+  providerConfigRef:
+    name: ibm-cloud
+
+
+
