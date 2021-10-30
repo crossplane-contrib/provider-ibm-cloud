@@ -8,6 +8,6 @@ The problem with this is that if you "import" a bucket - but while doing so you 
     -  of course, subsequently, the _Observe(...)_ method will be called
 * ...if the _Observe(..)_ were to report "not in sync", then the _Update(...)_ would be invoked
     - but it does not do anything currently, nor could it - even if it wanted
-    - ...so to prevent continuous _Update(..)_ invocations, we just have _Observe(...)_ report "all good" (despite the fact that things may not be so)
+    - ...so to prevent continuous _Update(..)_ invocations, we just have _Observe(...)_ report "all good"
   
 We can probably have the _Observe(...)_ method report this inconsistency in another way (eg via "status" - certainly not via telling crossplane "things are not in sync -> please call _Update(..)_ ASAP"), but we decided to not do it for now.
