@@ -5,7 +5,7 @@ Buckets, once created, cannot be modified (eg if encrypted they cannot be unencr
 The problem with this is that if you "import" a bucket - but while doing so you give the "wrong" (ie not reflecting the state of affairs in the IBM cloud) spec in the YAML file (eg the bucket is encrypted but you import is as unencrypted, or with a different location)... the "copy" you-end-up-with-in- crossplane will have a different _ForProvider_ spec than the one in the IBM cloud. Keep in mind that
 
 * our crossplane controller does NOT get involved in the "import"
-    -  of course subsequently the _Observe(...)_ method will be called
+    -  of course, subsequently, the _Observe(...)_ method will be called
 * ...if the _Observe(..)_ were to report "not in sync", then the _Update(...)_ would be invoked
     - but it does not do anything currently, nor could it - even if it wanted
     - ...so to prevent continuous _Update(..)_ invocations, we just have _Observe(...)_ report "all good"
