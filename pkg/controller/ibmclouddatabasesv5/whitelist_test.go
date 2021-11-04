@@ -315,7 +315,7 @@ func TestWhitelistObserve(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := wlExternal{
@@ -397,7 +397,7 @@ func TestWhitelistCreate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := wlExternal{
@@ -475,7 +475,7 @@ func TestWhitelistDelete(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := wlExternal{
@@ -574,7 +574,7 @@ func TestWhitelistUpdate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := wlExternal{
