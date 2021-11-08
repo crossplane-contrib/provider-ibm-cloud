@@ -43,11 +43,6 @@ import (
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
-// Used locally....
-const (
-	bearerTok = "mock-token"
-)
-
 // Constants that we could not use as such because no address...
 var (
 	createdAt                 = metav1.Time{Time: time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC)}.Rfc3339Copy()
@@ -196,9 +191,13 @@ func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]
 
 	tstServer := httptest.NewServer(mux)
 
-	opts := ibmc.ClientOptions{URL: tstServer.URL, Authenticator: &core.BearerTokenAuthenticator{
-		BearerToken: bearerTok,
-	}}
+	opts := ibmc.ClientOptions{
+		URL: tstServer.URL,
+		Authenticator: &core.BearerTokenAuthenticator{
+			BearerToken: ibmc.FakeBearerToken,
+		},
+		BearerToken: ibmc.FakeBearerToken,
+	}
 
 	mClient, errNC := ibmc.NewClient(opts)
 	if errNC != nil {

@@ -43,6 +43,7 @@ import (
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
 	"github.com/IBM/ibm-cos-sdk-go/aws"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam"
+	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam/token"
 	"github.com/IBM/ibm-cos-sdk-go/aws/session"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -58,16 +59,15 @@ import (
 const (
 	// AccessTokenKey key for IBM Cloud API access token
 	AccessTokenKey = "access_token"
-	// APIKey for IBM Cloud API
-	APIKey = "credentials"
+
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
+
 	// DefaultICDEndpoint is the default endpoint for the ICD service
 	DefaultICDEndpoint = "https://api.us-south.databases.cloud.ibm.com/v5/ibm"
+
 	// COSServiceEndpoint endpoint on US region for COS service
 	COSServiceEndpoint = "https://s3-api.us-geo.objectstorage.softlayer.net"
-	// AuthEndpoint endpoint for auth
-	AuthEndpoint = "https://iam.cloud.ibm.com/identity/token"
 
 	errTokNotFound        = "IAM access token key not found in provider config secret"
 	errGetSecret          = "cannot get credentials secret"
@@ -75,7 +75,7 @@ const (
 	errGetProviderCfg     = "error getting provider config"
 	errNoSecret           = "no credentials secret reference was provided"
 	errInitClient         = "error initializing client"
-	errParseTok           = "error parsig IAM access token"
+	errParseTok           = "error parsing the IAM access token"
 	errNotFound           = "Not Found"
 	errFailedToFind       = "Failed to find"
 	errUnableToGet        = "unable to get"
@@ -85,31 +85,40 @@ const (
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
 	errUnprocEntity       = "Unprocessable Entity"
+
 	// ETagAnnotation annotation name for ETag
 	ETagAnnotation = "Etag"
 
 	// ErrNewClient -
 	ErrNewClient = "cannot create new Client"
+
 	// ErrGetAuth -
 	ErrGetAuth = "error getting auth info"
+
 	// ErrGenObservation -
 	ErrGenObservation = "error generating observation"
+
 	// ErrManagedUpdateFailed -
 	ErrManagedUpdateFailed = "cannot update custom resource"
+
 	// ErrCheckUpToDate -
 	ErrCheckUpToDate = "cannot determine if resource is up to date"
+
 	// ErrBadRequest -
 	ErrBadRequest = "error getting instance: Bad Request"
+
 	// ErrGetConnDetails -
 	ErrGetConnDetails = "error getting connection details"
 )
 
 // ClientOptions provides info to initialize a client for the IBM Cloud APIs
 type ClientOptions struct {
-	ServiceName   string
-	URL           string
+	ServiceName string
+	URL         string
+	BearerToken string // This is contained in Authenticator (when it is of BearTokenAuthenticator type) - but we
+	// seem to not be able to look it up via reflection. So separately for the controllers that need it...
+	// Note that it should always be of the format 'Bearer <...>'
 	Authenticator core.Authenticator
-	APIKey        string
 }
 
 // GetAuthInfo returns the necessary authentication information that is necessary
@@ -134,37 +143,35 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 	if err := c.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
 		return ClientOptions{}, errors.Wrap(err, errGetSecret)
 	}
-	authenticator, err := getAuthenticator(s)
+
+	authenticator, bearerTok, err := getAuthenticator(s)
 	if err != nil {
 		return ClientOptions{}, err
 	}
 
-	apiKey, ok := s.Data[APIKey]
-	if !ok {
-		return ClientOptions{}, errors.New(errTokNotFound)
-	}
-
-	return ClientOptions{Authenticator: authenticator, APIKey: string(apiKey)}, nil
+	return ClientOptions{Authenticator: authenticator, BearerToken: *bearerTok}, nil
 }
 
-func getAuthenticator(s *v1.Secret) (core.Authenticator, error) {
+func getAuthenticator(s *v1.Secret) (core.Authenticator, *string, error) {
 	aTok, ok := s.Data[AccessTokenKey]
 	if !ok {
-		return nil, errors.New(errTokNotFound)
+		return nil, nil, errors.New(errTokNotFound)
 	}
 
-	bearerTok, err := getBearerFromAccessToken(string(aTok))
+	bearerTok, err := GetBearerFromAccessToken(string(aTok))
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	authenticator := &core.BearerTokenAuthenticator{
 		BearerToken: bearerTok,
 	}
-	return authenticator, nil
+
+	return authenticator, &bearerTok, nil
 }
 
-func getBearerFromAccessToken(aTok string) (string, error) {
+// GetBearerFromAccessToken accepts only "good-lookng" tokens (ie which start with 'Bearer ') and returns the actual token
+func GetBearerFromAccessToken(aTok string) (string, error) {
 	toks := strings.Split(aTok, " ")
 	if len(toks) != 2 {
 		return "", errors.New(errParseTok)
@@ -279,13 +286,23 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 		serviceEndPoint = COSServiceEndpoint
 	}
 
-	conf := aws.NewConfig().
-		WithEndpoint(serviceEndPoint).
-		WithCredentials(ibmiam.NewStaticCredentials(aws.NewConfig(),
-			AuthEndpoint, opts.APIKey, opts.URL)).
-		WithS3ForcePathStyle(true)
-	sess := session.Must(session.NewSession())
-	cs.s3client = s3.New(sess, conf)
+	if opts.BearerToken != "" {
+		s3AuthTokenFunc := func() (*token.Token, error) {
+			return &token.Token{
+				AccessToken: opts.BearerToken,
+				TokenType:   "Bearer",
+			}, nil
+		}
+
+		s3Conf := aws.NewConfig().
+			WithEndpoint(serviceEndPoint).
+			WithCredentials(ibmiam.NewCustomInitFuncCredentials(aws.NewConfig(),
+				s3AuthTokenFunc, serviceEndPoint, opts.URL)).
+			WithS3ForcePathStyle(true)
+
+		s3Session := session.Must(session.NewSession())
+		cs.s3client = s3.New(s3Session, s3Conf)
+	}
 
 	return &cs, err
 }
