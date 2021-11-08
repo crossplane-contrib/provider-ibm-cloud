@@ -354,7 +354,7 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := agrExternal{
@@ -515,7 +515,7 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := agrExternal{
@@ -658,7 +658,7 @@ func TestAccessGroupRuleDelete(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := agrExternal{
@@ -780,7 +780,7 @@ func TestAccessGroupRuleUpdate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := agrExternal{

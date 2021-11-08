@@ -349,7 +349,7 @@ func TestCustomRoleObserve(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := crExternal{
@@ -510,7 +510,7 @@ func TestCustomRoleCreate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := crExternal{
@@ -653,7 +653,7 @@ func TestCustomRoleDelete(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := crExternal{
@@ -775,7 +775,7 @@ func TestCustomRoleUpdate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := crExternal{

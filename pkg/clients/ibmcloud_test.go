@@ -25,14 +25,9 @@ const (
 	providerName = "provider-ibm-cloud"
 	secretName   = "ibm-cloud-creds"
 	creds        = "xxx-yyy-zzz"
-	key          = "apikey"
+	key          = "token_key"
 	instanceName = "myinstance"
 	uid          = "1fce7df8-8615-4b5c-97cb-2309cd0b9b23"
-	btok         = "xyz"
-)
-
-var (
-	fakeTok = "Bearer " + btok
 )
 
 func getInitializedMockClient(t *testing.T) client.Client {
@@ -71,8 +66,7 @@ func getInitializedMockClient(t *testing.T) client.Client {
 		},
 		Data: map[string][]byte{
 			key:            []byte(creds),
-			AccessTokenKey: []byte(fakeTok),
-			APIKey:         []byte(key),
+			AccessTokenKey: []byte(FakeBearerToken),
 		},
 	}
 	err := c.Create(context.TODO(), secret)
@@ -95,6 +89,8 @@ func resourceInstance() *v1alpha1.ResourceInstance {
 }
 
 func TestGetAuthInfo(t *testing.T) {
+	actualToken, _ := GetBearerFromAccessToken(FakeBearerToken)
+
 	type args struct {
 		cr *v1alpha1.ResourceInstance
 	}
@@ -111,11 +107,12 @@ func TestGetAuthInfo(t *testing.T) {
 			},
 			want: want{
 				auth: &core.BearerTokenAuthenticator{
-					BearerToken: btok,
+					BearerToken: actualToken,
 				},
 			},
 		},
 	}
+
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
 			mClient := getInitializedMockClient(t)
@@ -127,7 +124,6 @@ func TestGetAuthInfo(t *testing.T) {
 			if diff := cmp.Diff(tc.want.auth, opts.Authenticator); diff != "" {
 				t.Errorf("TestGetAuthInfo(...): -want, +got:\n%s", diff)
 			}
-
 		})
 	}
 }

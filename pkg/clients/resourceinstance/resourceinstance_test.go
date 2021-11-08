@@ -34,10 +34,6 @@ import (
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
-const (
-	bearerTok = "mock-token"
-)
-
 func params(m ...func(*v1alpha1.ResourceInstanceParameters)) *v1alpha1.ResourceInstanceParameters {
 	p := &v1alpha1.ResourceInstanceParameters{
 		Name:              "my-instance",
@@ -212,7 +208,7 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 
@@ -267,7 +263,7 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 
@@ -327,7 +323,7 @@ func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 
@@ -367,7 +363,7 @@ func TestResourceInstanceGenerateObservation(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 
@@ -424,7 +420,7 @@ func TestResourceInstanceIsUpToDate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 

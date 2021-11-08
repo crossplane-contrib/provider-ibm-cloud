@@ -22,7 +22,6 @@ import (
 )
 
 var (
-	bearerTok     = "mock-token"
 	accessGroupID = "12345678-abcd-1a2b-a1b2-1234567890ab"
 	createdAt, _  = strfmt.ParseDateTime("2020-10-31T02:33:06Z")
 	transactionID = "12345-abcd-ef000-abac"
@@ -430,7 +429,7 @@ func TestUpdateAccessGroupMembers(t *testing.T) {
 			}
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 

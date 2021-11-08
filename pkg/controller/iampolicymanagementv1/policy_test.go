@@ -45,7 +45,6 @@ import (
 )
 
 const (
-	bearerTok     = "mock-token"
 	errBadRequest = "error getting policy: Bad Request"
 	errForbidden  = "error getting policy: Forbidden"
 )
@@ -427,7 +426,7 @@ func TestPolicyObserve(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := pExternal{
@@ -588,7 +587,7 @@ func TestPolicyCreate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := pExternal{
@@ -731,7 +730,7 @@ func TestPolicyDelete(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := pExternal{
@@ -853,7 +852,7 @@ func TestPolicyUpdate(t *testing.T) {
 			defer server.Close()
 
 			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: ibmc.FakeBearerToken,
 			}}
 			mClient, _ := ibmc.NewClient(opts)
 			e := pExternal{

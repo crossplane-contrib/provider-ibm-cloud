@@ -21,10 +21,6 @@ import (
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
 )
 
-const (
-	bearerTok = "mock-token"
-)
-
 var (
 	resourceGroupID    = "mock-resource-group-id"
 	resourcePlanID     = "744bfc56-d12c-4866-88d5-dac9139e0e5d"
@@ -188,7 +184,7 @@ func TestGetResourcePlanID(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 
@@ -247,7 +243,7 @@ func TestGetResourcePlanName(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 
@@ -301,7 +297,7 @@ func TestGetResourceGroupID(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 
@@ -349,7 +345,7 @@ func TestGetResourceGroupName(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 
@@ -399,7 +395,7 @@ func TestGetResourceInstanceTags(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 
@@ -450,7 +446,7 @@ func TestUpdateResourceInstanceTags(t *testing.T) {
 			defer server.Close()
 
 			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: bearerTok,
+				BearerToken: FakeBearerToken,
 			}}
 			mClient, _ := NewClient(opts)
 

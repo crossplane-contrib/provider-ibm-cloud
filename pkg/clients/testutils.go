@@ -32,6 +32,11 @@ var (
 	resourceGroupIDMockVal   = "0be5ad401ae913d8ff665d92680664ed"
 )
 
+// A fake authentication token (WITH the "Bearer " prefix)
+const (
+	FakeBearerToken = "Bearer mock-token"
+)
+
 // TagsTestHandler handler to mock client SDK call to global tags API
 var TagsTestHandler = func(w http.ResponseWriter, r *http.Request) {
 	_ = r.Body.Close()

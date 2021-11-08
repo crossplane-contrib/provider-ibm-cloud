@@ -147,8 +147,6 @@ if [[ $rc -ne 0 ]]; then
     echo "-------------" >&2
     
     cat $tmp_file >&2
-else 
-    cat $tmp_file
 fi
 
 rm -f "$tmp_file"
