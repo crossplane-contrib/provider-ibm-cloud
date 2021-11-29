@@ -49,6 +49,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		eventstreamsadminv1.SetupTopic,
 		cloudantv1.SetupCloudantDatabase,
 		cos.SetupBucket,
+		cos.SetupBucketConfig,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

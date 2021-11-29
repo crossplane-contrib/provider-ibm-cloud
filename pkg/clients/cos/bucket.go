@@ -25,8 +25,8 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
 )
 
-// GenerateObservation sets the reported creation date to the IBM-cloud one
-func GenerateObservation(in *s3.Bucket) (v1alpha1.BucketObservation, error) {
+// GenerateBucketObservation sets the reported creation date to the IBM-cloud one
+func GenerateBucketObservation(in *s3.Bucket) (v1alpha1.BucketObservation, error) {
 	var newTimePtr *metav1.Time
 	if in.CreationDate != nil {
 		newTime := (metav1.NewTime(*in.CreationDate))
