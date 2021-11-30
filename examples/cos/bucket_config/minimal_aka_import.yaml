@@ -1,0 +1,12 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: BucketConfig
+metadata:
+  name: configurable-2
+  annotations:
+    crossplane.io/external-name: "configurable-2"
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    name: configurable-2
+  providerConfigRef:
+    name: ibm-cloud

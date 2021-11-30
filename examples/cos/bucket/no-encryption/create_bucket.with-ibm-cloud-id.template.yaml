@@ -17,6 +17,3 @@ spec:
     locationConstraint: 'us-standard'
   providerConfigRef:
     name: ibm-cloud
-
-
-

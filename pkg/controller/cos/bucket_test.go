@@ -78,7 +78,7 @@ func bucketObservation(m ...func(*v1alpha1.BucketObservation)) *v1alpha1.BucketO
 type bucketModifier func(*v1alpha1.Bucket)
 
 // Applies the given external name to a bucket, if it has no annotations
-func withExternalNameAnnotation(externalName string) bucketModifier {
+func withBucketExternalNameAnnotation(externalName string) bucketModifier {
 	return func(bucket *v1alpha1.Bucket) {
 		if bucket.ObjectMeta.Annotations == nil {
 			bucket.ObjectMeta.Annotations = make(map[string]string)
@@ -89,14 +89,14 @@ func withExternalNameAnnotation(externalName string) bucketModifier {
 }
 
 // Returns a function that sets the ForProvider part of a bucket
-func withForProvider(p *v1alpha1.BucketPararams) bucketModifier {
+func withBucketForProvider(p *v1alpha1.BucketPararams) bucketModifier {
 	return func(b *v1alpha1.Bucket) {
 		b.Spec.ForProvider = *p
 	}
 }
 
 // Returns a function that sets the AtProvider part of a bucket
-func withAtProvider(p v1alpha1.BucketObservation) bucketModifier {
+func withBucketAtProvider(p v1alpha1.BucketObservation) bucketModifier {
 	return func(b *v1alpha1.Bucket) {
 		b.Status.AtProvider = p
 	}
@@ -110,7 +110,7 @@ func withConditions(c ...cpv1alpha1.Condition) bucketModifier {
 }
 
 // Returns params used in tests
-func forProvider() *v1alpha1.BucketPararams {
+func forBucketProvider() *v1alpha1.BucketPararams {
 	return &v1alpha1.BucketPararams{
 		Name:                 aBucketName,
 		IbmServiceInstanceID: &resourceInstanceIDInCloud,
@@ -217,7 +217,7 @@ func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]
 		nil
 }
 
-func TestCreate(t *testing.T) {
+func TestBucketCreate(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
@@ -243,18 +243,18 @@ func TestCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 
-						s3Bucket := crossplaneToS3(createCrossplaneBucket(withForProvider(forProvider())))
+						s3Bucket := crossplaneToS3(createCrossplaneBucket(withBucketForProvider(forBucketProvider())))
 						_ = json.NewEncoder(w).Encode(s3Bucket)
 					},
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withForProvider(forProvider())),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
-				mg: createCrossplaneBucket(withForProvider(forProvider()),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
 					withConditions(cpv1alpha1.Creating()),
-					withExternalNameAnnotation(aBucketName)),
+					withBucketExternalNameAnnotation(aBucketName)),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
@@ -272,16 +272,16 @@ func TestCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
 
-						s3Bucket := crossplaneToS3(createCrossplaneBucket(withForProvider(forProvider())))
+						s3Bucket := crossplaneToS3(createCrossplaneBucket(withBucketForProvider(forBucketProvider())))
 						_ = json.NewEncoder(w).Encode(s3Bucket)
 					},
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withForProvider(forProvider())),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
-				mg: createCrossplaneBucket(withForProvider(forProvider()),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
 					withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateBucket),
@@ -322,7 +322,7 @@ func TestCreate(t *testing.T) {
 	}
 }
 
-func TestDelete(t *testing.T) {
+func TestBucketDelete(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		err error
@@ -351,10 +351,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withAtProvider(*bucketObservation())),
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -375,10 +375,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withAtProvider(*bucketObservation())),
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -399,10 +399,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withAtProvider(*bucketObservation())),
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteBucket),
 			},
 		},
@@ -437,7 +437,7 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-func TestObserve(t *testing.T) {
+func TestBucketObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
@@ -468,10 +468,10 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withForProvider(forProvider())),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withForProvider(forProvider())),
+				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 				obs: managed.ExternalObservation{ResourceExists: false},
 			},
 		},
@@ -492,10 +492,10 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withForProvider(forProvider())),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withForProvider(forProvider())),
+				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 				obs: managed.ExternalObservation{},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetBucketFailed),
 			},
@@ -516,10 +516,10 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withForProvider(forProvider())),
+				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
-				mg:  createCrossplaneBucket(withForProvider(forProvider())),
+				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 				obs: managed.ExternalObservation{},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetBucketFailed),
 			},
@@ -537,7 +537,7 @@ func TestObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 
-						crossplaneBucket := createCrossplaneBucket(withAtProvider(*bucketObservation()))
+						crossplaneBucket := createCrossplaneBucket(withBucketAtProvider(*bucketObservation()))
 						s3BucketArray := []*s3.Bucket{crossplaneToS3(crossplaneBucket)}
 						xmlStr := toXML(s3BucketArray)
 						w.Write([]byte(xmlStr))
@@ -545,10 +545,10 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			args: args{
-				mg: createCrossplaneBucket(withAtProvider(*bucketObservation())),
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
-				mg: createCrossplaneBucket(withAtProvider(*bucketObservation())),
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,

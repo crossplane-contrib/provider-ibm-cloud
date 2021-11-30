@@ -3,7 +3,7 @@
 
 # Buckets
 
-Buckets always live in a _COS Resource Instance_ - so you need to have one of those ready (you can create an instance [via crossplane](../resourcecontrollerv2/README.md), or the IBM Cloud UI or the IBM Cloud API).
+Buckets always live in a _COS Resource Instance_ - so you need to have one of those ready (you can create an instance [via crossplane](../../resourcecontrollerv2/README.md), or the IBM Cloud UI or the IBM Cloud API).
 
 Interestingly, buckets must have <ins>unique names</ins> across the IBM Cloud (this has implications in creating/importing buckets - arguably makes life easier).
 

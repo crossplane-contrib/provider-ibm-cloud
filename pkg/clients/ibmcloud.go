@@ -41,6 +41,7 @@ import (
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
 	"github.com/IBM/go-sdk-core/core"
 	corev4 "github.com/IBM/go-sdk-core/v4/core"
+	ibmBucketConfig "github.com/IBM/ibm-cos-sdk-go-config/resourceconfigurationv1"
 	"github.com/IBM/ibm-cos-sdk-go/aws"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials/ibmiam/token"
@@ -304,6 +305,18 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 		cs.s3client = s3.New(s3Session, s3Conf)
 	}
 
+	ibmBucketConfigClientConf, err := ibmBucketConfig.NewResourceConfigurationV1(
+		&ibmBucketConfig.ResourceConfigurationV1Options{
+			URL:           opts.URL,
+			Authenticator: opts.Authenticator,
+		},
+	)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
+	cs.bucketConfigClient = ibmBucketConfigClientConf
+
 	return &cs, err
 }
 
@@ -319,6 +332,7 @@ type ClientSession interface {
 	AdminrestV1() *arv1.AdminrestV1
 	CloudantV1() *cv1.CloudantV1
 	S3Client() *s3.S3
+	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
 }
 
 type clientSessionImpl struct {
@@ -332,6 +346,7 @@ type clientSessionImpl struct {
 	adminrestV1           *arv1.AdminrestV1
 	cloudantV1            *cv1.CloudantV1
 	s3client              *s3.S3
+	bucketConfigClient    *ibmBucketConfig.ResourceConfigurationV1
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -372,6 +387,10 @@ func (c *clientSessionImpl) CloudantV1() *cv1.CloudantV1 {
 
 func (c *clientSessionImpl) S3Client() *s3.S3 {
 	return c.s3client
+}
+
+func (c *clientSessionImpl) BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1 {
+	return c.bucketConfigClient
 }
 
 // StrPtr2Bytes converts the supplied string pointer to a byte array

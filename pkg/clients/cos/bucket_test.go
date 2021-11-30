@@ -106,13 +106,13 @@ func TestGenerateS3BucketInput(t *testing.T) {
 	})
 }
 
-func TestGenerateObservation(t *testing.T) {
+func TestGenerateBucketObservation(t *testing.T) {
 	tests := []time.Time{time.Date(2009, 11, 17, 20, 34, 58, 651387237, time.UTC)}
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
 			s3Bucket := &s3.Bucket{CreationDate: &tt}
-			obs, err := GenerateObservation(s3Bucket)
+			obs, err := GenerateBucketObservation(s3Bucket)
 
 			if err != nil {
 				t.Errorf("GenerateObservation() returned an error: %s", err)
