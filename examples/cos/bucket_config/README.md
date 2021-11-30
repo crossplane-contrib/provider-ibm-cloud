@@ -11,22 +11,22 @@ Every bucket in the IBM cloud has a configuration (like files and their permissi
 
 ### Discussion of the config spec 
 
-(do not bother to paste into a file - you got example files for that)
+(no need to paste into a file - it is in one of the example files provided)
 
-The full spec is this
+The full spec is this 
 
 ```
 apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
 kind: BucketConfig
 metadata:
   name: configurable-1
-  annotations:
-    crossplane.io/external-name: "configurable-1"
 spec:
   deletionPolicy: Orphan
   forProvider:
     name:
-    nameRef: configurable-1
+    nameRef: 
+        name: configurable-1
+    nameSelector:
     hardQuota: 201
     metricsMonitoring:
       usageMetricsEnabled: false
@@ -42,7 +42,9 @@ spec:
     name: ibm-cloud
 ```
 
-Not that there are not that many things that can be configured (the UI has more). This is the current state of the API we have to use; likely things will change.
+Note that we specified the `nameRef` - not the `name`; this is the name of the bucket and it assumes there is a bucket with this name defined in the cluster. We could have used the `name` instead, and then no bucket-in-the-cluster would be necessary
+
+Note also that there are not that many things that can be configured (the UI has more). This is the current state of the API we have to use; likely things will change.
 
 ...and a minimal (ie with only the compulsory fields) example:
 
@@ -59,7 +61,7 @@ spec:
     name: ibm-cloud
 ```
 
-Note that
+Things to keep in mind
 
 * _deletionPolicy_ is ALWAYS _Orphan_
 * after the first call to crossplane's `Observe`... whatever fields were left upopulated on the k8s side will get their values from the IBM cloud (so the minimal example may "expand" during the next sync cycle)
@@ -72,15 +74,15 @@ Note that
 ### How to delete/disable things
 
 * Setting the CRN of the _activity tracking_ or _metrics monitoring_ component to __"0"__ (note the quotes - without them the yaml validator thinks it is a number and chokes) will DISABLE the tracking/monitoring (as this is not a valid CRN)
-   * ...it does not matter whether you have set the remaining fields to any values. The CRN wins
-* Setting the `hardQuota` to __0__ (no quotes here - this is a legit number) will delete whatever quota the bucket has (essentially clear the value)
+   * ...it does not matter whether you have set the remaining fields to anything - the CRN wins
+* Setting the `hardQuota` to __0__ (no quotes here - this is a legit number) will delete whatever quota the bucket has (essentially clearing the value)
 * Setting the firewall's allowed IP list to empty ```allowedIP: []``` will disable it
 
 
-### Par exemple
+### Examples
 Please check the following 3 examples:
 
 * A [partial update to the config](partial_update.yaml). Note that
-  * leaving `ActivityConfig` empty will NOT disable it. <ins>You need to set the CRN to __disabled__</ins>, to disable it
+  * leaving `ActivityConfig` empty will NOT disable it. <ins>You need to set the CRN to __"0"__</ins>, to disable it
 * One that [deletes everything that can be deleted](delete_stuff.yaml)
 * A [minimal example](minimal_aka_import.yaml) - essentially "importing" a bucket to k8s.

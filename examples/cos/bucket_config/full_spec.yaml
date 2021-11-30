@@ -8,7 +8,9 @@ spec:
   deletionPolicy: Orphan
   forProvider:
     name:
-    nameRef: configurable-1
+    nameRef: 
+      name: configurable-1
+    nameSelector:
     hardQuota: 201
     metricsMonitoring:
       usageMetricsEnabled: true

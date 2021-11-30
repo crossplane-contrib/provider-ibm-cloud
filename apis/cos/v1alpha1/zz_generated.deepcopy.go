@@ -168,8 +168,13 @@ func (in *BucketConfigParams) DeepCopyInto(out *BucketConfigParams) {
 	}
 	if in.NameRef != nil {
 		in, out := &in.NameRef, &out.NameRef
-		*out = new(string)
+		*out = new(corev1alpha1.Reference)
 		**out = **in
+	}
+	if in.NameSelector != nil {
+		in, out := &in.NameSelector, &out.NameSelector
+		*out = new(corev1alpha1.Selector)
+		(*in).DeepCopyInto(*out)
 	}
 	if in.HardQuota != nil {
 		in, out := &in.HardQuota, &out.HardQuota

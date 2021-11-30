@@ -66,17 +66,17 @@ spec:
                 description: Info the IBM cloud needs to create a bucket
                 properties:
                   activityTracking:
-                    description: Enables sending log data to Activity Tracker and
-                      LogDNA to provide visibility into object read and write events.
-                      All object events are sent to the activity tracker instance
-                      defined in the `activity_tracker_crn` field.
+                    description: Enables sending log data to the Activity Tracker,
+                      to provide visibility into object read and write events. All
+                      object events are sent to the activity tracker instance identified
+                      in the `ActivityTrackerCRN` field.
                     properties:
                       activityTrackerCRN:
-                        description: "Required the first time Cctivity Tracking is
+                        description: "Required the first time Activity Tracking is
                           configured. The is the CRN of the instance of Activity Tracker
                           that will receive object event data. The format is \"crn:v1:bluemix:public:logdnaat:{bucket
                           location}:a/{storage account}:{activity tracker service
-                          instance}::\" \n If set to \"\", tracking is disabled (independently
+                          instance}::\" \n If set to \"0\", tracking is disabled (independently
                           of the values of the other paremeters)'"
                         type: string
                       readDataEvents:
@@ -120,15 +120,15 @@ spec:
                     type: object
                   metricsMonitoring:
                     description: Enables sending metrics to IBM Cloud Monitoring.
-                      All metrics are sent to the IBM Cloud Monitoring instance defined
-                      in the `monitoring_crn` field.
+                      All metrics are sent to the IBM Cloud Monitoring instance identified
+                      in the `MetricsMonitoringCRN` field.
                     properties:
                       metricsMonitoringCRN:
                         description: "Required the first time monitoring is be configured.
                           This is CRN the instance of IBM Cloud Monitoring that will
                           receive the bucket metrics. The format is \"crn:v1:bluemix:public:logdnaat:{bucket
                           location}:a/{storage account}:{monitoring service instance}::\".
-                          \n If set to \"\", monitoring is disabled (independently
+                          \n If set to \"0\", monitoring is disabled (independently
                           of the values of the other paremeters)"
                         type: string
                       requestMetricsEnabled:
@@ -145,9 +145,31 @@ spec:
                       of 'Name', 'NameRef' should be specified..."
                     type: string
                   nameRef:
-                    description: "Crossplane reference of the bucket name. \n Note:
-                      \   One of 'Name', 'NameRef' should be specified"
-                    type: string
+                    description: "Crossplane reference of the bucket name (the bucket
+                      should already be \"in the cluster\") \n Note:    One of 'Name',
+                      'NameRef' should be specified"
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  nameSelector:
+                    description: Selects a reference to a resource used to set the
+                      name
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that

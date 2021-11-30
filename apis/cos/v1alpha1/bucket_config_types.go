@@ -32,14 +32,20 @@ type BucketConfigParams struct {
 	// +optional
 	Name *string `json:"name,omitempty"`
 
-	// Crossplane reference of the bucket name.
+	// Crossplane reference of the bucket name (the bucket should already be "in the cluster")
 	//
 	// Note:
 	//    One of 'Name', 'NameRef' should be specified
 	//
 	// +immutable
 	// +optional
-	NameRef *string `json:"nameRef,omitempty"`
+	NameRef *runtimev1alpha1.Reference `json:"nameRef,omitempty"`
+
+	// Selects a reference to a resource used to set the name
+	//
+	// +immutable
+	// +optional
+	NameSelector *runtimev1alpha1.Selector `json:"nameSelector,omitempty"`
 
 	// Maximum bytes for this bucket. If set to 0, quota is disabled
 	//
@@ -54,14 +60,14 @@ type BucketConfigParams struct {
 	// +optional
 	Firewall *Firewall `json:"firewall,omitempty"`
 
-	// Enables sending log data to Activity Tracker and LogDNA to provide visibility into object read and write events. All
-	// object events are sent to the activity tracker instance defined in the `activity_tracker_crn` field.
+	// Enables sending log data to the Activity Tracker, to provide visibility into object read and write events. All
+	// object events are sent to the activity tracker instance identified in the `ActivityTrackerCRN` field.
 	//
 	// +optional
 	ActivityTracking *ActivityTracking `json:"activityTracking,omitempty"`
 
-	// Enables sending metrics to IBM Cloud Monitoring. All metrics are sent to the IBM Cloud Monitoring instance defined
-	// in the `monitoring_crn` field.
+	// Enables sending metrics to IBM Cloud Monitoring. All metrics are sent to the IBM Cloud Monitoring instance identified
+	// in the `MetricsMonitoringCRN` field.
 	//
 	// +optional
 	MetricsMonitoring *MetricsMonitoring `json:"metricsMonitoring,omitempty"`
@@ -133,7 +139,7 @@ type Firewall struct {
 
 // ActivityTracking contains the parameters used to configure activity tracking
 //
-// Setting the CRN to "" signals that we want to disable tracking (as this not a valid CRN)
+// Setting the CRN to "0" signals that we want to disable tracking (as this not a valid CRN)
 type ActivityTracking struct {
 	// If set to `true`, all object read events (i.e. downloads) will be sent to Activity Tracker.
 	//
@@ -145,11 +151,11 @@ type ActivityTracking struct {
 	// +optional
 	WriteDataEvents *bool `json:"writeDataEvents,omitempty"`
 
-	// Required the first time Cctivity Tracking is configured. The is the CRN of the instance of Activity Tracker that will receive object
+	// Required the first time Activity Tracking is configured. The is the CRN of the instance of Activity Tracker that will receive object
 	// event data. The format is "crn:v1:bluemix:public:logdnaat:{bucket location}:a/{storage account}:{activity tracker
 	// service instance}::"
 	//
-	// If set to "", tracking is disabled (independently of the values of the other paremeters)'
+	// If set to "0", tracking is disabled (independently of the values of the other paremeters)'
 	//
 	// +optional
 	ActivityTrackerCRN *string `json:"activityTrackerCRN,omitempty"`
@@ -157,7 +163,7 @@ type ActivityTracking struct {
 
 // MetricsMonitoring contains the parameters used to configure metrics monitoring.
 //
-// Setting the CRN to "" signals that we want to disable monitoring (as this not a valid CRN)
+// Setting the CRN to "0" signals that we want to disable monitoring (as this not a valid CRN)
 type MetricsMonitoring struct {
 	// If set to `true`, all usage metrics (i.e. `bytes_used`) will be sent to the monitoring service.
 	//
@@ -173,7 +179,7 @@ type MetricsMonitoring struct {
 	// the bucket metrics. The format is "crn:v1:bluemix:public:logdnaat:{bucket location}:a/{storage account}:{monitoring
 	// service instance}::".
 	//
-	// If set to "", monitoring is disabled (independently of the values of the other paremeters)
+	// If set to "0", monitoring is disabled (independently of the values of the other paremeters)
 	//
 	// +optional
 	MetricsMonitoringCRN *string `json:"metricsMonitoringCRN,omitempty"`
