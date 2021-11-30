@@ -35,7 +35,17 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	crossplane_client "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/cos"
+	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/cos"
+)
+
+// Various errors...
+const (
+	errThisIsNotABucket = "managed resource is not a bucket resource"
+	errCreateBucket     = "could not create a bucket"
+	errCreateBucketInp  = "could not generate the input params for a bucket"
+	errDeleteBucket     = "could not delete the bucket"
+	errGetBucketFailed  = "error getting the bucket"
+	errUpdBucket        = "error updating the bucket"
 )
 
 // SetupBucket adds a controller that reconciles Bucket objects
@@ -84,16 +94,6 @@ func (c *bucketConnector) Connect(ctx context.Context, mg resource.Managed) (man
 
 	return &bucketExternal{client: service, kube: c.kube, logger: c.logger}, nil
 }
-
-// Various errors...
-const (
-	errThisIsNotABucket = "managed resource is not a bucket resource"
-	errCreateBucket     = "could not create a bucket"
-	errCreateBucketInp  = "could not generate the input paraks for a bucket"
-	errDeleteBucket     = "could not delete the bucket"
-	errGetBucketFailed  = "error getting the bucket"
-	errUpdBucket        = "error updating the bucket"
-)
 
 // Because we use the Amazon S3 API, it requires more stuff when in unit-test mode than when actually
 // interacting with the IBM cloud. This type helps keep truck of what modus operandi we are in
@@ -155,7 +155,7 @@ func (c *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetBucketFailed)
 	} else if s3Bucket != nil {
-		crossplaneBucket.Status.AtProvider, err = crossplane_client.GenerateObservation(s3Bucket)
+		crossplaneBucket.Status.AtProvider, err = crossplaneClient.GenerateBucketObservation(s3Bucket)
 		if err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, errUpdBucket)
 		}
@@ -178,7 +178,7 @@ func (c *bucketExternal) Create(ctx context.Context, mg resource.Managed) (manag
 	crossplaneBucket.SetConditions(runtimev1alpha1.Creating())
 
 	s3BucketInp := s3.CreateBucketInput{}
-	if err := crossplane_client.GenerateS3BucketInput(crossplaneBucket.Spec.ForProvider.DeepCopy(), &s3BucketInp); err != nil {
+	if err := crossplaneClient.GenerateS3BucketInput(crossplaneBucket.Spec.ForProvider.DeepCopy(), &s3BucketInp); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateBucketInp)
 	}
 
