@@ -51,6 +51,27 @@ func (mg *Bucket) ResolveReferences(ctx context.Context, c client.Reader) error 
 	return nil
 }
 
+// ResolveReferences resolves the crossplane reference
+func (mg *BucketConfig) ResolveReferences(ctx context.Context, c client.Reader) error {
+	r := reference.NewAPIResolver(c, mg)
+
+	rsp, err := r.Resolve(ctx, reference.ResolutionRequest{
+		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Name),
+		Reference:    mg.Spec.ForProvider.NameRef,
+		Selector:     mg.Spec.ForProvider.NameSelector,
+		To:           reference.To{Managed: &rc2.ResourceInstance{}, List: &rc2.ResourceInstanceList{}},
+		Extract:      SourceGUID(),
+	})
+
+	if err != nil {
+		return errors.Wrap(err, "spec.forProvider.Source")
+	}
+
+	mg.Spec.ForProvider.NameRef = rsp.ResolvedReference
+
+	return nil
+}
+
 // SourceGUID extracts the resolved ResourceInstance's GUID - "" if it cannot
 func SourceGUID() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {

@@ -49,7 +49,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: BucketSpec - desired end-state of a Bucket on the IBM cloud
+            description: BucketSpec - desired end-state of a Bucket in the IBM cloud
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying
@@ -86,17 +86,17 @@ spec:
                       is also present. \n Allowable values: ``AES256''"
                     type: string
                   ibmServiceInstanceID:
-                    description: "References the resource service instance where the
-                      bucket will be created and to which data usage will be billed.
-                      This value can be either the full Cloud Resource Name (CRN)
-                      or just the GUID segment that identifies the service instance.
-                      \n Note:    Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef',
+                    description: "The resource service instance where the bucket will
+                      be created and to which data usage will be billed. This value
+                      can be either the full Cloud Resource Name (CRN) or just the
+                      GUID segment that identifies the service instance. \n Note:
+                      \   Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef',
                       'IbmServiceInstanceIDSelector' should be != nil \n Example:
                       d6f76k03-6k4f-4a82-n165-697654o63903"
                     type: string
                   ibmServiceInstanceIDRef:
-                    description: "A reference to a resource instance containing the
-                      bucket \n Note:    Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef',
+                    description: "Crossplane reference to a resource instance containing
+                      the bucket \n Note:    Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef',
                       'IbmServiceInstanceIDSelector' should be != nil"
                     properties:
                       name:

@@ -1,0 +1,17 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: BucketConfig
+metadata:
+  name: configurable-2
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    name: configurable-2
+    hardQuota: 0
+    metricsMonitoring:
+      metricsMonitoringCRN: "0"
+    activityTracking:
+       activityTrackerCRN: "0"
+    firewall:
+        allowedIP: []
+  providerConfigRef:
+    name: ibm-cloud

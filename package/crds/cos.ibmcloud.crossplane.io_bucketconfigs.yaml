@@ -1,0 +1,311 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: bucketconfigs.cos.ibmcloud.crossplane.io
+spec:
+  group: cos.ibmcloud.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
+    kind: BucketConfig
+    listKind: BucketConfigList
+    plural: bucketconfigs
+    singular: bucketconfig
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: BucketConfig contains all the info (spec + status) for a bucket
+          configuration
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: BucketConfigSpec - desired end-state of a bucket in the IBM
+              cloud
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: Info the IBM cloud needs to create a bucket
+                properties:
+                  activityTracking:
+                    description: Enables sending log data to the Activity Tracker,
+                      to provide visibility into object read and write events. All
+                      object events are sent to the activity tracker instance identified
+                      in the `ActivityTrackerCRN` field.
+                    properties:
+                      activityTrackerCRN:
+                        description: "Required the first time Activity Tracking is
+                          configured. The is the CRN of the instance of Activity Tracker
+                          that will receive object event data. The format is \"crn:v1:bluemix:public:logdnaat:{bucket
+                          location}:a/{storage account}:{activity tracker service
+                          instance}::\" \n If set to \"0\", tracking is disabled (independently
+                          of the values of the other paremeters)'"
+                        type: string
+                      readDataEvents:
+                        description: If set to `true`, all object read events (i.e.
+                          downloads) will be sent to Activity Tracker.
+                        type: boolean
+                      writeDataEvents:
+                        description: If set to `true`, all object write events (i.e.
+                          uploads) will be sent to Activity Tracker.
+                        type: boolean
+                    type: object
+                  firewall:
+                    description: An access control mechanism based on the network
+                      (IP address) where request originated. Requests not originating
+                      from IP addresses listed in the `allowed_ip` field will be denied
+                      regardless of any access policies (including public access)
+                      that might otherwise permit the request.  Viewing or updating
+                      the `Firewall` element requires the requester to have the `manager`
+                      role.
+                    properties:
+                      allowedIP:
+                        description: List of IPv4 or IPv6 addresses in CIDR notation
+                          to be affected by firewall in CIDR notation is supported.
+                          Passing an empty array will lift the IP address filter.  The
+                          `allowed_ip` array can contain a maximum of 1000 items.
+                        items:
+                          type: string
+                        type: array
+                    required:
+                    - allowedIP
+                    type: object
+                  hardQuota:
+                    description: Maximum bytes for this bucket. If set to 0, quota
+                      is disabled
+                    format: int64
+                    type: integer
+                  headers:
+                    additionalProperties:
+                      type: string
+                    description: Allows users to set headers to be GDPR compliant
+                    type: object
+                  metricsMonitoring:
+                    description: Enables sending metrics to IBM Cloud Monitoring.
+                      All metrics are sent to the IBM Cloud Monitoring instance identified
+                      in the `MetricsMonitoringCRN` field.
+                    properties:
+                      metricsMonitoringCRN:
+                        description: "Required the first time monitoring is be configured.
+                          This is CRN the instance of IBM Cloud Monitoring that will
+                          receive the bucket metrics. The format is \"crn:v1:bluemix:public:logdnaat:{bucket
+                          location}:a/{storage account}:{monitoring service instance}::\".
+                          \n If set to \"0\", monitoring is disabled (independently
+                          of the values of the other paremeters)"
+                        type: string
+                      requestMetricsEnabled:
+                        description: If set to `true`, all request metrics (i.e. `rest.object.head`)
+                          will be sent to the monitoring service.
+                        type: boolean
+                      usageMetricsEnabled:
+                        description: If set to `true`, all usage metrics (i.e. `bytes_used`)
+                          will be sent to the monitoring service.
+                        type: boolean
+                    type: object
+                  name:
+                    description: "The name of the bucket. Non-mutable. \n Note:    One
+                      of 'Name', 'NameRef' should be specified..."
+                    type: string
+                  nameRef:
+                    description: "Crossplane reference of the bucket name (the bucket
+                      should already be \"in the cluster\") \n Note:    One of 'Name',
+                      'NameRef' should be specified"
+                    properties:
+                      name:
+                        description: Name of the referenced object.
+                        type: string
+                    required:
+                    - name
+                    type: object
+                  nameSelector:
+                    description: Selects a reference to a resource used to set the
+                      name
+                    properties:
+                      matchControllerRef:
+                        description: MatchControllerRef ensures an object with the
+                          same controller reference as the selecting object is selected.
+                        type: boolean
+                      matchLabels:
+                        additionalProperties:
+                          type: string
+                        description: MatchLabels ensures an object with matching labels
+                          is selected.
+                        type: object
+                    type: object
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: BucketConfigStatus - whatever the status is (the IBM cloud
+              decides that)
+            properties:
+              atProvider:
+                description: Info the IBM cloud returns about a bucket
+                properties:
+                  bytesUsed:
+                    description: Total size of all objects in the bucket
+                    format: int64
+                    type: integer
+                  crn:
+                    description: The CRN of the bucket
+                    type: string
+                  deleteMarkerCount:
+                    description: Total number of delete markers in the bucket. Non-mutable.
+                    format: int64
+                    type: integer
+                  noncurrentBytesUsed:
+                    description: Total size of all non-current object versions in
+                      the bucket. Non-mutable.
+                    format: int64
+                    type: integer
+                  noncurrentObjectCount:
+                    description: Number of non-current object versions in the bucket.
+                      Non-mutable.
+                    format: int64
+                    type: integer
+                  objectCount:
+                    description: Total number of objects in the bucket
+                    format: int64
+                    type: integer
+                  serviceInstanceCRN:
+                    description: RN of the service instance that holds the bucket.
+                    type: string
+                  serviceInstanceID:
+                    description: Id of the service instance that holds the bucket
+                    type: string
+                  timeCreated:
+                    description: The creation time of the bucket in RFC 3339 format
+                    format: date-time
+                    type: string
+                  timeUpdated:
+                    description: The modification time of the bucket in RFC 3339 format.
+                    format: date-time
+                    type: string
+                required:
+                - crn
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

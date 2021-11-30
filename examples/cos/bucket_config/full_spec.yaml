@@ -1,0 +1,26 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: BucketConfig
+metadata:
+  name: configurable-1
+  annotations:
+    crossplane.io/external-name: "configurable-1"
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    name:
+    nameRef: 
+      name: configurable-1
+    nameSelector:
+    hardQuota: 201
+    metricsMonitoring:
+      usageMetricsEnabled: true
+      requestMetricsEnabled: false
+      metricsMonitoringCRN: "crn:v1:bluemix:public:sysdig-monitor:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:636a39a0-aeb2-424c-949e-546df6d79d42::"        
+    activityTracking:
+      readDataEvents: false
+      writeDataEvents: true
+      activityTrackerCRN: "crn:v1:bluemix:public:logdnaat:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:ad5c1154-4ebc-4c46-9a9f-030792b29138::"
+    firewall:
+        allowedIP: ["24.189.53.198", "24.189.53.22"]
+  providerConfigRef:
+    name: ibm-cloud

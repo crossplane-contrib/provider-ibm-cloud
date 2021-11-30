@@ -39,14 +39,20 @@ var (
 
 // types metadata.
 var (
-	BucketKind             = reflect.TypeOf(Bucket{}).Name()
-	BucketGroupKind        = schema.GroupKind{Group: Group, Kind: BucketKind}.String()
-	BucketKindAPIVersion   = BucketKind + "." + SchemeGroupVersion.String()
-	BucketGroupVersionKind = SchemeGroupVersion.WithKind(BucketKind)
+	BucketKind                   = reflect.TypeOf(Bucket{}).Name()
+	BucketGroupKind              = schema.GroupKind{Group: Group, Kind: BucketKind}.String()
+	BucketKindAPIVersion         = BucketKind + "." + SchemeGroupVersion.String()
+	BucketGroupVersionKind       = SchemeGroupVersion.WithKind(BucketKind)
+	BucketConfigKind             = reflect.TypeOf(BucketConfig{}).Name()
+	BucketConfigGroupKind        = schema.GroupKind{Group: Group, Kind: BucketConfigKind}.String()
+	BucketConfigKindAPIVersion   = BucketConfigKind + "." + SchemeGroupVersion.String()
+	BucketConfigGroupVersionKind = SchemeGroupVersion.WithKind(BucketConfigKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&Bucket{},
-		&BucketList{})
+		&BucketList{},
+		&BucketConfig{},
+		&BucketConfigList{})
 }

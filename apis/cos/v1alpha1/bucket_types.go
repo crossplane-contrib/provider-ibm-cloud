@@ -29,19 +29,22 @@ type BucketPararams struct {
 	// Names resembling IP addresses are not allowed. Names must be unique because all buckets in the public cloud share a global namespace, allowing access to buckets without the need to provide any service instance or account information.
 	//
 	// It is not possible to create a bucket with a name beginning with cosv1- or account- as these prefixes are reserved by the system.
+	//
+	// +immutable
 	Name string `json:"bucket"`
 
-	// References the resource service instance where the bucket will be created and to which data usage will be billed. This value can be either the full Cloud Resource Name (CRN) or just the GUID segment that identifies the service instance.
+	// The resource service instance where the bucket will be created and to which data usage will be billed. This value can be either the full Cloud Resource Name (CRN) or just the GUID segment that identifies the service instance.
 	//
 	// Note:
 	//    Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef', 'IbmServiceInstanceIDSelector' should be != nil
 	//
 	// Example: d6f76k03-6k4f-4a82-n165-697654o63903
+	//
 	// +immutable
 	// +optional
 	IbmServiceInstanceID *string `json:"ibmServiceInstanceID,omitempty"`
 
-	// A reference to a resource instance containing the bucket
+	// Crossplane reference to a resource instance containing the bucket
 	//
 	// Note:
 	//    Only one of 'IbmServiceInstanceID', 'IbmServiceInstanceIDRef', 'IbmServiceInstanceIDSelector' should be != nil
@@ -62,6 +65,7 @@ type BucketPararams struct {
 	// The algorithm and key size used to for the managed encryption root key. Required if IbmSSEKpCustomerRootKeyCrn is also present.
 	//
 	// Allowable values: ``AES256''
+	//
 	// +immutable
 	// +optional
 	IbmSSEKpEncryptionAlgorithm *string `json:"ibmSSEKpEncryptionAlgorithm,omitempty"`
@@ -69,11 +73,13 @@ type BucketPararams struct {
 	// The CRN of the root key used to encrypt the bucket. Required ifIbmSSEKpEncryptionAlgorithm is also present.
 	//
 	// Example: crn:v1:bluemix:public:kms:us-south:a/f047b55a3362ac06afad8a3f2f5586ea:12e8c9c2-a162-472d-b7d6-8b9a86b815a6:key:02fd6835-6001-4482-a892-13bd2085f75d
+	//
 	// +immutable
 	// +optional
 	IbmSSEKpCustomerRootKeyCrn *string `json:"ibmSSEKpCustomerRootKeyCrn,omitempty"`
 
 	// Allowable values: ``us-standard'', ``us-cold''
+	//
 	// +immutable
 	LocationConstraint string `json:"locationConstraint"`
 }
@@ -85,7 +91,7 @@ type BucketObservation struct {
 	CreationDate *metav1.Time `json:"creationDate"`
 }
 
-// BucketSpec - desired end-state of a Bucket on the IBM cloud
+// BucketSpec - desired end-state of a Bucket in the IBM cloud
 type BucketSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
 
