@@ -1,0 +1,310 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: clusters.cos.ibmcloud.crossplane.io
+spec:
+  group: cos.ibmcloud.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
+    kind: Cluster
+    listKind: ClusterList
+    plural: clusters
+    singular: cluster
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Cluster contains all the info (spec + status) for a cluster
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: ClusterCreateRequest contains the params used to create a
+              cluster
+            properties:
+              billing:
+                type: string
+              cosInstanceCRN:
+                type: string
+              defaultWorkerPoolEntitlement:
+                type: string
+              disablePublicServiceEndpoint:
+                type: boolean
+              kubeVersion:
+                type: string
+              name:
+                type: string
+              podSubnet:
+                type: string
+              provider:
+                type: string
+              serviceSubnet:
+                type: string
+              workerPool:
+                description: WorkerPoolConfig is needin order to create a cluster
+                properties:
+                  diskEncryption:
+                    type: boolean
+                  entitlement:
+                    type: string
+                  flavor:
+                    type: string
+                  isolation:
+                    type: string
+                  labels:
+                    additionalProperties:
+                      type: string
+                    type: object
+                  name:
+                    type: string
+                  vpcID:
+                    type: string
+                  workerCount:
+                    type: integer
+                  zones:
+                    items:
+                      description: Zone info for the workes
+                      properties:
+                        id:
+                          type: string
+                        subnetID:
+                          type: string
+                      type: object
+                    type: array
+                required:
+                - entitlement
+                - flavor
+                - name
+                - vpcID
+                - workerCount
+                - zones
+                type: object
+            required:
+            - cosInstanceCRN
+            - defaultWorkerPoolEntitlement
+            - disablePublicServiceEndpoint
+            - kubeVersion
+            - name
+            - podSubnet
+            - provider
+            - serviceSubnet
+            - workerPool
+            type: object
+          status:
+            description: ClusterInfo contains the "observation" info
+            properties:
+              addons:
+                items:
+                  description: Addon ...
+                  properties:
+                    name:
+                      type: string
+                    version:
+                      type: string
+                  required:
+                  - name
+                  - version
+                  type: object
+                type: array
+              apiUser:
+                type: string
+              createdDate:
+                format: date-time
+                type: string
+              crn:
+                type: string
+              dataCenter:
+                type: string
+              disableAutoUpdate:
+                type: boolean
+              entitlement:
+                type: string
+              features:
+                description: Feat ...
+                properties:
+                  keyProtectEnabled:
+                    type: boolean
+                  pullSecretApplied:
+                    type: boolean
+                required:
+                - keyProtectEnabled
+                - pullSecretApplied
+                type: object
+              id:
+                type: string
+              ingress:
+                description: IngresInfo ...
+                properties:
+                  hostname:
+                    type: string
+                  secretName:
+                    type: string
+                required:
+                - hostname
+                - secretName
+                type: object
+              isPaid:
+                type: boolean
+              lifecycle:
+                description: LifeCycleInfo ...
+                properties:
+                  masterHealth:
+                    type: string
+                  masterState:
+                    type: string
+                  masterStatus:
+                    type: string
+                  masterStatusModifiedDate:
+                    type: string
+                  modifiedDate:
+                    format: date-time
+                    type: string
+                required:
+                - masterHealth
+                - masterState
+                - masterStatus
+                - masterStatusModifiedDate
+                - modifiedDate
+                type: object
+              location:
+                type: string
+              masterKubeVersion:
+                type: string
+              masterStatus:
+                type: string
+              masterURL:
+                type: string
+              multiAzCapable:
+                type: boolean
+              name:
+                type: string
+              ownerEmail:
+                type: string
+              podSubnet:
+                type: string
+              provider:
+                type: string
+              region:
+                type: string
+              resourceGroup:
+                type: string
+              resourceGroupName:
+                type: string
+              serverURL:
+                type: string
+              serviceEndpoints:
+                description: Endpoints ...
+                properties:
+                  privateServiceEndpointEnabled:
+                    type: boolean
+                  privateServiceEndpointURL:
+                    type: string
+                  publicServiceEndpointEnabled:
+                    type: boolean
+                  publicServiceEndpointURL:
+                    type: string
+                required:
+                - privateServiceEndpointEnabled
+                - privateServiceEndpointURL
+                - publicServiceEndpointEnabled
+                - publicServiceEndpointURL
+                type: object
+              serviceSubnet:
+                type: string
+              state:
+                type: string
+              targetVersion:
+                type: string
+              type:
+                type: string
+              versionEOS:
+                type: string
+              vpcs:
+                items:
+                  type: string
+                type: array
+              workerCount:
+                type: integer
+              workerZones:
+                items:
+                  type: string
+                type: array
+            required:
+            - addons
+            - apiUser
+            - createdDate
+            - crn
+            - dataCenter
+            - disableAutoUpdate
+            - entitlement
+            - features
+            - id
+            - ingress
+            - isPaid
+            - lifecycle
+            - location
+            - masterKubeVersion
+            - masterStatus
+            - masterURL
+            - multiAzCapable
+            - name
+            - ownerEmail
+            - podSubnet
+            - provider
+            - region
+            - resourceGroup
+            - resourceGroupName
+            - serverURL
+            - serviceEndpoints
+            - serviceSubnet
+            - state
+            - targetVersion
+            - type
+            - versionEOS
+            - vpcs
+            - workerCount
+            - workerZones
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []
