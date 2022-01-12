@@ -71,7 +71,7 @@ spec:
               serviceSubnet:
                 type: string
               workerPool:
-                description: WorkerPoolConfig is needin order to create a cluster
+                description: WorkerPoolConfig is needed in order to create a cluster
                 properties:
                   diskEncryption:
                     type: boolean

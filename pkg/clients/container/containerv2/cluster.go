@@ -18,6 +18,7 @@ package cos
 
 import (
 	cv2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
@@ -76,13 +77,52 @@ func GenerateClusterInfo(in *cv2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 		},
 	}
 
-	result.Addons = make([]v1alpha1.Addon, len(in.Addons))
-	for i, ao := range in.Addons {
-		result.Addons[i] = v1alpha1.Addon{
-			Name:    ao.Name,
-			Version: ao.Version,
+	if len(in.Addons) > 0 {
+		result.Addons = make([]v1alpha1.Addon, len(in.Addons))
+		for i, ao := range in.Addons {
+			result.Addons[i] = v1alpha1.Addon{
+				Name:    ao.Name,
+				Version: ao.Version,
+			}
 		}
 	}
 
 	return result, nil
+}
+
+// GenerateClusterCreateRequest populates the 'out' object from the 'in' one
+func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *cv2.ClusterCreateRequest) error {
+	out.DisablePublicServiceEndpoint = in.DisablePublicServiceEndpoint
+	out.KubeVersion = in.KubeVersion
+	out.Billing = reference.FromPtrValue(in.Billing)
+	out.PodSubnet = in.PodSubnet
+	out.Provider = in.Provider
+	out.ServiceSubnet = in.ServiceSubnet
+	out.ServiceSubnet = in.ServiceSubnet
+	out.Name = in.Name
+	out.DefaultWorkerPoolEntitlement = in.DefaultWorkerPoolEntitlement
+	out.CosInstanceCRN = in.CosInstanceCRN
+	out.WorkerPools.DiskEncryption = ibmc.BoolValue(in.WorkerPools.DiskEncryption)
+	out.WorkerPools.Entitlement = in.WorkerPools.Entitlement
+	out.WorkerPools.Flavor = in.WorkerPools.Flavor
+	out.WorkerPools.Isolation = reference.FromPtrValue(in.WorkerPools.Isolation)
+
+	if in.WorkerPools.Labels != nil {
+		for k, v := range *in.WorkerPools.Labels {
+			out.WorkerPools.Labels[k] = v
+		}
+	}
+
+	out.WorkerPools.Name = in.WorkerPools.Name
+	out.WorkerPools.VpcID = in.WorkerPools.VpcID
+	out.WorkerPools.WorkerCount = in.WorkerPools.WorkerCount
+
+	for i, zo := range in.WorkerPools.Zones {
+		out.WorkerPools.Zones[i] = cv2.Zone{
+			ID:       reference.FromPtrValue(zo.ID),
+			SubnetID: reference.FromPtrValue(zo.SubnetID),
+		}
+	}
+
+	return nil
 }

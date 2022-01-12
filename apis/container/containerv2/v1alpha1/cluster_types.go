@@ -31,7 +31,7 @@ type Zone struct {
 	SubnetID *string `json:"subnetID,omitempty"`
 }
 
-// WorkerPoolConfig is needin order to create a cluster
+// WorkerPoolConfig is needed in order to create a cluster
 type WorkerPoolConfig struct {
 	// +immutable
 	// +optional
