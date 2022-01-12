@@ -185,6 +185,7 @@ spec:
                   masterStatus:
                     type: string
                   masterStatusModifiedDate:
+                    format: date-time
                     type: string
                   modifiedDate:
                     format: date-time

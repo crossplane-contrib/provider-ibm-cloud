@@ -99,19 +99,13 @@ type ClusterCreateRequest struct {
 
 // Feat ...
 type Feat struct {
-	// +immutable
 	KeyProtectEnabled bool `json:"keyProtectEnabled"`
-
-	// +immutable
 	PullSecretApplied bool `json:"pullSecretApplied"`
 }
 
 // IngresInfo ...
 type IngresInfo struct {
-	// +immutable
-	HostName string `json:"hostname"`
-
-	// +immutable
+	HostName   string `json:"hostname"`
 	SecretName string `json:"secretName"`
 }
 
@@ -119,7 +113,7 @@ type IngresInfo struct {
 type LifeCycleInfo struct {
 	ModifiedDate             *metav1.Time `json:"modifiedDate"`
 	MasterStatus             string       `json:"masterStatus"`
-	MasterStatusModifiedDate string       `json:"masterStatusModifiedDate"`
+	MasterStatusModifiedDate *metav1.Time `json:"masterStatusModifiedDate"`
 	MasterHealth             string       `json:"masterHealth"`
 	MasterState              string       `json:"masterState"`
 }
