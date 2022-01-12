@@ -23,7 +23,7 @@ import (
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
-// GenerateClusterInfo returns constructs a crossplane version of the Cluster info, from the returned by the IBM cloud
+// GenerateClusterInfo returns a crossplane version of the Cluster info (built from the one returned by the IBM cloud)
 func GenerateClusterInfo(in *cv2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 	result := v1alpha1.ClusterInfo{
 		CreatedDate:       ibmc.ParseMetaV1Time(in.CreatedDate),
