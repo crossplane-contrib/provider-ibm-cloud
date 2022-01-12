@@ -36,6 +36,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	bluemix "github.com/IBM-Cloud/bluemix-go"
+	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	bluemixSession "github.com/IBM-Cloud/bluemix-go/session"
 	cv1 "github.com/IBM/cloudant-go-sdk/cloudantv1"
 	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
@@ -317,7 +320,30 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.bucketConfigClient = ibmBucketConfigClientConf
 
+	cs.clustersClientV2, err = generateClustersClientV2()
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
 	return &cs, err
+}
+
+func generateClustersClientV2() (*ibmContainerV2.Clusters, error) {
+	blueMixConf := new(bluemix.Config)
+
+	sess, err := bluemixSession.New(blueMixConf)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterClient, err := ibmContainerV2.New(sess)
+	if err != nil {
+		return nil, err
+	}
+
+	result := clusterClient.Clusters()
+
+	return &result, nil
 }
 
 // ClientSession provides an interface for IBM Cloud APIs
@@ -333,6 +359,7 @@ type ClientSession interface {
 	CloudantV1() *cv1.CloudantV1
 	S3Client() *s3.S3
 	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
+	ClustersClientV2() *ibmContainerV2.Clusters
 }
 
 type clientSessionImpl struct {
@@ -347,6 +374,11 @@ type clientSessionImpl struct {
 	cloudantV1            *cv1.CloudantV1
 	s3client              *s3.S3
 	bucketConfigClient    *ibmBucketConfig.ResourceConfigurationV1
+	clustersClientV2      *ibmContainerV2.Clusters
+}
+
+func (c *clientSessionImpl) ClustersClientV2() *ibmContainerV2.Clusters {
+	return c.clustersClientV2
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
