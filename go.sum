@@ -43,6 +43,7 @@ github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03
 github.com/BurntSushi/xgb v0.0.0-20160522181843-27f122750802/go.mod h1:IVnqGOEym/WlBOVXweHU+Q+/VP0lqqI8lqeDx9IjBqo=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb h1:ke+JASYimCuuAsmMWw2jmCRakGrKRQqVgIG30eiPI+Y=
 github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb/go.mod h1:gPJbH1etcDj7qS/hBRiLuYW9CY0bRcostSKusa51xR0=
+github.com/IBM-Cloud/bluemix-go v0.0.0-20211223094327-0da2539481f7 h1:XH//z3YFvgWzfZVScUkiT0KQHBWgcKozm3CAb8ujXPo=
 github.com/IBM/cloudant-go-sdk v0.0.34 h1:pHRtJeKdyeBIMD3YiXUNL0S/Dww5TiwRIvSs29imHYo=
 github.com/IBM/cloudant-go-sdk v0.0.34/go.mod h1:2kJzJJ1aoAW1qwsMX9CixWywNsvO7/fkyzhgDDgyrGc=
 github.com/IBM/eventstreams-go-sdk v1.1.0 h1:rOLcsraXtBu9nTVwTLMQANWPfu2vD28cG+s/ZQY8L/M=
