@@ -175,180 +175,217 @@ spec:
             - forProvider
             type: object
           status:
-            description: ClusterInfo contains the "observation" info
+            description: ClusterStatus represents the observed state of a AccessGroup.
             properties:
-              addons:
-                items:
-                  description: Addon ...
-                  properties:
-                    name:
-                      type: string
-                    version:
-                      type: string
-                  required:
-                  - name
-                  - version
-                  type: object
-                type: array
-              apiUser:
-                type: string
-              createdDate:
-                format: date-time
-                type: string
-              crn:
-                type: string
-              dataCenter:
-                type: string
-              disableAutoUpdate:
-                type: boolean
-              entitlement:
-                type: string
-              features:
-                description: Feat ...
+              atProvider:
+                description: ClusterInfo contains the "observation" info
                 properties:
-                  keyProtectEnabled:
+                  addons:
+                    items:
+                      description: Addon ...
+                      properties:
+                        name:
+                          type: string
+                        version:
+                          type: string
+                      required:
+                      - name
+                      - version
+                      type: object
+                    type: array
+                  apiUser:
+                    type: string
+                  createdDate:
+                    format: date-time
+                    type: string
+                  crn:
+                    type: string
+                  dataCenter:
+                    type: string
+                  disableAutoUpdate:
                     type: boolean
-                  pullSecretApplied:
+                  entitlement:
+                    type: string
+                  features:
+                    description: Feat ...
+                    properties:
+                      keyProtectEnabled:
+                        type: boolean
+                      pullSecretApplied:
+                        type: boolean
+                    required:
+                    - keyProtectEnabled
+                    - pullSecretApplied
+                    type: object
+                  id:
+                    type: string
+                  ingress:
+                    description: IngresInfo ...
+                    properties:
+                      hostname:
+                        type: string
+                      secretName:
+                        type: string
+                    required:
+                    - hostname
+                    - secretName
+                    type: object
+                  isPaid:
                     type: boolean
-                required:
-                - keyProtectEnabled
-                - pullSecretApplied
-                type: object
-              id:
-                type: string
-              ingress:
-                description: IngresInfo ...
-                properties:
-                  hostname:
+                  lifecycle:
+                    description: LifeCycleInfo ...
+                    properties:
+                      masterHealth:
+                        type: string
+                      masterState:
+                        type: string
+                      masterStatus:
+                        type: string
+                      masterStatusModifiedDate:
+                        format: date-time
+                        type: string
+                      modifiedDate:
+                        format: date-time
+                        type: string
+                    required:
+                    - masterHealth
+                    - masterState
+                    - masterStatus
+                    - masterStatusModifiedDate
+                    - modifiedDate
+                    type: object
+                  location:
                     type: string
-                  secretName:
-                    type: string
-                required:
-                - hostname
-                - secretName
-                type: object
-              isPaid:
-                type: boolean
-              lifecycle:
-                description: LifeCycleInfo ...
-                properties:
-                  masterHealth:
-                    type: string
-                  masterState:
+                  masterKubeVersion:
                     type: string
                   masterStatus:
                     type: string
-                  masterStatusModifiedDate:
-                    format: date-time
+                  masterURL:
                     type: string
-                  modifiedDate:
-                    format: date-time
+                  multiAzCapable:
+                    type: boolean
+                  name:
                     type: string
+                  ownerEmail:
+                    type: string
+                  podSubnet:
+                    type: string
+                  provider:
+                    type: string
+                  region:
+                    type: string
+                  resourceGroup:
+                    type: string
+                  resourceGroupName:
+                    type: string
+                  serverURL:
+                    type: string
+                  serviceEndpoints:
+                    description: Endpoints ...
+                    properties:
+                      privateServiceEndpointEnabled:
+                        type: boolean
+                      privateServiceEndpointURL:
+                        type: string
+                      publicServiceEndpointEnabled:
+                        type: boolean
+                      publicServiceEndpointURL:
+                        type: string
+                    required:
+                    - privateServiceEndpointEnabled
+                    - privateServiceEndpointURL
+                    - publicServiceEndpointEnabled
+                    - publicServiceEndpointURL
+                    type: object
+                  serviceSubnet:
+                    type: string
+                  state:
+                    type: string
+                  targetVersion:
+                    type: string
+                  type:
+                    type: string
+                  versionEOS:
+                    type: string
+                  vpcs:
+                    items:
+                      type: string
+                    type: array
+                  workerCount:
+                    type: integer
+                  workerZones:
+                    items:
+                      type: string
+                    type: array
                 required:
-                - masterHealth
-                - masterState
+                - addons
+                - apiUser
+                - createdDate
+                - crn
+                - dataCenter
+                - disableAutoUpdate
+                - entitlement
+                - features
+                - id
+                - ingress
+                - isPaid
+                - lifecycle
+                - location
+                - masterKubeVersion
                 - masterStatus
-                - masterStatusModifiedDate
-                - modifiedDate
+                - masterURL
+                - multiAzCapable
+                - name
+                - ownerEmail
+                - podSubnet
+                - provider
+                - region
+                - resourceGroup
+                - resourceGroupName
+                - serverURL
+                - serviceEndpoints
+                - serviceSubnet
+                - state
+                - targetVersion
+                - type
+                - versionEOS
+                - vpcs
+                - workerCount
+                - workerZones
                 type: object
-              location:
-                type: string
-              masterKubeVersion:
-                type: string
-              masterStatus:
-                type: string
-              masterURL:
-                type: string
-              multiAzCapable:
-                type: boolean
-              name:
-                type: string
-              ownerEmail:
-                type: string
-              podSubnet:
-                type: string
-              provider:
-                type: string
-              region:
-                type: string
-              resourceGroup:
-                type: string
-              resourceGroupName:
-                type: string
-              serverURL:
-                type: string
-              serviceEndpoints:
-                description: Endpoints ...
-                properties:
-                  privateServiceEndpointEnabled:
-                    type: boolean
-                  privateServiceEndpointURL:
-                    type: string
-                  publicServiceEndpointEnabled:
-                    type: boolean
-                  publicServiceEndpointURL:
-                    type: string
-                required:
-                - privateServiceEndpointEnabled
-                - privateServiceEndpointURL
-                - publicServiceEndpointEnabled
-                - publicServiceEndpointURL
-                type: object
-              serviceSubnet:
-                type: string
-              state:
-                type: string
-              targetVersion:
-                type: string
-              type:
-                type: string
-              versionEOS:
-                type: string
-              vpcs:
+              conditions:
+                description: Conditions of the resource.
                 items:
-                  type: string
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
                 type: array
-              workerCount:
-                type: integer
-              workerZones:
-                items:
-                  type: string
-                type: array
-            required:
-            - addons
-            - apiUser
-            - createdDate
-            - crn
-            - dataCenter
-            - disableAutoUpdate
-            - entitlement
-            - features
-            - id
-            - ingress
-            - isPaid
-            - lifecycle
-            - location
-            - masterKubeVersion
-            - masterStatus
-            - masterURL
-            - multiAzCapable
-            - name
-            - ownerEmail
-            - podSubnet
-            - provider
-            - region
-            - resourceGroup
-            - resourceGroupName
-            - serverURL
-            - serviceEndpoints
-            - serviceSubnet
-            - state
-            - targetVersion
-            - type
-            - versionEOS
-            - vpcs
-            - workerCount
-            - workerZones
             type: object
         required:
         - spec

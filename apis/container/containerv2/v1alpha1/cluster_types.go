@@ -196,8 +196,8 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterSpec `json:"spec"`
-	Status ClusterInfo `json:"status,omitempty"`
+	Spec   ClusterSpec   `json:"spec"`
+	Status ClusterStatus `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
