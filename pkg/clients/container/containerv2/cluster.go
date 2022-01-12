@@ -17,7 +17,7 @@ limitations under the License.
 package cos
 
 import (
-	cv2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
@@ -25,7 +25,7 @@ import (
 )
 
 // GenerateClusterInfo returns a crossplane version of the Cluster info (built from the one returned by the IBM cloud)
-func GenerateClusterInfo(in *cv2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
+func GenerateClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 	result := v1alpha1.ClusterInfo{
 		CreatedDate:       ibmc.ParseMetaV1Time(in.CreatedDate),
 		DataCenter:        in.DataCenter,
@@ -91,7 +91,7 @@ func GenerateClusterInfo(in *cv2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 }
 
 // GenerateClusterCreateRequest populates the 'out' object from the 'in' one
-func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *cv2.ClusterCreateRequest) error {
+func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *ibmContainerV2.ClusterCreateRequest) error {
 	out.DisablePublicServiceEndpoint = in.DisablePublicServiceEndpoint
 	out.KubeVersion = in.KubeVersion
 	out.Billing = reference.FromPtrValue(in.Billing)
@@ -118,10 +118,10 @@ func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *cv2.Cl
 	out.WorkerPools.WorkerCount = in.WorkerPools.WorkerCount
 
 	if len(in.WorkerPools.Zones) > 0 {
-		out.WorkerPools.Zones = make([]cv2.Zone, len(in.WorkerPools.Zones))
+		out.WorkerPools.Zones = make([]ibmContainerV2.Zone, len(in.WorkerPools.Zones))
 
 		for i, zo := range in.WorkerPools.Zones {
-			out.WorkerPools.Zones[i] = cv2.Zone{
+			out.WorkerPools.Zones[i] = ibmContainerV2.Zone{
 				ID:       reference.FromPtrValue(zo.ID),
 				SubnetID: reference.FromPtrValue(zo.SubnetID),
 			}

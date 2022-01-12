@@ -49,76 +49,130 @@ spec:
           metadata:
             type: object
           spec:
-            description: ClusterCreateRequest contains the params used to create a
-              cluster
+            description: ClusterSpec defines the desired state of a Cluster.
             properties:
-              billing:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
                 type: string
-              cosInstanceCRN:
-                type: string
-              defaultWorkerPoolEntitlement:
-                type: string
-              disablePublicServiceEndpoint:
-                type: boolean
-              kubeVersion:
-                type: string
-              name:
-                type: string
-              podSubnet:
-                type: string
-              provider:
-                type: string
-              serviceSubnet:
-                type: string
-              workerPool:
-                description: WorkerPoolConfig is needed in order to create a cluster
+              forProvider:
+                description: ClusterCreateRequest contains the params used to create
+                  a cluster
                 properties:
-                  diskEncryption:
+                  billing:
+                    type: string
+                  cosInstanceCRN:
+                    type: string
+                  defaultWorkerPoolEntitlement:
+                    type: string
+                  disablePublicServiceEndpoint:
                     type: boolean
-                  entitlement:
+                  kubeVersion:
                     type: string
-                  flavor:
-                    type: string
-                  isolation:
-                    type: string
-                  labels:
-                    additionalProperties:
-                      type: string
-                    type: object
                   name:
                     type: string
-                  vpcID:
+                  podSubnet:
                     type: string
-                  workerCount:
-                    type: integer
-                  zones:
-                    items:
-                      description: Zone info for the workes
-                      properties:
-                        id:
+                  provider:
+                    type: string
+                  serviceSubnet:
+                    type: string
+                  workerPool:
+                    description: WorkerPoolConfig is needed in order to create a cluster
+                    properties:
+                      diskEncryption:
+                        type: boolean
+                      entitlement:
+                        type: string
+                      flavor:
+                        type: string
+                      isolation:
+                        type: string
+                      labels:
+                        additionalProperties:
                           type: string
-                        subnetID:
-                          type: string
-                      type: object
-                    type: array
+                        type: object
+                      name:
+                        type: string
+                      vpcID:
+                        type: string
+                      workerCount:
+                        type: integer
+                      zones:
+                        items:
+                          description: Zone info for the workes
+                          properties:
+                            id:
+                              type: string
+                            subnetID:
+                              type: string
+                          type: object
+                        type: array
+                    required:
+                    - entitlement
+                    - flavor
+                    - name
+                    - vpcID
+                    - workerCount
+                    - zones
+                    type: object
                 required:
-                - entitlement
-                - flavor
+                - cosInstanceCRN
+                - defaultWorkerPoolEntitlement
+                - disablePublicServiceEndpoint
+                - kubeVersion
                 - name
-                - vpcID
-                - workerCount
-                - zones
+                - podSubnet
+                - provider
+                - serviceSubnet
+                - workerPool
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
                 type: object
             required:
-            - cosInstanceCRN
-            - defaultWorkerPoolEntitlement
-            - disablePublicServiceEndpoint
-            - kubeVersion
-            - name
-            - podSubnet
-            - provider
-            - serviceSubnet
-            - workerPool
+            - forProvider
             type: object
           status:
             description: ClusterInfo contains the "observation" info

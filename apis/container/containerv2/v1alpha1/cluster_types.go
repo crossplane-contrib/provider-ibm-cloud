@@ -17,6 +17,7 @@ limitations under the License.
 package v1alpha1
 
 import (
+	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -170,6 +171,18 @@ type ClusterInfo struct {
 	Features          Feat          `json:"features"`
 }
 
+// ClusterSpec defines the desired state of a Cluster.
+type ClusterSpec struct {
+	runtimev1alpha1.ResourceSpec `json:",inline"`
+	ForProvider                  ClusterCreateRequest `json:"forProvider"`
+}
+
+// ClusterStatus represents the observed state of a AccessGroup.
+type ClusterStatus struct {
+	runtimev1alpha1.ResourceStatus `json:",inline"`
+	AtProvider                     ClusterInfo `json:"atProvider,omitempty"`
+}
+
 // +kubebuilder:object:root=true
 
 // Cluster contains all the info (spec + status) for a cluster
@@ -183,8 +196,8 @@ type Cluster struct {
 	metav1.TypeMeta   `json:",inline"`
 	metav1.ObjectMeta `json:"metadata,omitempty"`
 
-	Spec   ClusterCreateRequest `json:"spec"`
-	Status ClusterInfo          `json:"status,omitempty"`
+	Spec   ClusterSpec `json:"spec"`
+	Status ClusterInfo `json:"status,omitempty"`
 }
 
 // +kubebuilder:object:root=true
