@@ -117,10 +117,14 @@ func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *cv2.Cl
 	out.WorkerPools.VpcID = in.WorkerPools.VpcID
 	out.WorkerPools.WorkerCount = in.WorkerPools.WorkerCount
 
-	for i, zo := range in.WorkerPools.Zones {
-		out.WorkerPools.Zones[i] = cv2.Zone{
-			ID:       reference.FromPtrValue(zo.ID),
-			SubnetID: reference.FromPtrValue(zo.SubnetID),
+	if len(in.WorkerPools.Zones) > 0 {
+		out.WorkerPools.Zones = make([]cv2.Zone, len(in.WorkerPools.Zones))
+
+		for i, zo := range in.WorkerPools.Zones {
+			out.WorkerPools.Zones[i] = cv2.Zone{
+				ID:       reference.FromPtrValue(zo.ID),
+				SubnetID: reference.FromPtrValue(zo.SubnetID),
+			}
 		}
 	}
 
