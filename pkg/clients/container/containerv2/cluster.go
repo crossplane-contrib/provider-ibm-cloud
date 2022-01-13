@@ -25,7 +25,7 @@ import (
 )
 
 // GenerateClusterInfo returns a crossplane version of the Cluster info (built from the one returned by the IBM cloud)
-func GenerateClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
+func GenerateCrossplaneClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 	result := v1alpha1.ClusterInfo{
 		CreatedDate:       ibmc.ParseMetaV1Time(in.CreatedDate),
 		DataCenter:        in.DataCenter,

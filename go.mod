@@ -3,7 +3,7 @@ module github.com/crossplane-contrib/provider-ibm-cloud
 go 1.13
 
 require (
-	github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb
+	github.com/IBM-Cloud/bluemix-go v0.0.0-20211223094327-0da2539481f7
 	github.com/IBM/cloudant-go-sdk v0.0.34
 	github.com/IBM/eventstreams-go-sdk v1.1.0
 	github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655
@@ -12,7 +12,6 @@ require (
 	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/ibm-cos-sdk-go-config v1.2.0
 	github.com/IBM/platform-services-go-sdk v0.17.18
-	github.com/aws/aws-sdk-go v1.34.28
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
 	github.com/go-openapi/strfmt v0.20.1

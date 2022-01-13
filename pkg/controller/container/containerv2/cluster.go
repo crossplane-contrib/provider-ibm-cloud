@@ -19,7 +19,6 @@ package cos
 import (
 	"context"
 
-	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -42,7 +41,7 @@ import (
 const (
 	errThisIsNotACluster = "managed resource is not a cluster resource"
 	errCreateCluster     = "could not create a cluster"
-	errCreateClusterInp  = "could not generate the input params for a cluster"
+	errCreateClusterReq  = "could not generate the input params for a cluster"
 	errDeleteCluster     = "could not delete the cluster"
 	errGetClusterFailed  = "error getting the cluster"
 	errUpdCluster        = "error updating the cluster"
@@ -117,41 +116,41 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		}, nil
 	}
 
-	ibmCluster, err := c.client.ClustersClientV2().GetCluster(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+	ibmClusterInfo, err := c.client.ClustersClientV2().GetCluster(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
-	} else if ibmCluster != nil {
-		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateClusterInfo(ibmCluster)
+	} else if ibmClusterInfo != nil {
+		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneClusterInfo(ibmClusterInfo)
 		if err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errUpdBucket)
+			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 		}
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:    ibmCluster != nil,
+		ResourceExists:    ibmClusterInfo != nil,
 		ResourceUpToDate:  true,
 		ConnectionDetails: nil,
 	}, nil
 }
 
 // Called by crossplane
-func (c *bucketExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	crossplaneBucket, ok := mg.(*v1alpha1.Bucket)
+func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
+	crossplaneBucket, ok := mg.(*v1alpha1.Cluster)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errCreateBucket)
+		return managed.ExternalCreation{}, errors.New(errThisIsNotACluster)
 	}
 
 	crossplaneBucket.SetConditions(runtimev1alpha1.Creating())
 
-	s3BucketInp := s3.CreateBucketInput{}
-	if err := crossplaneClient.GenerateS3BucketInput(crossplaneBucket.Spec.ForProvider.DeepCopy(), &s3BucketInp); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateBucketInp)
+	createRequest := ibmContainerV2.ClusterCreateRequest{}
+	if err := crossplaneClient.GenerateClusterCreateRequest(crossplaneBucket.Spec.ForProvider.DeepCopy(), &createRequest); err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateClusterReq)
 	}
 
-	s3Client := c.generateClient()
-	_, err := s3Client.CreateBucket(&s3BucketInp)
+	clusterClient := c.client.ClustersClientV2()
+	clusterCreateResponse, err := clusterClient.Create(&createRequest, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateBucket)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
 
 	meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
@@ -160,38 +159,24 @@ func (c *bucketExternal) Create(ctx context.Context, mg resource.Managed) (manag
 }
 
 // (Not) called by crossplane - as the bucket cannot be changed once created... Here only to satisfy the compiler
-func (c *bucketExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+func (c *clusterExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	return managed.ExternalUpdate{}, nil
 }
 
 // Called by crossplane
-func (c *bucketExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	crossplaneBucket, ok := mg.(*v1alpha1.Bucket)
+func (c *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error {
+	crossplaneCluster, ok := mg.(*v1alpha1.Cluster)
 	if !ok {
-		return errors.New(errThisIsNotABucket)
+		return errors.New(errThisIsNotACluster)
 	}
 
-	crossplaneBucket.SetConditions(runtimev1alpha1.Deleting())
+	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
 
-	s3Client := c.generateClient()
-
-	_, err := s3Client.DeleteBucket(&s3.DeleteBucketInput{Bucket: &crossplaneBucket.Spec.ForProvider.Name})
+	clusterClient := c.client.ClustersClientV2()
+	_, err := clusterClient.Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteBucket)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
 	}
 
 	return nil
-}
-
-// Returns a client, potentially adapted for unit test running (unit test requires extra params)
-func (c *bucketExternal) generateClient() *s3.S3 {
-	result := c.client.S3Client()
-
-	if c.unitTestRegionAndCredentials != nil {
-		result.Config.Credentials = c.unitTestRegionAndCredentials.credentials
-		result.Config.Region = &c.unitTestRegionAndCredentials.region
-		result.ClientInfo.SigningRegion = c.unitTestRegionAndCredentials.region
-	}
-
-	return result
 }
