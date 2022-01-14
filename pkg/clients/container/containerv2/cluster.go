@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cos
+package containerv2
 
 import (
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"

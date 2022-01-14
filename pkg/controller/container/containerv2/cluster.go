@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cos
+package containerv2
 
 import (
 	"context"
@@ -116,7 +116,7 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		}, nil
 	}
 
-	ibmClusterInfo, err := c.client.ClustersClientV2().GetCluster(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+	ibmClusterInfo := c.client.ClustersClientV2().GetCluster(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
 	} else if ibmClusterInfo != nil {
@@ -147,14 +147,16 @@ func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateClusterReq)
 	}
 
-	clusterClient := c.client.ClustersClientV2()
-	clusterCreateResponse, err := clusterClient.Create(&createRequest, ibmContainerV2.ClusterTargetHeader{})
-	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
-	}
+	/*
+		clusterClient := c.client.ClustersClientV2()
+		clusterCreateResponse, err := clusterClient.Create(&createRequest, ibmContainerV2.ClusterTargetHeader{})
+		if err != nil {
+			return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
+		}
 
-	meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
+		meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
 
+	*/
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
@@ -171,12 +173,12 @@ func (c *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 	}
 
 	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
-
-	clusterClient := c.client.ClustersClientV2()
-	_, err := clusterClient.Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
-	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
-	}
-
+	/*
+		clusterClient := c.client.ClustersClientV2()
+		_, err := clusterClient.Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+		if err != nil {
+			return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
+		}
+	*/
 	return nil
 }
