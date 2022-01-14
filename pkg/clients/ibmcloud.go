@@ -359,7 +359,7 @@ type ClientSession interface {
 	CloudantV1() *cv1.CloudantV1
 	S3Client() *s3.S3
 	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
-	ClustersClientV2() *ibmContainerV2.Clusters
+	ClusterClientV2() *ibmContainerV2.Clusters
 }
 
 type clientSessionImpl struct {
@@ -377,7 +377,7 @@ type clientSessionImpl struct {
 	clustersClientV2      *ibmContainerV2.Clusters
 }
 
-func (c *clientSessionImpl) ClustersClientV2() *ibmContainerV2.Clusters {
+func (c *clientSessionImpl) ClusterClientV2() *ibmContainerV2.Clusters {
 	return c.clustersClientV2
 }
 
