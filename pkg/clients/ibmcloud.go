@@ -328,7 +328,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 	return &cs, err
 }
 
-func generateClustersClientV2() (*ibmContainerV2.Clusters, error) {
+func generateClustersClientV2() (ibmContainerV2.Clusters, error) {
 	blueMixConf := new(bluemix.Config)
 
 	sess, err := bluemixSession.New(blueMixConf)
@@ -341,9 +341,7 @@ func generateClustersClientV2() (*ibmContainerV2.Clusters, error) {
 		return nil, err
 	}
 
-	result := clusterClient.Clusters()
-
-	return &result, nil
+	return clusterClient.Clusters(), nil
 }
 
 // ClientSession provides an interface for IBM Cloud APIs
@@ -359,7 +357,7 @@ type ClientSession interface {
 	CloudantV1() *cv1.CloudantV1
 	S3Client() *s3.S3
 	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
-	ClusterClientV2() *ibmContainerV2.Clusters
+	ClusterClientV2() ibmContainerV2.Clusters
 }
 
 type clientSessionImpl struct {
@@ -374,10 +372,10 @@ type clientSessionImpl struct {
 	cloudantV1            *cv1.CloudantV1
 	s3client              *s3.S3
 	bucketConfigClient    *ibmBucketConfig.ResourceConfigurationV1
-	clustersClientV2      *ibmContainerV2.Clusters
+	clustersClientV2      ibmContainerV2.Clusters
 }
 
-func (c *clientSessionImpl) ClusterClientV2() *ibmContainerV2.Clusters {
+func (c *clientSessionImpl) ClusterClientV2() ibmContainerV2.Clusters {
 	return c.clustersClientV2
 }
 

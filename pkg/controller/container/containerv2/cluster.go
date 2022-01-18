@@ -44,7 +44,6 @@ const (
 	errCreateClusterReq  = "could not generate the input params for a cluster"
 	errDeleteCluster     = "could not delete the cluster"
 	errGetClusterFailed  = "error getting the cluster"
-	errUpdCluster        = "error updating the cluster"
 )
 
 // SetupCluster adds a controller that reconciles Cluster objects
@@ -147,16 +146,13 @@ func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateClusterReq)
 	}
 
-	/*
-		clusterClient := c.client.ClustersClientV2()
-		clusterCreateResponse, err := clusterClient.Create(&createRequest, ibmContainerV2.ClusterTargetHeader{})
-		if err != nil {
-			return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
-		}
+	_, err := c.client.ClusterClientV2().Create(createRequest, ibmContainerV2.ClusterTargetHeader{})
+	if err != nil {
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
+	}
 
-		meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
+	meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
 
-	*/
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
@@ -173,12 +169,11 @@ func (c *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 	}
 
 	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
-	/*
-		clusterClient := c.client.ClustersClientV2()
-		_, err := clusterClient.Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
-		if err != nil {
-			return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
-		}
-	*/
+
+	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+	if err != nil {
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
+	}
+
 	return nil
 }
