@@ -4,9 +4,9 @@ metadata:
   annotations:
     controller-gen.kubebuilder.io/version: v0.2.4
   creationTimestamp: null
-  name: clusters.cos.ibmcloud.crossplane.io
+  name: clusters.container.containerv2.ibmcloud.crossplane.io
 spec:
-  group: cos.ibmcloud.crossplane.io
+  group: container.containerv2.ibmcloud.crossplane.io
   names:
     categories:
     - crossplane

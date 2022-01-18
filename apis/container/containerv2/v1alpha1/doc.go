@@ -16,6 +16,6 @@ limitations under the License.
 
 // Package v1alpha1 contains the v1alpha1 group eventstreamsadminv1 resources of the IBM Cloud provider.
 // +kubebuilder:object:generate=true
-// +groupName=cos.ibmcloud.crossplane.io
+// +groupName=container.containerv2.ibmcloud.crossplane.io
 // +versionName=v1alpha1
 package v1alpha1
