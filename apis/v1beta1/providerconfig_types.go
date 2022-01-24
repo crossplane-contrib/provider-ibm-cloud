@@ -32,6 +32,9 @@ type ProviderConfigSpec struct {
 // A ProviderConfigStatus represents the status of a ProviderConfig.
 type ProviderConfigStatus struct {
 	v1alpha1.ProviderConfigStatus `json:",inline"`
+
+	// RefreshToken ...for the IBM Cloud API
+	RefreshToken v1alpha1.ProviderCredentials `json:"refreshToken,omitempty"`
 }
 
 // +kubebuilder:object:root=true

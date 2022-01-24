@@ -9,5 +9,11 @@ spec:
       namespace: crossplane-system
       name: provider-ibm-cloud-secret
       key: credentials
-  region: us-south    
+status:
+  refreshToken:
+    source: Secret
+    secretRef:
+      namespace: crossplane-system
+      name: provider-ibm-refresh-token
+      key: credentials 
    

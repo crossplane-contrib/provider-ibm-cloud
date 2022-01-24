@@ -44,11 +44,12 @@ import (
 )
 
 const (
-	timeout      = 2 * time.Minute
-	requeueTime  = 30 * time.Minute
-	errGetPC     = "cannot get ProviderConfig"
-	errNoSecret  = "no credentials secret reference was provided"
-	errGetSecret = "cannot get credentials secret"
+	timeout                  = 2 * time.Minute
+	requeueTime              = 30 * time.Minute
+	errGetPC                 = "cannot get ProviderConfig"
+	errNoIAMSecret           = "no credentials/secret reference was provided"
+	errGetIAMSecret          = "cannot get credentials/secret"
+	errGetRefreshTokenSecret = "cannot get a refresh token from the server"
 )
 
 // SetupToken adds a controller that reconciles ProviderConfigs by accounting for
@@ -142,32 +143,48 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, errors.Wrap(resource.IgnoreNotFound(err), errGetPC)
 	}
 
-	ref := pc.Spec.Credentials.SecretRef
-	if ref == nil {
-		return reconcile.Result{}, errors.New(errNoSecret)
+	// Get the access token
+	iamTokenRef := pc.Spec.Credentials.SecretRef
+	if iamTokenRef == nil {
+		return reconcile.Result{}, errors.New(errGetIAMSecret)
 	}
 
-	s := &v1.Secret{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
+	iamTokenSecret := &v1.Secret{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, iamTokenSecret); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
 	}
 
-	config := bluemix.Config{
+	blueMixConfig := bluemix.Config{
 		EndpointLocator: endpoints.NewEndpointLocator(getRegion(*pc)),
 	}
-	auth, err := authentication.NewIAMAuthRepository(&config, &rest.Client{HTTPClient: http.DefaultClient})
+
+	auth, err := authentication.NewIAMAuthRepository(&blueMixConfig, &rest.Client{HTTPClient: http.DefaultClient})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := auth.AuthenticateAPIKey(string(s.Data[ref.Key])); err != nil {
+	if err := auth.AuthenticateAPIKey(string(iamTokenSecret.Data[iamTokenRef.Key])); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	s.Data[ibmc.AccessTokenKey] = []byte(config.IAMAccessToken)
-	if err := r.client.Update(ctx, s); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
+	iamTokenSecret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
+	if err := r.client.Update(ctx, iamTokenSecret); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
 	}
+
+	// Get the refresh token (if one exists)
+	refreshTokenRef := pc.Status.RefreshToken.SecretRef
+	if refreshTokenRef != nil {
+		refreshTokenSecret := &v1.Secret{}
+		if err := r.client.Get(ctx, types.NamespacedName{Name: refreshTokenRef.Name, Namespace: refreshTokenRef.Namespace}, refreshTokenSecret); err != nil {
+			return reconcile.Result{}, errors.Wrap(err, errGetRefreshTokenSecret)
+		}
+	}
+
+	//s.Data[ibmc.RefreshTokenKey] = []byte(config.IAMRefreshToken)
+	// if err := r.client.Update(ctx, s); err != nil {
+	//	return reconcile.Result{}, errors.Wrap(err, errGetSecret)
+	//}
 
 	return reconcile.Result{RequeueAfter: requeueTime}, nil
 }

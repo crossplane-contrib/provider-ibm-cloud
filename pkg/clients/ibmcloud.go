@@ -64,6 +64,9 @@ const (
 	// AccessTokenKey key for IBM Cloud API access token
 	AccessTokenKey = "access_token"
 
+	// RefreshTokenKey ...for the IBM Cloud API
+	RefreshTokenKey = "refresh_token"
+
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
 
@@ -122,6 +125,7 @@ type ClientOptions struct {
 	BearerToken string // This is contained in Authenticator (when it is of BearTokenAuthenticator type) - but we
 	// seem to not be able to look it up via reflection. So separately for the controllers that need it...
 	// Note that it should always be of the format 'Bearer <...>'
+	RefreshToken  string // not used every time....
 	Authenticator core.Authenticator
 }
 

@@ -6,7 +6,7 @@ metadata:
 spec:
   deletionPolicy: Delete
   forProvider:
-    name: corssplane-1
+    name: crossplane-1
     disablePublicServiceEndpoint: true
     provider: vpc-gen2
     kubeVersion: 1.21.7_1541
