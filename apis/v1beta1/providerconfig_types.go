@@ -27,14 +27,13 @@ type ProviderConfigSpec struct {
 	v1alpha1.ProviderConfigSpec `json:",inline"`
 	// Region for IBM Cloud API
 	Region string `json:"region,omitempty"`
+	// RefreshToken ...for the IBM Cloud API. We put it here since we need to have things bootstrapped
+	RefreshToken v1alpha1.ProviderCredentials `json:"refreshToken,omitempty"`
 }
 
 // A ProviderConfigStatus represents the status of a ProviderConfig.
 type ProviderConfigStatus struct {
 	v1alpha1.ProviderConfigStatus `json:",inline"`
-
-	// RefreshToken ...for the IBM Cloud API
-	RefreshToken v1alpha1.ProviderCredentials `json:"refreshToken,omitempty"`
 }
 
 // +kubebuilder:object:root=true

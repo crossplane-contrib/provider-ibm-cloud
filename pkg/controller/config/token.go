@@ -50,6 +50,7 @@ const (
 	errNoIAMSecret           = "no credentials/secret reference was provided"
 	errGetIAMSecret          = "cannot get credentials/secret"
 	errGetRefreshTokenSecret = "cannot get a refresh token from the server"
+	errSaveSecret            = "cannot save new credentials from the cloud"
 )
 
 // SetupToken adds a controller that reconciles ProviderConfigs by accounting for
@@ -149,8 +150,8 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, errors.New(errGetIAMSecret)
 	}
 
-	iamTokenSecret := &v1.Secret{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, iamTokenSecret); err != nil {
+	secret := &v1.Secret{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, secret); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
 	}
 
@@ -163,28 +164,15 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, err
 	}
 
-	if err := auth.AuthenticateAPIKey(string(iamTokenSecret.Data[iamTokenRef.Key])); err != nil {
+	if err := auth.AuthenticateAPIKey(string(secret.Data[iamTokenRef.Key])); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	iamTokenSecret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
-	if err := r.client.Update(ctx, iamTokenSecret); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
+	secret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
+	secret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
+	if err := r.client.Update(ctx, secret); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errSaveSecret)
 	}
-
-	// Get the refresh token (if one exists)
-	refreshTokenRef := pc.Status.RefreshToken.SecretRef
-	if refreshTokenRef != nil {
-		refreshTokenSecret := &v1.Secret{}
-		if err := r.client.Get(ctx, types.NamespacedName{Name: refreshTokenRef.Name, Namespace: refreshTokenRef.Namespace}, refreshTokenSecret); err != nil {
-			return reconcile.Result{}, errors.Wrap(err, errGetRefreshTokenSecret)
-		}
-	}
-
-	//s.Data[ibmc.RefreshTokenKey] = []byte(config.IAMRefreshToken)
-	// if err := r.client.Update(ctx, s); err != nil {
-	//	return reconcile.Result{}, errors.Wrap(err, errGetSecret)
-	//}
 
 	return reconcile.Result{RequeueAfter: requeueTime}, nil
 }
