@@ -150,8 +150,8 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, errors.New(errGetIAMSecret)
 	}
 
-	secret := &v1.Secret{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, secret); err != nil {
+	iamAccessAndRefreshTokenSecret := &v1.Secret{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, iamAccessAndRefreshTokenSecret); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
 	}
 
@@ -164,13 +164,13 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, err
 	}
 
-	if err := auth.AuthenticateAPIKey(string(secret.Data[iamTokenRef.Key])); err != nil {
+	if err := auth.AuthenticateAPIKey(string(iamAccessAndRefreshTokenSecret.Data[iamTokenRef.Key])); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	secret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
-	secret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
-	if err := r.client.Update(ctx, secret); err != nil {
+	iamAccessAndRefreshTokenSecret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
+	iamAccessAndRefreshTokenSecret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
+	if err := r.client.Update(ctx, iamAccessAndRefreshTokenSecret); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errSaveSecret)
 	}
 

@@ -125,7 +125,7 @@ type ClientOptions struct {
 	BearerToken string // This is contained in Authenticator (when it is of BearTokenAuthenticator type) - but we
 	// seem to not be able to look it up via reflection. So separately for the controllers that need it...
 	// Note that it should always be of the format 'Bearer <...>'
-	RefreshToken  string // not used every time....
+	RefreshToken  *string // not used every time....
 	Authenticator core.Authenticator
 }
 
@@ -157,7 +157,16 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 		return ClientOptions{}, err
 	}
 
-	return ClientOptions{Authenticator: authenticator, BearerToken: *bearerTok}, nil
+	result := ClientOptions{Authenticator: authenticator,
+		BearerToken: *bearerTok,
+	}
+
+	if s.Data[RefreshTokenKey] != nil {
+		rtkStr := string(s.Data[RefreshTokenKey])
+		result.RefreshToken = &rtkStr
+	}
+
+	return result, nil
 }
 
 func getAuthenticator(s *v1.Secret) (core.Authenticator, *string, error) {
@@ -324,7 +333,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.bucketConfigClient = ibmBucketConfigClientConf
 
-	cs.clustersClientV2, err = generateClustersClientV2()
+	cs.clustersClientV2, err = generateClustersClientV2(opts.BearerToken, *opts.RefreshToken)
 	if err != nil {
 		return nil, errors.Wrap(err, errInitClient)
 	}
@@ -332,8 +341,16 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 	return &cs, err
 }
 
-func generateClustersClientV2() (ibmContainerV2.Clusters, error) {
+// Params
+// 		bearerToken - the IAM access token
+//      refreshToken - sent from the server
+//
+// Returns
+//      a client which has established a connection with the server
+func generateClustersClientV2(bearerToken string, refreshToken string) (ibmContainerV2.Clusters, error) {
 	blueMixConf := new(bluemix.Config)
+	blueMixConf.IAMAccessToken = bearerToken
+	blueMixConf.IAMRefreshToken = refreshToken
 
 	sess, err := bluemixSession.New(blueMixConf)
 	if err != nil {
