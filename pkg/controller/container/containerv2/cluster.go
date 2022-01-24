@@ -115,7 +115,7 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 		}, nil
 	}
 
-	ibmClusterInfo, err := c.client.ClusterClientV2().GetCluster(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+	ibmClusterInfo, err := c.client.ClusterClientV2().GetCluster(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
 	} else if ibmClusterInfo != nil {
@@ -134,15 +134,15 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 // Called by crossplane
 func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	crossplaneBucket, ok := mg.(*v1alpha1.Cluster)
+	crossplaneCluster, ok := mg.(*v1alpha1.Cluster)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errThisIsNotACluster)
 	}
 
-	crossplaneBucket.SetConditions(runtimev1alpha1.Creating())
+	crossplaneCluster.SetConditions(runtimev1alpha1.Creating())
 
 	createRequest := ibmContainerV2.ClusterCreateRequest{}
-	if err := crossplaneClient.GenerateClusterCreateRequest(crossplaneBucket.Spec.ForProvider.DeepCopy(), &createRequest); err != nil {
+	if err := crossplaneClient.GenerateClusterCreateRequest(crossplaneCluster.Spec.ForProvider.DeepCopy(), &createRequest); err != nil {
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateClusterReq)
 	}
 
@@ -151,7 +151,7 @@ func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
 
-	meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
+	meta.SetExternalName(crossplaneCluster, crossplaneCluster.Spec.ForProvider.Name)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
