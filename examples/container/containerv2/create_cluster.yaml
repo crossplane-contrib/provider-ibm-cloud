@@ -1,12 +1,12 @@
 apiVersion: container.containerv2.ibmcloud.crossplane.io/v1alpha1
 kind: Cluster
 metadata:
-  name: metadata-name
+  name: metadata-name-1
   annotations:
 spec:
-  deletionPolicy: Orphan
+  deletionPolicy: Delete
   forProvider:
-    name: crossplane-9
+    name: crossplane-1
     disablePublicServiceEndpoint: true
     provider: vpc-gen2
     kubeVersion: 1.21.7_1541

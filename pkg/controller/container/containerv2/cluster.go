@@ -170,7 +170,7 @@ func (c *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 
 	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
 
-	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
 	}
