@@ -88,6 +88,7 @@ const (
 	errUnableToGet        = "unable to get"
 	errNotFound2          = "not_found"
 	errNotFound3          = "does not exist"
+	errNotFound4          = "not be found"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -617,10 +618,10 @@ func IsResourceUnprocessable(err error) bool {
 	return strings.Contains(err.Error(), errUnprocEntity)
 }
 
-// IsResourceGone returns true if resource is gone
+// IsResourceGone returns true if the resource is gone
 func IsResourceGone(err error) bool {
-	return strings.Contains(err.Error(), errGone) ||
-		strings.Contains(err.Error(), http.StatusText(http.StatusNotFound))
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errGone)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(http.StatusText(http.StatusNotFound)))
 }
 
 // IsResourceInactive returns true if resource is inactive
@@ -634,7 +635,8 @@ func IsResourceNotFound(err error) bool {
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound2)) ||
-		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound3))
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound3)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound4))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted

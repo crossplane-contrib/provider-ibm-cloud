@@ -47,8 +47,8 @@ const (
 	timeout                  = 2 * time.Minute
 	requeueTime              = 30 * time.Minute
 	errGetPC                 = "cannot get ProviderConfig"
-	errNoIAMSecret           = "no credentials/secret reference was provided"
-	errGetIAMSecret          = "cannot get credentials/secret"
+	errNoSecret              = "no credentials/secret reference was provided"
+	errGetSecret             = "cannot get credentials/secret"
 	errGetRefreshTokenSecret = "cannot get a refresh token from the server"
 	errSaveSecret            = "cannot save new credentials from the cloud"
 )
@@ -145,14 +145,14 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 	}
 
 	// Get the access token
-	iamTokenRef := pc.Spec.Credentials.SecretRef
-	if iamTokenRef == nil {
-		return reconcile.Result{}, errors.New(errGetIAMSecret)
+	secretRef := pc.Spec.Credentials.SecretRef
+	if secretRef == nil {
+		return reconcile.Result{}, errors.New(errGetSecret)
 	}
 
-	iamAccessAndRefreshTokenSecret := &v1.Secret{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: iamTokenRef.Name, Namespace: iamTokenRef.Namespace}, iamAccessAndRefreshTokenSecret); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, errGetIAMSecret)
+	secret := &v1.Secret{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: secretRef.Name, Namespace: secretRef.Namespace}, secret); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
 	}
 
 	blueMixConfig := bluemix.Config{
@@ -164,13 +164,13 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, err
 	}
 
-	if err := auth.AuthenticateAPIKey(string(iamAccessAndRefreshTokenSecret.Data[iamTokenRef.Key])); err != nil {
+	if err := auth.AuthenticateAPIKey(string(secret.Data[secretRef.Key])); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	iamAccessAndRefreshTokenSecret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
-	iamAccessAndRefreshTokenSecret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
-	if err := r.client.Update(ctx, iamAccessAndRefreshTokenSecret); err != nil {
+	secret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
+	secret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
+	if err := r.client.Update(ctx, secret); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errSaveSecret)
 	}
 
@@ -181,5 +181,6 @@ func getRegion(pc v1beta1.ProviderConfig) string {
 	if pc.Spec.Region != "" {
 		return pc.Spec.Region
 	}
+
 	return ibmc.DefaultRegion
 }

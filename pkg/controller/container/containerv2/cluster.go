@@ -117,7 +117,11 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 
 	ibmClusterInfo, err := c.client.ClusterClientV2().GetCluster(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
+		if ibmc.IsResourceNotFound(err) {
+			return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
+		} else {
+			return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
+		}
 	} else if ibmClusterInfo != nil {
 		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneClusterInfo(ibmClusterInfo)
 		if err != nil {
