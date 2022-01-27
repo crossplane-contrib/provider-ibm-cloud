@@ -21,6 +21,7 @@ import (
 	"testing"
 
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 
 	"github.com/google/go-cmp/cmp"
@@ -29,7 +30,20 @@ import (
 // Tests the GenerateCrossplaneClusterInfo function
 func TestGenerateCrossplaneClusterInfo(t *testing.T) {
 	ibmClusterInfo := &ibmContainerV2.ClusterInfo{
+		CreatedDate:       "2006-01-02 15:04:05",
+		DataCenter:        "a data center",
+		ID:                "an id",
+		Location:          "location-location",
+		Entitlement:       "young people these days are like that",
+		MasterKubeVersion: "grand master",
 		Name:              "harry",
+		Region:            "a region",
+		ResourceGroupID:   "what an id",
+		State:             "doing great!",
+		IsPaid:            false,
+		Addons:            []ibmContainerV2.Addon{{Name: "name1", Version: "version 1"}, {Name: "name1", Version: "version 2"}},
+		OwnerEmail:        "foo@bar",
+		Type:              "residential",
 		TargetVersion:     "a version",
 		ServiceSubnet:     "a subnet",
 		ResourceGroupName: "a resource group",
@@ -71,13 +85,68 @@ func TestGenerateCrossplaneClusterInfo(t *testing.T) {
 		crossPlaneClusterInfo, _ := GenerateCrossplaneClusterInfo(ibmClusterInfo)
 
 		tests := map[string]struct {
-			cloudVal      string
-			crossplaneVal string
-			isDateStr     bool `default:"false"`
+			cloudVal            string
+			crossplaneVal       string
+			cloudValAddons      []ibmContainerV2.Addon
+			crossplaneValAddons []v1alpha1.Addon
+			isDateStr           bool `default:"false"`
 		}{
+			"CreatedDate": {
+				cloudVal:      ibmClusterInfo.CreatedDate,
+				crossplaneVal: strconv.FormatInt(crossPlaneClusterInfo.CreatedDate.Unix(), 10),
+				isDateStr:     true,
+			},
+			"DataCenter": {
+				cloudVal:      ibmClusterInfo.DataCenter,
+				crossplaneVal: crossPlaneClusterInfo.DataCenter,
+			},
+			"ID": {
+				cloudVal:      ibmClusterInfo.ID,
+				crossplaneVal: crossPlaneClusterInfo.ID,
+			},
+			"Location": {
+				cloudVal:      ibmClusterInfo.Location,
+				crossplaneVal: crossPlaneClusterInfo.Location,
+			},
+			"Entitlement": {
+				cloudVal:      ibmClusterInfo.Entitlement,
+				crossplaneVal: crossPlaneClusterInfo.Entitlement,
+			},
+			"MasterKubeVersion": {
+				cloudVal:      ibmClusterInfo.MasterKubeVersion,
+				crossplaneVal: crossPlaneClusterInfo.MasterKubeVersion,
+			},
 			"Name": {
 				cloudVal:      ibmClusterInfo.Name,
 				crossplaneVal: crossPlaneClusterInfo.Name,
+			},
+			"Region": {
+				cloudVal:      ibmClusterInfo.Region,
+				crossplaneVal: crossPlaneClusterInfo.Region,
+			},
+			"ResourceGroupID": {
+				cloudVal:      ibmClusterInfo.ResourceGroupID,
+				crossplaneVal: crossPlaneClusterInfo.ResourceGroupID,
+			},
+			"State": {
+				cloudVal:      ibmClusterInfo.State,
+				crossplaneVal: crossPlaneClusterInfo.State,
+			},
+			"IsPaid": {
+				cloudVal:      strconv.FormatBool(ibmClusterInfo.IsPaid),
+				crossplaneVal: strconv.FormatBool(crossPlaneClusterInfo.IsPaid),
+			},
+			"Addons": {
+				cloudValAddons:      ibmClusterInfo.Addons,
+				crossplaneValAddons: crossPlaneClusterInfo.Addons,
+			},
+			"OwnerEmail": {
+				cloudVal:      ibmClusterInfo.OwnerEmail,
+				crossplaneVal: crossPlaneClusterInfo.OwnerEmail,
+			},
+			"Type": {
+				cloudVal:      ibmClusterInfo.Type,
+				crossplaneVal: crossPlaneClusterInfo.Type,
 			},
 			"TargetVersion": {
 				cloudVal:      ibmClusterInfo.TargetVersion,
