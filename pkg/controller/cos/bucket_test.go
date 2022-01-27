@@ -39,7 +39,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
-	tstUtil "github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/util"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 // Constants that we could not use as such because no address...
@@ -178,8 +178,8 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 //		  garbage collection)
 //      -- an error (if...)
 
-func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]tstUtil.Handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
-	mClient, tstServer, err := tstUtil.SetupTestServerClient(testingObj, handlers)
+func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
 		return nil, nil, err
 	}
@@ -205,13 +205,13 @@ func TestBucketCreate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []tstUtil.Handler
+		handlers []tstutil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"Successful": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -240,7 +240,7 @@ func TestBucketCreate(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -309,13 +309,13 @@ func TestBucketDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []tstUtil.Handler
+		handlers []tstutil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"Successful": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -339,7 +339,7 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"AlreadyGone": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -363,7 +363,7 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -425,13 +425,13 @@ func TestBucketObserve(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []tstUtil.Handler
+		handlers []tstutil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -456,7 +456,7 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -481,7 +481,7 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetForbidden": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
@@ -505,7 +505,7 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []tstUtil.Handler{
+			handlers: []tstutil.Handler{
 				{
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
