@@ -196,7 +196,8 @@ func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]
 		Authenticator: &core.BearerTokenAuthenticator{
 			BearerToken: ibmc.FakeBearerToken,
 		},
-		BearerToken: ibmc.FakeBearerToken,
+		BearerToken:  ibmc.FakeBearerToken,
+		RefreshToken: "does it check for spaces?",
 	}
 
 	mClient, errNC := ibmc.NewClient(opts)
