@@ -23,7 +23,6 @@ import (
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-
 	"github.com/google/go-cmp/cmp"
 )
 
