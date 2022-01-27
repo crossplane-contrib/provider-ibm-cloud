@@ -119,9 +119,9 @@ func (c *clusterExternal) Observe(ctx context.Context, mg resource.Managed) (man
 	if err != nil {
 		if ibmc.IsResourceNotFound(err) {
 			return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
-		} else {
-			return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
 		}
+
+		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
 	} else if ibmClusterInfo != nil {
 		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneClusterInfo(ibmClusterInfo)
 		if err != nil {

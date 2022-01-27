@@ -258,3 +258,112 @@ func TestGenerateCrossplaneClusterInfo(t *testing.T) {
 		}
 	})
 }
+
+// Tests the GenerateClusterCreateRequest function
+func TestGenerateClusterCreateRequest(t *testing.T) {
+	crossplaneRequest := &v1alpha1.ClusterCreateRequest{}
+	ibmCloudRequest := &ibmContainerV2.ClusterCreateRequest{}
+
+	t.Run("TestGenerateClusterCreateRequest", func(t *testing.T) {
+		err := GenerateClusterCreateRequest(crossplaneRequest, ibmCloudRequest)
+		if err != nil {
+			t.Errorf("TestGenerateClusterCreateRequest(...): -returned error\n%s", err.Error())
+
+			return
+		}
+
+		tests := map[string]struct {
+			crossplaneVal    string
+			cloudVal         string
+			isDateStr        bool `default:"false"`
+			crossplaneLabels *map[string]string
+			cloudLabels      map[string]string
+		}{
+			"DisablePublicServiceEndpoint": {
+				crossplaneVal: strconv.FormatBool(crossplaneRequest.DisablePublicServiceEndpoint),
+				cloudVal:      strconv.FormatBool(ibmCloudRequest.DisablePublicServiceEndpoint),
+			},
+			"KubeVersion": {
+				crossplaneVal: crossplaneRequest.KubeVersion,
+				cloudVal:      ibmCloudRequest.KubeVersion,
+			},
+			"Billing": {
+				crossplaneVal: *crossplaneRequest.Billing,
+				cloudVal:      ibmCloudRequest.Billing,
+			},
+			"PodSubnet": {
+				crossplaneVal: crossplaneRequest.PodSubnet,
+				cloudVal:      ibmCloudRequest.PodSubnet,
+			},
+			"Provider": {
+				crossplaneVal: crossplaneRequest.Provider,
+				cloudVal:      ibmCloudRequest.Provider,
+			},
+			"ServiceSubnet": {
+				crossplaneVal: crossplaneRequest.ServiceSubnet,
+				cloudVal:      ibmCloudRequest.ServiceSubnet,
+			},
+			"Name": {
+				crossplaneVal: crossplaneRequest.Name,
+				cloudVal:      ibmCloudRequest.Name,
+			},
+			"DefaultWorkerPoolEntitlement": {
+				crossplaneVal: crossplaneRequest.DefaultWorkerPoolEntitlement,
+				cloudVal:      ibmCloudRequest.DefaultWorkerPoolEntitlement,
+			},
+			"CosInstanceCRN": {
+				crossplaneVal: crossplaneRequest.CosInstanceCRN,
+				cloudVal:      ibmCloudRequest.CosInstanceCRN,
+			},
+			"DiskEncryption": {
+				crossplaneVal: strconv.FormatBool(*crossplaneRequest.WorkerPools.DiskEncryption),
+				cloudVal:      strconv.FormatBool(ibmCloudRequest.WorkerPools.DiskEncryption),
+			},
+			"Entitlement": {
+				crossplaneVal: crossplaneRequest.WorkerPools.Entitlement,
+				cloudVal:      ibmCloudRequest.WorkerPools.Entitlement,
+			},
+			"Flavor": {
+				crossplaneVal: crossplaneRequest.WorkerPools.Flavor,
+				cloudVal:      ibmCloudRequest.WorkerPools.Flavor,
+			},
+			"Isolation": {
+				crossplaneVal: *crossplaneRequest.WorkerPools.Isolation,
+				cloudVal:      ibmCloudRequest.WorkerPools.Isolation,
+			},
+			"Labels": {
+				crossplaneLabels: crossplaneRequest.WorkerPools.Labels,
+				cloudLabels:      ibmCloudRequest.WorkerPools.Labels,
+			},
+			"WorkerPools.Name": {
+				crossplaneVal: crossplaneRequest.WorkerPools.Name,
+				cloudVal:      ibmCloudRequest.WorkerPools.Name,
+			},
+			"VpcID": {
+				crossplaneVal: crossplaneRequest.WorkerPools.VpcID,
+				cloudVal:      ibmCloudRequest.WorkerPools.VpcID,
+			},
+			"WorkerCount": {
+				crossplaneVal: strconv.Itoa(crossplaneRequest.WorkerPools.WorkerCount),
+				cloudVal:      strconv.Itoa(ibmCloudRequest.WorkerPools.WorkerCount),
+			},
+		}
+
+		for name, tc := range tests {
+			t.Run(name, func(t *testing.T) {
+				if !tc.isDateStr {
+					if diff := cmp.Diff(tc.crossplaneVal, tc.cloudVal); diff != "" {
+						t.Errorf("TestGenerateClusterCreateRequest(...): -wanted, +got:\n%s", diff)
+					}
+				} else {
+					cloudVal := ibmc.ParseMetaV1Time(tc.cloudVal).Unix()
+					crossPlaneVal, _ := strconv.ParseInt(tc.crossplaneVal, 10, 64)
+
+					if cloudVal != crossPlaneVal {
+						t.Errorf("TestGenerateClusterCreateRequest(...): -wanted %s, +got:%s\n", tc.crossplaneVal, tc.cloudVal)
+					}
+				}
+			})
+		}
+	})
+}

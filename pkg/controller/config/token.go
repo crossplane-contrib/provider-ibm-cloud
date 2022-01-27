@@ -44,13 +44,11 @@ import (
 )
 
 const (
-	timeout                  = 2 * time.Minute
-	requeueTime              = 30 * time.Minute
-	errGetPC                 = "cannot get ProviderConfig"
-	errNoSecret              = "no credentials/secret reference was provided"
-	errGetSecret             = "cannot get credentials/secret"
-	errGetRefreshTokenSecret = "cannot get a refresh token from the server"
-	errSaveSecret            = "cannot save new credentials from the cloud"
+	timeout       = 2 * time.Minute
+	requeueTime   = 30 * time.Minute
+	errGetPC      = "cannot get ProviderConfig"
+	errGetSecret  = "cannot get credentials/secret"
+	errSaveSecret = "cannot save new credentials from the cloud"
 )
 
 // SetupToken adds a controller that reconciles ProviderConfigs by accounting for

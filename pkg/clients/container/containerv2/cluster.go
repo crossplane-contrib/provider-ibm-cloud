@@ -98,7 +98,6 @@ func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *ibmCon
 	out.PodSubnet = in.PodSubnet
 	out.Provider = in.Provider
 	out.ServiceSubnet = in.ServiceSubnet
-	out.ServiceSubnet = in.ServiceSubnet
 	out.Name = in.Name
 	out.DefaultWorkerPoolEntitlement = in.DefaultWorkerPoolEntitlement
 	out.CosInstanceCRN = in.CosInstanceCRN
