@@ -107,6 +107,8 @@ func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *ibmCon
 	out.WorkerPools.Isolation = reference.FromPtrValue(in.WorkerPools.Isolation)
 
 	if in.WorkerPools.Labels != nil {
+		out.WorkerPools.Labels = map[string]string{}
+
 		for k, v := range *in.WorkerPools.Labels {
 			out.WorkerPools.Labels[k] = v
 		}

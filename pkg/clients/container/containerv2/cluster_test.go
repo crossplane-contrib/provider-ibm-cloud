@@ -21,8 +21,11 @@ import (
 	"testing"
 
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
+
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+
 	"github.com/google/go-cmp/cmp"
 )
 
@@ -258,9 +261,43 @@ func TestGenerateCrossplaneClusterInfo(t *testing.T) {
 	})
 }
 
+// Returns a pointer to a random map
+func randomMap() *map[string]string {
+	result := map[string]string{
+		"one":   "two",
+		"three": "two",
+		"four":  "two",
+	}
+
+	return &result
+}
+
 // Tests the GenerateClusterCreateRequest function
 func TestGenerateClusterCreateRequest(t *testing.T) {
-	crossplaneRequest := &v1alpha1.ClusterCreateRequest{}
+	crossplaneRequest := &v1alpha1.ClusterCreateRequest{
+		DisablePublicServiceEndpoint: false,
+		KubeVersion:                  "a version",
+		Billing:                      reference.ToPtrValue("billing"),
+		PodSubnet:                    "a subnet",
+		Provider:                     "a provider",
+		ServiceSubnet:                "a service net",
+		Name:                         "a name",
+		DefaultWorkerPoolEntitlement: "an entitlement",
+		CosInstanceCRN:               "a crn",
+		WorkerPools: v1alpha1.WorkerPoolConfig{
+			DiskEncryption: ibmc.BoolPtr(true),
+			Entitlement:    "so entitled",
+			Flavor:         "banana",
+			Isolation:      reference.ToPtrValue("...due to COVID"),
+			Labels:         randomMap(),
+			Name:           "another name",
+			VpcID:          "whoooooa",
+			WorkerCount:    33,
+			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("verston 2")},
+				{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("v2")}},
+		},
+	}
+
 	ibmCloudRequest := &ibmContainerV2.ClusterCreateRequest{}
 
 	t.Run("TestGenerateClusterCreateRequest", func(t *testing.T) {
