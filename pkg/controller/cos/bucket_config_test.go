@@ -174,6 +174,9 @@ func setupServerAndGetUnitTestExternalBucketConfig(testingObj *testing.T, handle
 		Authenticator: &core.BearerTokenAuthenticator{
 			BearerToken: ibmc.FakeBearerToken,
 		},
+
+		BearerToken:  ibmc.FakeBearerToken,
+		RefreshToken: "does format matter?",
 	}
 
 	mClient, errNC := ibmc.NewClient(opts)

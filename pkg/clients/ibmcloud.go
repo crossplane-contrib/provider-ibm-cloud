@@ -126,7 +126,7 @@ type ClientOptions struct {
 	BearerToken string // This is contained in Authenticator (when it is of BearTokenAuthenticator type) - but we
 	// seem to not be able to look it up via reflection. So separately for the controllers that need it...
 	// Note that it should always be of the format 'Bearer <...>'
-	RefreshToken  *string // not used every time....
+	RefreshToken  string // not used every time....
 	Authenticator core.Authenticator
 }
 
@@ -164,7 +164,7 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 
 	if s.Data[RefreshTokenKey] != nil {
 		rtkStr := string(s.Data[RefreshTokenKey])
-		result.RefreshToken = &rtkStr
+		result.RefreshToken = rtkStr
 	}
 
 	return result, nil
@@ -334,7 +334,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.bucketConfigClient = ibmBucketConfigClientConf
 
-	cs.clustersClientV2, err = generateClustersClientV2(opts.BearerToken, *opts.RefreshToken)
+	cs.clustersClientV2, err = generateClustersClientV2(opts.BearerToken, opts.RefreshToken)
 	if err != nil {
 		return nil, errors.Wrap(err, errInitClient)
 	}
