@@ -49,11 +49,6 @@ var (
 	resourceInstanceIDInCloud = "cloudy"
 )
 
-// Used in testing, to hold the arguments passed to the crossplane functions
-type args struct {
-	mg resource.Managed
-}
-
 // Applies a list of functions to a bucket observation creted locally
 func bucketObservation(m ...func(*v1alpha1.BucketObservation)) *v1alpha1.BucketObservation {
 	result := &v1alpha1.BucketObservation{
@@ -177,7 +172,6 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 //		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
 //		  garbage collection)
 //      -- an error (if...)
-
 func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -207,7 +201,7 @@ func TestBucketCreate(t *testing.T) {
 	cases := map[string]struct {
 		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
@@ -228,8 +222,8 @@ func TestBucketCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
@@ -257,8 +251,8 @@ func TestBucketCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
@@ -278,7 +272,7 @@ func TestBucketCreate(t *testing.T) {
 
 			defer server.Close()
 
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -295,7 +289,7 @@ func TestBucketCreate(t *testing.T) {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -311,7 +305,7 @@ func TestBucketDelete(t *testing.T) {
 	cases := map[string]struct {
 		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
@@ -330,8 +324,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -354,8 +348,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -378,8 +372,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -397,7 +391,7 @@ func TestBucketDelete(t *testing.T) {
 
 			defer server.Close()
 
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -410,7 +404,7 @@ func TestBucketDelete(t *testing.T) {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -427,7 +421,7 @@ func TestBucketObserve(t *testing.T) {
 	cases := map[string]struct {
 		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
@@ -447,8 +441,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -471,8 +465,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -495,8 +489,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -524,8 +518,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
@@ -547,7 +541,7 @@ func TestBucketObserve(t *testing.T) {
 
 			defer server.Close()
 
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -564,7 +558,7 @@ func TestBucketObserve(t *testing.T) {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})

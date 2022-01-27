@@ -178,7 +178,7 @@ func TestBucketConfigObserve(t *testing.T) {
 	cases := map[string]struct {
 		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 		name     string // used for debugging convenience
 	}{
@@ -199,8 +199,8 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errGetBucketConfigFailed),
@@ -223,8 +223,8 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetBucketConfigFailed),
@@ -246,8 +246,8 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetBucketConfigFailed),
@@ -272,8 +272,8 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				obs: managed.ExternalObservation{
@@ -295,7 +295,7 @@ func TestBucketConfigObserve(t *testing.T) {
 
 			defer server.Close()
 
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
 					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
@@ -309,7 +309,7 @@ func TestBucketConfigObserve(t *testing.T) {
 			}
 
 			if tc.want.mg != nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Observe(...): -want, +got:\n%s", diff)
 				}
 			}
@@ -327,7 +327,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 	cases := map[string]struct {
 		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 		name     string // used for debugging convenience
 	}{
@@ -348,8 +348,8 @@ func TestBucketConfigUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				upd: managed.ExternalUpdate{},
@@ -373,8 +373,8 @@ func TestBucketConfigUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				upd: managed.ExternalUpdate{},
@@ -393,7 +393,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 
 			defer server.Close()
 
-			xu, err := e.Update(context.Background(), tc.args.mg)
+			xu, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
 					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
@@ -407,7 +407,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 			}
 
 			if tc.want.mg != nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Observe(...): -want, +got:\n%s", diff)
 				}
 			}

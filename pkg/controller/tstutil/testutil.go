@@ -22,9 +22,15 @@ import (
 	"testing"
 
 	"github.com/IBM/go-sdk-core/core"
+	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
+
+// Args is used in testing, to hold the arguments passed to the crossplane functions
+type Args struct {
+	Managed resource.Managed
+}
 
 // Handler is used in unit testing
 type Handler struct {
