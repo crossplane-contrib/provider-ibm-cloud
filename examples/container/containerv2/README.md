@@ -1,0 +1,3 @@
+The 2 examples provided are fairly similar - only the _all_params_ one contains all the possible parameters (even if w/o values :-)).
+
+Note that <ins>deleting</ins> a cluster can take a while and it can seem that it hangs (and that you have to clear the resource from k8s manually). It does not! - it is just that the cloud takes a while to get rid of the cluster; once this happens, the k8s _delete_ command will return...
