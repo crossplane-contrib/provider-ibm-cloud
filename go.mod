@@ -12,7 +12,6 @@ require (
 	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/ibm-cos-sdk-go-config v1.2.0
 	github.com/IBM/platform-services-go-sdk v0.17.18
-	github.com/aws/aws-sdk-go v1.34.28
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
 	github.com/go-openapi/strfmt v0.20.1
@@ -20,6 +19,7 @@ require (
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2 // indirect
 	github.com/jeremywohl/flatten v1.0.1
+	github.com/kisielk/godepgraph v0.0.0-20190626013829-57a7e4a651a9 // indirect
 	github.com/pkg/errors v0.9.1
 	golang.org/x/oauth2 v0.0.0-20210514164344-f6687ab2804c // indirect
 	golang.org/x/tools v0.1.7 // indirect

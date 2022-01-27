@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cos
 
 import (
@@ -24,14 +25,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/IBM/go-sdk-core/core"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -40,7 +39,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
-	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+	tstUtil "github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/util"
 )
 
 // Constants that we could not use as such because no address...
@@ -53,12 +52,6 @@ var (
 // Used in testing, to hold the arguments passed to the crossplane functions
 type args struct {
 	mg resource.Managed
-}
-
-// Used further down in testing, to hold the function that will generate the response
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
 }
 
 // Applies a list of functions to a bucket observation creted locally
@@ -180,29 +173,15 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 //	   client - the controller runtime client
 //
 // Returns
-//		the external bucket, ready for unit test
-//		the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		garbage collection)
-func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
-	mux := http.NewServeMux()
-	for _, h := range *handlers {
-		mux.HandleFunc(h.path, h.handlerFunc)
-	}
+//		- the external bucket, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
 
-	tstServer := httptest.NewServer(mux)
-
-	opts := ibmc.ClientOptions{
-		URL: tstServer.URL,
-		Authenticator: &core.BearerTokenAuthenticator{
-			BearerToken: ibmc.FakeBearerToken,
-		},
-		BearerToken:  ibmc.FakeBearerToken,
-		RefreshToken: "does it check for spaces?",
-	}
-
-	mClient, errNC := ibmc.NewClient(opts)
-	if errNC != nil {
-		return nil, tstServer, errNC
+func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]tstUtil.Handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstUtil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
 
 	return &bucketExternal{
@@ -211,7 +190,7 @@ func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]
 				region:      "does not matter",
 			},
 			kube:   *kube,
-			client: mClient,
+			client: *mClient,
 			logger: logging.NewNopLogger(),
 		},
 		tstServer,
@@ -226,16 +205,16 @@ func TestBucketCreate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstUtil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
@@ -261,10 +240,10 @@ func TestBucketCreate(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
@@ -330,16 +309,16 @@ func TestBucketDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstUtil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -360,10 +339,10 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"AlreadyGone": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -384,10 +363,10 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -446,16 +425,16 @@ func TestBucketObserve(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstUtil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -477,10 +456,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -502,10 +481,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -526,10 +505,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstUtil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
