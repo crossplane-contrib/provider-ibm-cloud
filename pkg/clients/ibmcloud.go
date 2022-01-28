@@ -334,7 +334,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.bucketConfigClient = ibmBucketConfigClientConf
 
-	cs.clustersClientV2, err = generateClustersClientV2(opts.BearerToken, opts.RefreshToken)
+	cs.clustersClientV2, err = generateClustersClientV2(opts.URL, opts.BearerToken, opts.RefreshToken)
 	if err != nil {
 		return nil, errors.Wrap(err, errInitClient)
 	}
@@ -343,13 +343,18 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 }
 
 // Params
+//      url - the server url
 // 		bearerToken - the IAM access token
 //      refreshToken - sent from the server
 //
 // Returns
 //      a client which has established a connection with the server
-func generateClustersClientV2(bearerToken string, refreshToken string) (ibmContainerV2.Clusters, error) {
+func generateClustersClientV2(url string, bearerToken string, refreshToken string) (ibmContainerV2.Clusters, error) {
 	blueMixConf := new(bluemix.Config)
+	if url != "" {
+		blueMixConf.Endpoint = &url
+	}
+
 	blueMixConf.IAMAccessToken = bearerToken
 	blueMixConf.IAMRefreshToken = refreshToken
 
