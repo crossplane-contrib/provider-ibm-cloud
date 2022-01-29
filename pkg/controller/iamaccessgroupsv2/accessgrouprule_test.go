@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -29,6 +30,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -175,6 +177,32 @@ func agrInstance(m ...func(*iamagv2.Rule)) *iamagv2.Rule {
 	return i
 }
 
+// Sets up a unit test http server, and creates an external access-group-rule structure appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external object, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternalAGR(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*agrExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
+	}
+
+	return &agrExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
 func TestAccessGroupRuleObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
@@ -341,7 +369,7 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -490,7 +518,7 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -621,7 +649,7 @@ func TestAccessGroupRuleDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, errServer := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, errServer := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
 			if errServer != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", errServer)
 			}
@@ -731,7 +759,7 @@ func TestAccessGroupRuleUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}

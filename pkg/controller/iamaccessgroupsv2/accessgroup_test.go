@@ -181,7 +181,7 @@ func crInstance(m ...func(*iamagv2.Group)) *iamagv2.Group {
 //		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
 //		  garbage collection)
 //      -- an error (if...)
-func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*agExternal, *httptest.Server, error) {
+func setupServerAndGetUnitTestExternalAG(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*agExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
 		return nil, nil, err
@@ -363,7 +363,7 @@ func TestAccessGroupObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -512,7 +512,7 @@ func TestAccessGroupCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -643,7 +643,7 @@ func TestAccessGroupDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, errServer := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, errServer := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
 			if errServer != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", errServer)
 			}
@@ -753,7 +753,7 @@ func TestAccessGroupUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}

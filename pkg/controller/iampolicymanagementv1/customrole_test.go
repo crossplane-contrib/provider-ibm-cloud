@@ -36,12 +36,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/IBM/go-sdk-core/core"
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iampolicymanagementv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 	ibmccr "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/customrole"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 const (
@@ -171,26 +171,50 @@ func crInstance(m ...func(*iampmv1.CustomRole)) *iampmv1.CustomRole {
 	return i
 }
 
-func TestCustomRoleObserve(t *testing.T) {
-	type args struct {
-		mg resource.Managed
+// Sets up a unit test http server, and creates an external client structure appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external bucket config, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      - an error (iff...)
+func setupServerAndGetUnitTestExternalCR(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*crExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil {
+		return nil, nil, err
 	}
+
+	return &crExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
+
+func TestCustomRoleObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -202,8 +226,8 @@ func TestCustomRoleObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(),
+			args: tstutil.Args{
+				Managed: cr(),
 			},
 			want: want{
 				mg:  cr(),
@@ -211,10 +235,10 @@ func TestCustomRoleObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -225,8 +249,8 @@ func TestCustomRoleObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(),
+			args: tstutil.Args{
+				Managed: cr(),
 			},
 			want: want{
 				mg:  cr(),
@@ -235,10 +259,10 @@ func TestCustomRoleObserve(t *testing.T) {
 		},
 
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -249,8 +273,8 @@ func TestCustomRoleObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(),
+			args: tstutil.Args{
+				Managed: cr(),
 			},
 			want: want{
 				mg:  cr(),
@@ -258,10 +282,10 @@ func TestCustomRoleObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -276,8 +300,8 @@ func TestCustomRoleObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: cr(
+			args: tstutil.Args{
+				Managed: cr(
 					crWithExternalNameAnnotation(policyID),
 					crWithSpec(*crParams()),
 				),
@@ -297,10 +321,10 @@ func TestCustomRoleObserve(t *testing.T) {
 			},
 		},
 		"NotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -317,8 +341,8 @@ func TestCustomRoleObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: cr(
+			args: tstutil.Args{
+				Managed: cr(
 					crWithExternalNameAnnotation(policyID),
 					crWithSpec(*crParams()),
 				),
@@ -341,23 +365,14 @@ func TestCustomRoleObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errCr := setupServerAndGetUnitTestExternalCR(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := crExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -371,7 +386,7 @@ func TestCustomRoleObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -379,25 +394,22 @@ func TestCustomRoleObserve(t *testing.T) {
 }
 
 func TestCustomRoleCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -409,8 +421,8 @@ func TestCustomRoleCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams())),
 			},
 			want: want{
 				mg: cr(crWithSpec(*crParams()),
@@ -421,10 +433,10 @@ func TestCustomRoleCreate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -436,8 +448,8 @@ func TestCustomRoleCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams())),
 			},
 			want: want{
 				mg: cr(crWithSpec(*crParams()),
@@ -447,10 +459,10 @@ func TestCustomRoleCreate(t *testing.T) {
 			},
 		},
 		"Conflict": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -462,8 +474,8 @@ func TestCustomRoleCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams())),
 			},
 			want: want{
 				mg: cr(crWithSpec(*crParams()),
@@ -473,10 +485,10 @@ func TestCustomRoleCreate(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -488,8 +500,8 @@ func TestCustomRoleCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams())),
 			},
 			want: want{
 				mg: cr(crWithSpec(*crParams()),
@@ -502,23 +514,14 @@ func TestCustomRoleCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errCr := setupServerAndGetUnitTestExternalCR(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := crExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -532,7 +535,7 @@ func TestCustomRoleCreate(t *testing.T) {
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -540,24 +543,21 @@ func TestCustomRoleCreate(t *testing.T) {
 }
 
 func TestCustomRoleDelete(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -567,8 +567,8 @@ func TestCustomRoleDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
@@ -576,10 +576,10 @@ func TestCustomRoleDelete(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -589,8 +589,8 @@ func TestCustomRoleDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
@@ -598,10 +598,10 @@ func TestCustomRoleDelete(t *testing.T) {
 			},
 		},
 		"InvalidToken": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -611,8 +611,8 @@ func TestCustomRoleDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
@@ -620,10 +620,10 @@ func TestCustomRoleDelete(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -633,8 +633,8 @@ func TestCustomRoleDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithStatus(*crObservation()), crWithConditions(cpv1alpha1.Deleting())),
@@ -645,23 +645,14 @@ func TestCustomRoleDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errCr := setupServerAndGetUnitTestExternalCR(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := crExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -672,7 +663,7 @@ func TestCustomRoleDelete(t *testing.T) {
 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -680,25 +671,22 @@ func TestCustomRoleDelete(t *testing.T) {
 }
 
 func TestCustomRoleUpdate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		upd managed.ExternalUpdate
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -710,8 +698,8 @@ func TestCustomRoleUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation()), crWithEtagAnnotation(eTag)),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams()), crWithStatus(*crObservation()), crWithEtagAnnotation(eTag)),
 			},
 			want: want{
 				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation()), crWithEtagAnnotation(eTag)),
@@ -720,10 +708,10 @@ func TestCustomRoleUpdate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -733,8 +721,8 @@ func TestCustomRoleUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
@@ -742,10 +730,10 @@ func TestCustomRoleUpdate(t *testing.T) {
 			},
 		},
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -755,8 +743,8 @@ func TestCustomRoleUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  cr(crWithSpec(*crParams()), crWithStatus(*crObservation())),
@@ -767,23 +755,14 @@ func TestCustomRoleUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errCr := setupServerAndGetUnitTestExternalCR(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := crExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			upd, err := e.Update(context.Background(), tc.args.mg)
+			upd, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -795,7 +774,7 @@ func TestCustomRoleUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
