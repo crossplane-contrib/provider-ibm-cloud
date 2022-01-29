@@ -403,7 +403,7 @@ func TestResourceKeyObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalRK(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -511,7 +511,7 @@ func TestResourceKeyCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalRK(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
@@ -620,7 +620,7 @@ func TestResourceKeyDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, errSetup := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			e, server, errSetup := setupServerAndGetUnitTestExternalRK(t, &tc.handlers, &tc.kube)
 			if errSetup != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", errSetup)
 			}
@@ -708,7 +708,7 @@ func TestResourceKeyUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalRK(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
