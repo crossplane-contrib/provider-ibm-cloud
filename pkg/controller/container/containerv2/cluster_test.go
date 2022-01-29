@@ -90,7 +90,7 @@ func aStr() string {
 	return "foobar"
 }
 
-// Sets up a unit test http server, and creates an external bucket appropriate for unit test.
+// Sets up a unit test http server, and creates an external cluster structure appropriate for unit test.
 //
 // Params
 //	   testingObj - the test object

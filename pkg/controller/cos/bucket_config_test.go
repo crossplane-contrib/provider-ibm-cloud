@@ -141,7 +141,7 @@ func createCrossplaneBucketConfig(im ...bucketConfigModifier) *v1alpha1.BucketCo
 	return i
 }
 
-// Sets up a unit test http server, and creates an external bucket config appropriate for unit test.
+// Sets up a unit test http server, and creates an external bucket config structure appropriate for unit test.
 //
 // Params
 //	   testingObj - the test object

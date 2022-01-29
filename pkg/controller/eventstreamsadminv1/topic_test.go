@@ -42,6 +42,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/eventstreamsadminv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 var (
@@ -50,11 +51,6 @@ var (
 
 var _ managed.ExternalConnecter = &topicConnector{}
 var _ managed.ExternalClient = &topicExternal{}
-
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 type tModifier func(*v1alpha1.Topic)
 
@@ -321,16 +317,16 @@ func TestTopicObserve(t *testing.T) {
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
 		args     args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -351,10 +347,10 @@ func TestTopicObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -374,10 +370,10 @@ func TestTopicObserve(t *testing.T) {
 			},
 		},
 		"ObservedTopicUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -411,10 +407,10 @@ func TestTopicObserve(t *testing.T) {
 			},
 		},
 		"ObservedTopicNotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -491,25 +487,22 @@ func TestTopicObserve(t *testing.T) {
 }
 
 func TestTopicCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}

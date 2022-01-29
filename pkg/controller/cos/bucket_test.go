@@ -160,7 +160,7 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 	return result
 }
 
-// Sets up a unit test http server, and creates an external bucket appropriate for unit test.
+// Sets up a unit test http server, and creates an external bucket structure appropriate for unit test.
 //
 // Params
 //	   testingObj - the test object
