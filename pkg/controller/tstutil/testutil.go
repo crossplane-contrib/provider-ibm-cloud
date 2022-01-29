@@ -34,10 +34,10 @@ type Args struct {
 
 // Handler is used in unit testing
 type Handler struct {
-	// http path
+	// http path to handle a request
 	Path string
 
-	// Function that will deal with the request, populate the response...
+	// Function that will deal with the request, and write the response in the writer.
 	HandlerFunc func(w http.ResponseWriter, r *http.Request)
 }
 
