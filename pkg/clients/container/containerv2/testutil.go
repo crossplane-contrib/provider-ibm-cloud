@@ -25,6 +25,15 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 )
 
+const (
+	clusterName   = "a clusterName"
+	anEntitlement = "kids these days"
+	aCRN          = "fake crn"
+	zoneName1     = "zone 1"
+	zoneName2     = "zone 2"
+	zoneName3     = "zone 3"
+)
+
 // Returns a pointer to a random map
 func randomMap() *map[string]string {
 	result := map[string]string{
@@ -45,9 +54,9 @@ func GetClusterCreateCrossplaneRequest() *v1alpha1.ClusterCreateRequest {
 		PodSubnet:                    "a subnet",
 		Provider:                     "a provider",
 		ServiceSubnet:                "a service net",
-		Name:                         "a name",
-		DefaultWorkerPoolEntitlement: "an entitlement",
-		CosInstanceCRN:               "a crn",
+		Name:                         clusterName,
+		DefaultWorkerPoolEntitlement: anEntitlement,
+		CosInstanceCRN:               aCRN,
 		WorkerPools: v1alpha1.WorkerPoolConfig{
 			DiskEncryption: ibmc.BoolPtr(true),
 			Entitlement:    "so entitled",
@@ -57,8 +66,9 @@ func GetClusterCreateCrossplaneRequest() *v1alpha1.ClusterCreateRequest {
 			Name:           "another name",
 			VpcID:          "whoooooa",
 			WorkerCount:    33,
-			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("verston 2")},
-				{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("v2")}},
+			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue(zoneName1), SubnetID: reference.ToPtrValue("subnet uno")},
+				{ID: reference.ToPtrValue(zoneName2), SubnetID: reference.ToPtrValue("subnet due")},
+				{ID: reference.ToPtrValue(zoneName2), SubnetID: reference.ToPtrValue("subnet tre")}},
 		},
 	}
 }
@@ -69,10 +79,10 @@ func GetContainerClusterInfo() *ibmContainerV2.ClusterInfo {
 		CreatedDate:       "2006-01-02 15:04:05",
 		DataCenter:        "a data center",
 		ID:                "an id",
-		Location:          "location-location",
-		Entitlement:       "young people these days are like that",
+		Location:          anEntitlement,
+		Entitlement:       "kids these days...",
 		MasterKubeVersion: "grand master",
-		Name:              "harry",
+		Name:              clusterName,
 		Region:            "a region",
 		ResourceGroupID:   "what an id",
 		State:             "doing great!",
@@ -89,9 +99,9 @@ func GetContainerClusterInfo() *ibmContainerV2.ClusterInfo {
 		APIUser:           "some user",
 		MasterURL:         "what a url!",
 		DisableAutoUpdate: true,
-		WorkerZones:       []string{"zone2", "zone1", "zone0"},
+		WorkerZones:       []string{zoneName2, zoneName1, zoneName3}, // different order than in the "create" request
 		Vpcs:              []string{"vpcs3", "zone1", "vpcs2"},
-		CRN:               "a CRN",
+		CRN:               aCRN,
 		VersionEOS:        "a version",
 		ServiceEndpoints: ibmContainerV2.Endpoints{
 			PrivateServiceEndpointEnabled: false,
