@@ -25,31 +25,33 @@ import (
 	"testing"
 
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
-	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
-	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
-	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/pkg/errors"
+	"sigs.k8s.io/controller-runtime/pkg/client"
+
 	crossplaneApi "github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/container/containerv2"
+
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 // Interface to a function that takes as argument a cluster create request, and modifies it
 type clusterModifier func(*crossplaneApi.Cluster)
 
-// Creates a cluster, by creating a generic one + applying a list of modifiers to the Spec part
-func createCrossplaneCluster(modifiers ...clusterModifier) *crossplaneApi.Cluster {
+// Creates a cluster, by creating a generic one + applying a list of modifiers to the Spec part (which is the only one populated)
+func createCrossplaneClusterSansStatus(modifiers ...clusterModifier) *crossplaneApi.Cluster {
 	result := &crossplaneApi.Cluster{
 		Spec: crossplaneApi.ClusterSpec{
 			ForProvider: *crossplaneClient.GetClusterCreateCrossplaneRequest(),
 		},
 		Status: crossplaneApi.ClusterStatus{
-			AtProvider: crossplaneClient.GetContainerClusterInfo(),
+			AtProvider: crossplaneApi.ClusterInfo{},
 		},
 	}
 
@@ -58,6 +60,13 @@ func createCrossplaneCluster(modifiers ...clusterModifier) *crossplaneApi.Cluste
 	}
 
 	return result
+}
+
+// Sets the status part of a clauster
+func setStatus(cluster *crossplaneApi.Cluster) *crossplaneApi.Cluster {
+	cluster.Status.AtProvider, _ = crossplaneClient.GenerateCrossplaneClusterInfo(crossplaneClient.GetContainerClusterInfo())
+
+	return cluster
 }
 
 // Returns a string
@@ -69,14 +78,6 @@ func aStr() string {
 func withConditions(c ...cpv1alpha1.Condition) clusterModifier {
 	return func(i *crossplaneApi.Cluster) {
 		i.Status.SetConditions(c...)
-	}
-}
-
-// Converts a crossplane cluster to an IBM-cloud one
-func crossplaneToIBMCloud(c *crossplaneApi.Cluster) *ibmContainerV2.ClusterInfo {
-	return &ibmContainerV2.ClusterInfo{
-		Name: c.Spec.ProviderConfigReference.Name,
-		// CreatedDate: &c.Status.AtProvider.DeepCopy().CreatedDate.Time,
 	}
 }
 
@@ -141,10 +142,10 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Creating())),
+				mg:  createCrossplaneClusterSansStatus(withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
@@ -165,10 +166,10 @@ func TestCreate(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Creating())),
+				mg:  createCrossplaneClusterSansStatus(withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateCluster),
 			},
@@ -191,10 +192,8 @@ func TestCreate(t *testing.T) {
 				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
 					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
-			} else {
-				if diff := cmp.Diff(tc.want.err, err); diff != "" {
-					t.Errorf("Create(...): -want, +got:\n%s", diff)
-				}
+			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
@@ -234,10 +233,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneClusterSansStatus(withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
 		},
@@ -258,10 +257,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneClusterSansStatus(withConditions(cpv1alpha1.Deleting())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errDeleteCluster),
 			},
 		},
@@ -282,10 +281,10 @@ func TestDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				mg:  createCrossplaneClusterSansStatus(withConditions(cpv1alpha1.Deleting())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteCluster),
 			},
 		},
@@ -319,7 +318,6 @@ func TestDelete(t *testing.T) {
 	}
 }
 
-/*
 // Tests the cluster "Observe" method
 func TestBucketObserve(t *testing.T) {
 	type want struct {
@@ -352,10 +350,10 @@ func TestBucketObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions()),
+				mg:  createCrossplaneClusterSansStatus(withConditions()),
 				obs: managed.ExternalObservation{ResourceExists: false},
 			},
 		},
@@ -376,10 +374,10 @@ func TestBucketObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions()),
+				mg:  createCrossplaneClusterSansStatus(withConditions()),
 				obs: managed.ExternalObservation{},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
 			},
@@ -400,10 +398,10 @@ func TestBucketObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneCluster(),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg:  createCrossplaneCluster(withConditions()),
+				mg:  createCrossplaneClusterSansStatus(withConditions()),
 				obs: managed.ExternalObservation{},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
 			},
@@ -425,10 +423,10 @@ func TestBucketObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+				Managed: createCrossplaneClusterSansStatus(),
 			},
 			want: want{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+				mg: setStatus(createCrossplaneClusterSansStatus()),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -450,11 +448,10 @@ func TestBucketObserve(t *testing.T) {
 			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
-				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
-				returnedNoSpace := strings.ReplaceAll(err.Error(), " ", "")
-				if strings.HasPrefix(returnedNoSpace, expectedNoSpace) == false {
-					diff := cmp.Diff(tc.want.err.Error(), err.Error())
-					t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				wantedPrefix := strings.Split(tc.want.err.Error(), ":")[0]
+				actualPrefix := strings.Split(err.Error(), ":")[0]
+				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
 				t.Errorf("Observe(...): want error != got error:\n%s", diff)
@@ -470,4 +467,3 @@ func TestBucketObserve(t *testing.T) {
 		})
 	}
 }
-*/
