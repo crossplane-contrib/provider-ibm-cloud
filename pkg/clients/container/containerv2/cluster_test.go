@@ -29,9 +29,36 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-// Tests the GenerateCrossplaneClusterInfo function
-func TestGenerateCrossplaneClusterInfo(t *testing.T) {
-	ibmClusterInfo := &ibmContainerV2.ClusterInfo{
+// GetClusterCreateCrossplaneRequest returns a crossplane request to generate a cluster
+func GetClusterCreateCrossplaneRequest() *v1alpha1.ClusterCreateRequest {
+	return &v1alpha1.ClusterCreateRequest{
+		DisablePublicServiceEndpoint: false,
+		KubeVersion:                  "a version",
+		Billing:                      reference.ToPtrValue("billing"),
+		PodSubnet:                    "a subnet",
+		Provider:                     "a provider",
+		ServiceSubnet:                "a service net",
+		Name:                         "a name",
+		DefaultWorkerPoolEntitlement: "an entitlement",
+		CosInstanceCRN:               "a crn",
+		WorkerPools: v1alpha1.WorkerPoolConfig{
+			DiskEncryption: ibmc.BoolPtr(true),
+			Entitlement:    "so entitled",
+			Flavor:         "banana",
+			Isolation:      reference.ToPtrValue("...due to COVID"),
+			Labels:         randomMap(),
+			Name:           "another name",
+			VpcID:          "whoooooa",
+			WorkerCount:    33,
+			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("verston 2")},
+				{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("v2")}},
+		},
+	}
+}
+
+// GetContainerClusterInfo returns an object like the one returned by the cloud
+func GetContainerClusterInfo() *ibmContainerV2.ClusterInfo {
+	return &ibmContainerV2.ClusterInfo{
 		CreatedDate:       "2006-01-02 15:04:05",
 		DataCenter:        "a data center",
 		ID:                "an id",
@@ -82,6 +109,11 @@ func TestGenerateCrossplaneClusterInfo(t *testing.T) {
 			PullSecretApplied: true,
 		},
 	}
+}
+
+// Tests the GenerateCrossplaneClusterInfo function
+func TestGenerateCrossplaneClusterInfo(t *testing.T) {
+	ibmClusterInfo := GetContainerClusterInfo()
 
 	t.Run("TestGenerateCrossplaneClusterInfo", func(t *testing.T) {
 		crossPlaneClusterInfo, _ := GenerateCrossplaneClusterInfo(ibmClusterInfo)
@@ -274,30 +306,7 @@ func randomMap() *map[string]string {
 
 // Tests the GenerateClusterCreateRequest function
 func TestGenerateClusterCreateRequest(t *testing.T) {
-	crossplaneRequest := &v1alpha1.ClusterCreateRequest{
-		DisablePublicServiceEndpoint: false,
-		KubeVersion:                  "a version",
-		Billing:                      reference.ToPtrValue("billing"),
-		PodSubnet:                    "a subnet",
-		Provider:                     "a provider",
-		ServiceSubnet:                "a service net",
-		Name:                         "a name",
-		DefaultWorkerPoolEntitlement: "an entitlement",
-		CosInstanceCRN:               "a crn",
-		WorkerPools: v1alpha1.WorkerPoolConfig{
-			DiskEncryption: ibmc.BoolPtr(true),
-			Entitlement:    "so entitled",
-			Flavor:         "banana",
-			Isolation:      reference.ToPtrValue("...due to COVID"),
-			Labels:         randomMap(),
-			Name:           "another name",
-			VpcID:          "whoooooa",
-			WorkerCount:    33,
-			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("verston 2")},
-				{ID: reference.ToPtrValue("name 1"), SubnetID: reference.ToPtrValue("v2")}},
-		},
-	}
-
+	crossplaneRequest := GetClusterCreateCrossplaneRequest()
 	ibmCloudRequest := &ibmContainerV2.ClusterCreateRequest{}
 
 	t.Run("TestGenerateClusterCreateRequest", func(t *testing.T) {

@@ -32,33 +32,24 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
-	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
-	"github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
+	crossplaneApi "github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
+	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/container/containerv2"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 // Interface to a function that takes as argument a cluster create request, and modifies it
-type clusterModifier func(*v1alpha1.Cluster)
+type clusterModifier func(*crossplaneApi.Cluster)
 
 // Creates a cluster, by creating a generic one + applying a list of modifiers to the Spec part
-func createCrossplaneCluster(modifiers ...clusterModifier) *v1alpha1.Cluster {
-	result := &v1alpha1.Cluster{
-		Spec: v1alpha1.ClusterSpec{
-			ForProvider: v1alpha1.ClusterCreateRequest{
-				WorkerPools: v1alpha1.WorkerPoolConfig{
-					Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue("us-south-1"), SubnetID: reference.ToPtrValue("mia")}},
-				},
-			},
+func createCrossplaneCluster(modifiers ...clusterModifier) *crossplaneApi.Cluster {
+	result := &crossplaneApi.Cluster{
+		Spec: crossplaneApi.ClusterSpec{
+			ForProvider: crossplaneClient.GetClusterCreateCrossplaneRequest(),
 		},
-		Status: v1alpha1.ClusterStatus{
-			AtProvider: v1alpha1.ClusterInfo{
-				ServiceEndpoints: v1alpha1.Endpoints{},
-				Lifecycle:        v1alpha1.LifeCycleInfo{},
-				Ingress:          v1alpha1.IngresInfo{},
-				Features:         v1alpha1.Feat{},
-			},
+		Status: crossplaneApi.ClusterStatus{
+			AtProvider: crossplaneClient.GetContainerClusterInfo(),
 		},
 	}
 
@@ -76,8 +67,16 @@ func aStr() string {
 
 // Returns a function that sets the cluster conditions
 func withConditions(c ...cpv1alpha1.Condition) clusterModifier {
-	return func(i *v1alpha1.Cluster) {
+	return func(i *crossplaneApi.Cluster) {
 		i.Status.SetConditions(c...)
+	}
+}
+
+// Converts a crossplane cluster to an IBM-cloud one
+func crossplaneToIBMCloud(c *crossplaneApi.Cluster) *ibmContainerV2.ClusterInfo {
+	return &ibmContainerV2.ClusterInfo{
+		Name: c.Spec.ProviderConfigReference.Name,
+		// CreatedDate: &c.Status.AtProvider.DeepCopy().CreatedDate.Time,
 	}
 }
 
@@ -319,3 +318,156 @@ func TestDelete(t *testing.T) {
 		})
 	}
 }
+
+/*
+// Tests the cluster "Observe" method
+func TestBucketObserve(t *testing.T) {
+	type want struct {
+		mg  resource.Managed
+		obs managed.ExternalObservation
+		err error
+	}
+
+	cases := map[string]struct {
+		handlers []tstutil.Handler
+		kube     client.Client
+		args     tstutil.Args
+		want     want
+	}{
+		"NotFound": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						// content type should always set before writeHeader()
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusNotFound)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions()),
+				obs: managed.ExternalObservation{ResourceExists: false},
+			},
+		},
+		"GetFailed": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions()),
+				obs: managed.ExternalObservation{},
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
+			},
+		},
+		"GetForbidden": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusForbidden)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions()),
+				obs: managed.ExternalObservation{},
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
+			},
+		},
+		"UpToDate": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			},
+			want: want{
+				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+				obs: managed.ExternalObservation{
+					ResourceExists:    true,
+					ResourceUpToDate:  true,
+					ConnectionDetails: nil,
+				},
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+			}
+
+			defer server.Close()
+
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
+				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
+				returnedNoSpace := strings.ReplaceAll(err.Error(), " ", "")
+				if strings.HasPrefix(returnedNoSpace, expectedNoSpace) == false {
+					diff := cmp.Diff(tc.want.err.Error(), err.Error())
+					t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				}
+			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
+				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+*/
