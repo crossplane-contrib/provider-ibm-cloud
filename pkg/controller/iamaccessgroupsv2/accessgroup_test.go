@@ -37,12 +37,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/IBM/go-sdk-core/core"
 	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iamaccessgroupsv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 	ibmcag "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/accessgroup"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 const (
@@ -67,11 +67,6 @@ var (
 
 var _ managed.ExternalConnecter = &agConnector{}
 var _ managed.ExternalClient = &agExternal{}
-
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 type agModifier func(*v1alpha1.AccessGroup)
 
@@ -174,26 +169,50 @@ func crInstance(m ...func(*iamagv2.Group)) *iamagv2.Group {
 	return i
 }
 
-func TestAccessGroupObserve(t *testing.T) {
-	type args struct {
-		mg resource.Managed
+// Sets up a unit test http server, and creates an external access group structure appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external object, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*agExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
+
+	return &agExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
+
+func TestAccessGroupObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -205,8 +224,8 @@ func TestAccessGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(),
+			args: tstutil.Args{
+				Managed: ag(),
 			},
 			want: want{
 				mg:  ag(),
@@ -214,10 +233,10 @@ func TestAccessGroupObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -228,8 +247,8 @@ func TestAccessGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(),
+			args: tstutil.Args{
+				Managed: ag(),
 			},
 			want: want{
 				mg:  ag(),
@@ -238,10 +257,10 @@ func TestAccessGroupObserve(t *testing.T) {
 		},
 
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -252,8 +271,8 @@ func TestAccessGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(),
+			args: tstutil.Args{
+				Managed: ag(),
 			},
 			want: want{
 				mg:  ag(),
@@ -261,10 +280,10 @@ func TestAccessGroupObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -279,8 +298,8 @@ func TestAccessGroupObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: ag(
+			args: tstutil.Args{
+				Managed: ag(
 					agWithExternalNameAnnotation(agID),
 					agWithSpec(*agParams()),
 				),
@@ -300,10 +319,10 @@ func TestAccessGroupObserve(t *testing.T) {
 			},
 		},
 		"NotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -320,8 +339,8 @@ func TestAccessGroupObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: ag(
+			args: tstutil.Args{
+				Managed: ag(
 					agWithExternalNameAnnotation(agID),
 					agWithSpec(*agParams()),
 				),
@@ -344,23 +363,14 @@ func TestAccessGroupObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := agExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -374,7 +384,7 @@ func TestAccessGroupObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -382,25 +392,22 @@ func TestAccessGroupObserve(t *testing.T) {
 }
 
 func TestAccessGroupCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -412,8 +419,8 @@ func TestAccessGroupCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams())),
 			},
 			want: want{
 				mg: ag(agWithSpec(*agParams()),
@@ -424,10 +431,10 @@ func TestAccessGroupCreate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -439,8 +446,8 @@ func TestAccessGroupCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams())),
 			},
 			want: want{
 				mg: ag(agWithSpec(*agParams()),
@@ -450,10 +457,10 @@ func TestAccessGroupCreate(t *testing.T) {
 			},
 		},
 		"Conflict": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -465,8 +472,8 @@ func TestAccessGroupCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams())),
 			},
 			want: want{
 				mg: ag(agWithSpec(*agParams()),
@@ -476,10 +483,10 @@ func TestAccessGroupCreate(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -491,8 +498,8 @@ func TestAccessGroupCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams())),
 			},
 			want: want{
 				mg: ag(agWithSpec(*agParams()),
@@ -505,23 +512,14 @@ func TestAccessGroupCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := agExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -535,7 +533,7 @@ func TestAccessGroupCreate(t *testing.T) {
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -543,24 +541,21 @@ func TestAccessGroupCreate(t *testing.T) {
 }
 
 func TestAccessGroupDelete(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -570,8 +565,8 @@ func TestAccessGroupDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithStatus(*crObservation()), agWithConditions(cpv1alpha1.Deleting())),
@@ -579,10 +574,10 @@ func TestAccessGroupDelete(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -592,8 +587,8 @@ func TestAccessGroupDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithStatus(*crObservation()), agWithConditions(cpv1alpha1.Deleting())),
@@ -601,10 +596,10 @@ func TestAccessGroupDelete(t *testing.T) {
 			},
 		},
 		"InvalidToken": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -614,8 +609,8 @@ func TestAccessGroupDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithStatus(*crObservation()), agWithConditions(cpv1alpha1.Deleting())),
@@ -623,10 +618,10 @@ func TestAccessGroupDelete(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -636,8 +631,8 @@ func TestAccessGroupDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithStatus(*crObservation()), agWithConditions(cpv1alpha1.Deleting())),
@@ -648,23 +643,14 @@ func TestAccessGroupDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errServer := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if errServer != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", errServer)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := agExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -675,7 +661,7 @@ func TestAccessGroupDelete(t *testing.T) {
 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -683,25 +669,22 @@ func TestAccessGroupDelete(t *testing.T) {
 }
 
 func TestAccessGroupUpdate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		upd managed.ExternalUpdate
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -713,8 +696,8 @@ func TestAccessGroupUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams()), agWithStatus(*crObservation()), agWithEtagAnnotation(eTag)),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams()), agWithStatus(*crObservation()), agWithEtagAnnotation(eTag)),
 			},
 			want: want{
 				mg:  ag(agWithSpec(*agParams()), agWithStatus(*crObservation()), agWithEtagAnnotation(eTag)),
@@ -723,10 +706,10 @@ func TestAccessGroupUpdate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -736,8 +719,8 @@ func TestAccessGroupUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
@@ -745,10 +728,10 @@ func TestAccessGroupUpdate(t *testing.T) {
 			},
 		},
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -758,8 +741,8 @@ func TestAccessGroupUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
+			args: tstutil.Args{
+				Managed: ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
 			},
 			want: want{
 				mg:  ag(agWithSpec(*agParams()), agWithStatus(*crObservation())),
@@ -770,23 +753,14 @@ func TestAccessGroupUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := agExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			upd, err := e.Update(context.Background(), tc.args.mg)
+			upd, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -798,7 +772,7 @@ func TestAccessGroupUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
