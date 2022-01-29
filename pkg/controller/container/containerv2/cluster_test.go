@@ -108,6 +108,7 @@ func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstuti
 		nil
 }
 
+// Tests the cluster "Create" method
 func TestCreate(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
@@ -199,6 +200,121 @@ func TestCreate(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+// Tests the cluster "Delete" method
+func TestDelete(t *testing.T) {
+	type want struct {
+		mg  resource.Managed
+		err error
+	}
+
+	cases := map[string]struct {
+		handlers []tstutil.Handler
+		kube     client.Client
+		args     tstutil.Args
+		want     want
+	}{
+		"Successful": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusAccepted)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				err: nil,
+			},
+		},
+		"AlreadyGone": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusNotFound)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errDeleteCluster),
+			},
+		},
+		"Failed": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneCluster(),
+			},
+			want: want{
+				mg:  createCrossplaneCluster(withConditions(cpv1alpha1.Deleting())),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteCluster),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			e, server, setupErr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if setupErr != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
+			}
+
+			defer server.Close()
+
+			err := e.Delete(context.Background(), tc.args.Managed)
+			if tc.want.err != nil && err != nil {
+				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
+				wantedPrefix := strings.Split(tc.want.err.Error(), ":")[0]
+				actualPrefix := strings.Split(err.Error(), ":")[0]
+				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
+					t.Errorf("Create(...): -want, +got:\n%s", diff)
+				}
+			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
+				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
