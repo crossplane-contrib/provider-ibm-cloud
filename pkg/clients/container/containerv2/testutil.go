@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	clusterName   = "a clusterName"
+	clusterName   = "aClusterName" // cannot contain spaces
 	anEntitlement = "kids these days"
 	aCRN          = "fake crn"
 	zoneName1     = "zone 1"

@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -328,10 +329,15 @@ func TestDelete(t *testing.T) {
 
 // Tests the cluster "Observe" method
 func TestObserve(t *testing.T) {
+	type errInfo struct {
+		err     error
+		errCode int
+	}
+
 	type want struct {
-		mg  resource.Managed
-		obs managed.ExternalObservation
-		err error
+		mg      resource.Managed
+		obs     managed.ExternalObservation
+		errInfo *errInfo
 	}
 
 	cases := map[string]struct {
@@ -385,9 +391,12 @@ func TestObserve(t *testing.T) {
 				Managed: createCrossplaneClusterSansStatus(withExternalName()),
 			},
 			want: want{
-				mg:  createCrossplaneClusterSansStatus(),
+				mg:  createCrossplaneClusterSansStatus(withExternalName()),
 				obs: managed.ExternalObservation{},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
+				errInfo: &errInfo{
+					err:     errors.Wrap(errors.New(strconv.Itoa(http.StatusBadRequest)+" "+http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
+					errCode: http.StatusBadRequest,
+				},
 			},
 		},
 		"GetForbidden": {
@@ -396,6 +405,7 @@ func TestObserve(t *testing.T) {
 					Path: "/",
 					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
+
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -406,12 +416,15 @@ func TestObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneClusterSansStatus(),
+				Managed: createCrossplaneClusterSansStatus(withExternalName()),
 			},
 			want: want{
-				mg:  createCrossplaneClusterSansStatus(withConditions()),
+				mg:  createCrossplaneClusterSansStatus(withExternalName()),
 				obs: managed.ExternalObservation{},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetClusterFailed),
+				errInfo: &errInfo{
+					err:     errors.Wrap(errors.New(strconv.Itoa(http.StatusForbidden)+" "+http.StatusText(http.StatusForbidden)), errGetClusterFailed),
+					errCode: http.StatusForbidden,
+				},
 			},
 		},
 		"UpToDate": {
@@ -427,14 +440,16 @@ func TestObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 
+						cloudResponse := crossplaneClient.GetContainerClusterInfo()
+						_ = json.NewEncoder(w).Encode(cloudResponse)
 					},
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneClusterSansStatus(),
+				Managed: createCrossplaneClusterSansStatus(withExternalName()),
 			},
 			want: want{
-				mg: setStatus(createCrossplaneClusterSansStatus()),
+				mg: setStatus(createCrossplaneClusterSansStatus(withExternalName())),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -445,9 +460,6 @@ func TestObserve(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		if name != "GetFailed" {
-			continue
-		}
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
@@ -457,15 +469,24 @@ func TestObserve(t *testing.T) {
 			defer server.Close()
 
 			obs, err := e.Observe(context.Background(), tc.args.Managed)
-			if tc.want.err != nil && err != nil {
+			if tc.want.errInfo != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
-				wantedPrefix := strings.Split(tc.want.err.Error(), ":")[0]
-				actualPrefix := strings.Split(err.Error(), ":")[0]
+				arrWantedError := strings.Split(tc.want.errInfo.err.Error(), ":")
+				arrActualError := strings.Split(err.Error(), ":")
+
+				wantedPrefix := arrWantedError[0]
+				actualPrefix := arrActualError[0]
 				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
 					t.Errorf("Create(...): -want, +got:\n%s", diff)
 				}
-			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+
+				if !strings.Contains(err.Error(), strconv.Itoa(tc.want.errInfo.errCode)) {
+					t.Errorf("Create(...): -want response containing %s, +got:\n%s", strconv.Itoa(tc.want.errInfo.errCode), err.Error())
+				}
+			} else if tc.want.errInfo != nil {
+				if diff := cmp.Diff(tc.want.errInfo.err, err); diff != "" {
+					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				}
 			}
 
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
