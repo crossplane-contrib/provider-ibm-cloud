@@ -46,7 +46,7 @@ type clusterModifier func(*crossplaneApi.Cluster)
 func createCrossplaneCluster(modifiers ...clusterModifier) *crossplaneApi.Cluster {
 	result := &crossplaneApi.Cluster{
 		Spec: crossplaneApi.ClusterSpec{
-			ForProvider: crossplaneClient.GetClusterCreateCrossplaneRequest(),
+			ForProvider: *crossplaneClient.GetClusterCreateCrossplaneRequest(),
 		},
 		Status: crossplaneApi.ClusterStatus{
 			AtProvider: crossplaneClient.GetContainerClusterInfo(),
