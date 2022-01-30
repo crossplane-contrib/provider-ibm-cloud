@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
-	"github.com/IBM/go-sdk-core/core"
 	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iamaccessgroupsv2/v1alpha1"
@@ -428,11 +427,7 @@ func TestUpdateAccessGroupMembers(t *testing.T) {
 				},
 			}
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-
+			mClient, _ := ibmc.GetTestClient(server.URL)
 			err := UpdateAccessGroupMembers(mClient, tc.args.gm)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
 				t.Errorf("UpdateAccessGroupMembers(...): want: %s\ngot: %s\n", tc.want.err, err)

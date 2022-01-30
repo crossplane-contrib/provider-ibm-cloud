@@ -21,7 +21,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/IBM/go-sdk-core/core"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
@@ -60,17 +59,7 @@ func SetupTestServerClient(testingObj *testing.T, handlers *[]Handler) (*ibmc.Cl
 
 	tstServer := httptest.NewServer(mux)
 
-	mClient, errNC := ibmc.NewClient(
-		ibmc.ClientOptions{
-			URL: tstServer.URL,
-			Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			},
-
-			BearerToken:  ibmc.FakeBearerToken,
-			RefreshToken: "does format matter?",
-		})
-
+	mClient, errNC := ibmc.GetTestClient(tstServer.URL)
 	if errNC != nil {
 		return nil, tstServer, errNC
 	}

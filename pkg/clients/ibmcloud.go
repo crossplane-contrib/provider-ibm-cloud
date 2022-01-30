@@ -197,7 +197,7 @@ func GetBearerFromAccessToken(aTok string) (string, error) {
 	return toks[1], nil
 }
 
-// NewClient returns an IBM API client
+// NewClient returns an IBM API client. Should not be used for unit-testing (unless you know what you are doing - use GetTestClient(...) instead)
 func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 	var err error
 	cs := clientSessionImpl{}

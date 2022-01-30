@@ -22,6 +22,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
+	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
@@ -36,6 +37,27 @@ var (
 const (
 	FakeBearerToken = "Bearer mock-token"
 )
+
+// GetTestClient creates a client appropriate for unit testing.
+//
+// Params
+// 	   serverURL - the test server url
+//
+// Returns
+//     the test client ready to go
+func GetTestClient(serverURL string) (ClientSession, error) {
+	opts := ClientOptions{
+		URL: serverURL,
+		Authenticator: &core.BearerTokenAuthenticator{
+			BearerToken: FakeBearerToken,
+		},
+
+		BearerToken:  FakeBearerToken,
+		RefreshToken: "does format matter?",
+	}
+
+	return NewClient(opts)
+}
 
 // TagsTestHandler handler to mock client SDK call to global tags API
 var TagsTestHandler = func(w http.ResponseWriter, r *http.Request) {
