@@ -518,9 +518,9 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
-			if err != nil {
-				t.Errorf("Create(...): problem setting up the test server %s", err)
+			e, server, errSetup := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
+			if errSetup != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", errSetup)
 			}
 
 			defer server.Close()
@@ -759,7 +759,7 @@ func TestAccessGroupRuleUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			e, server, err := setupServerAndGetUnitTestExternalAG(t, &tc.handlers, &tc.kube)
+			e, server, err := setupServerAndGetUnitTestExternalAGR(t, &tc.handlers, &tc.kube)
 			if err != nil {
 				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
