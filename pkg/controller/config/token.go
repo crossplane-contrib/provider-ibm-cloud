@@ -44,11 +44,11 @@ import (
 )
 
 const (
-	timeout      = 2 * time.Minute
-	requeueTime  = 30 * time.Minute
-	errGetPC     = "cannot get ProviderConfig"
-	errNoSecret  = "no credentials secret reference was provided"
-	errGetSecret = "cannot get credentials secret"
+	timeout       = 2 * time.Minute
+	requeueTime   = 30 * time.Minute
+	errGetPC      = "cannot get ProviderConfig"
+	errGetSecret  = "cannot get credentials/secret"
+	errSaveSecret = "cannot save new credentials from the cloud"
 )
 
 // SetupToken adds a controller that reconciles ProviderConfigs by accounting for
@@ -142,31 +142,34 @@ func (r *TokenReconciler) Reconcile(req reconcile.Request) (reconcile.Result, er
 		return reconcile.Result{}, errors.Wrap(resource.IgnoreNotFound(err), errGetPC)
 	}
 
-	ref := pc.Spec.Credentials.SecretRef
-	if ref == nil {
-		return reconcile.Result{}, errors.New(errNoSecret)
+	// Get the access token
+	secretRef := pc.Spec.Credentials.SecretRef
+	if secretRef == nil {
+		return reconcile.Result{}, errors.New(errGetSecret)
 	}
 
-	s := &v1.Secret{}
-	if err := r.client.Get(ctx, types.NamespacedName{Name: ref.Name, Namespace: ref.Namespace}, s); err != nil {
+	secret := &v1.Secret{}
+	if err := r.client.Get(ctx, types.NamespacedName{Name: secretRef.Name, Namespace: secretRef.Namespace}, secret); err != nil {
 		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
 	}
 
-	config := bluemix.Config{
+	blueMixConfig := bluemix.Config{
 		EndpointLocator: endpoints.NewEndpointLocator(getRegion(*pc)),
 	}
-	auth, err := authentication.NewIAMAuthRepository(&config, &rest.Client{HTTPClient: http.DefaultClient})
+
+	auth, err := authentication.NewIAMAuthRepository(&blueMixConfig, &rest.Client{HTTPClient: http.DefaultClient})
 	if err != nil {
 		return reconcile.Result{}, err
 	}
 
-	if err := auth.AuthenticateAPIKey(string(s.Data[ref.Key])); err != nil {
+	if err := auth.AuthenticateAPIKey(string(secret.Data[secretRef.Key])); err != nil {
 		return reconcile.Result{}, err
 	}
 
-	s.Data[ibmc.AccessTokenKey] = []byte(config.IAMAccessToken)
-	if err := r.client.Update(ctx, s); err != nil {
-		return reconcile.Result{}, errors.Wrap(err, errGetSecret)
+	secret.Data[ibmc.AccessTokenKey] = []byte(blueMixConfig.IAMAccessToken)
+	secret.Data[ibmc.RefreshTokenKey] = []byte(blueMixConfig.IAMRefreshToken)
+	if err := r.client.Update(ctx, secret); err != nil {
+		return reconcile.Result{}, errors.Wrap(err, errSaveSecret)
 	}
 
 	return reconcile.Result{RequeueAfter: requeueTime}, nil
@@ -176,5 +179,6 @@ func getRegion(pc v1beta1.ProviderConfig) string {
 	if pc.Spec.Region != "" {
 		return pc.Spec.Region
 	}
+
 	return ibmc.DefaultRegion
 }

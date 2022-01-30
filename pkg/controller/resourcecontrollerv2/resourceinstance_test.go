@@ -39,7 +39,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
@@ -47,6 +46,7 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 const (
@@ -76,11 +76,6 @@ var (
 
 var _ managed.ExternalConnecter = &resourceinstanceConnector{}
 var _ managed.ExternalClient = &resourceinstanceExternal{}
-
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 type instanceModifier func(*v1alpha1.ResourceInstance)
 
@@ -298,26 +293,50 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 	return i
 }
 
-func TestObserve(t *testing.T) {
-	type args struct {
-		mg resource.Managed
+// Sets up a unit test http server, and creates an external resource instance structure appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external object, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternalRI(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*resourceinstanceExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
+
+	return &resourceinstanceExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
+
+func TestObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -329,8 +348,8 @@ func TestObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(),
+			args: tstutil.Args{
+				Managed: instance(),
 			},
 			want: want{
 				mg:  instance(),
@@ -338,10 +357,10 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -352,8 +371,8 @@ func TestObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(),
+			args: tstutil.Args{
+				Managed: instance(),
 			},
 			want: want{
 				mg:  instance(),
@@ -361,10 +380,10 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedResourceInstanceUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -375,27 +394,27 @@ func TestObserve(t *testing.T) {
 					},
 				},
 				{
-					path:        "/v3/tags/",
-					handlerFunc: tagsHandler,
+					Path:        "/v3/tags/",
+					HandlerFunc: tagsHandler,
 				},
 				{
-					path:        "/resource_groups/",
-					handlerFunc: rgHandler,
+					Path:        "/resource_groups/",
+					HandlerFunc: rgHandler,
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: instance(
+			args: tstutil.Args{
+				Managed: instance(
 					withExternalNameAnnotation(id),
 					withID(id),
 					withSpec(resourceInstanceSpec()),
@@ -412,10 +431,10 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedResourceInstanceNotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -427,27 +446,27 @@ func TestObserve(t *testing.T) {
 					},
 				},
 				{
-					path:        "/v3/tags/",
-					handlerFunc: tagsHandler,
+					Path:        "/v3/tags/",
+					HandlerFunc: tagsHandler,
 				},
 				{
-					path:        "/resource_groups/",
-					handlerFunc: rgHandler,
+					Path:        "/resource_groups/",
+					HandlerFunc: rgHandler,
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: instance(
+			args: tstutil.Args{
+				Managed: instance(
 					withExternalNameAnnotation(id),
 					withID(id),
 					withSpec(resourceInstanceNewSpec()),
@@ -463,10 +482,10 @@ func TestObserve(t *testing.T) {
 			},
 		},
 		"ObservedResourceInstancePendingReclamation": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -478,8 +497,8 @@ func TestObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(),
+			args: tstutil.Args{
+				Managed: instance(),
 			},
 			want: want{
 				mg: instance(),
@@ -494,23 +513,14 @@ func TestObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := resourceinstanceExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -524,7 +534,7 @@ func TestObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -532,25 +542,22 @@ func TestObserve(t *testing.T) {
 }
 
 func TestCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							listResourceInstancesNoItems(w, r)
 							return
@@ -566,24 +573,24 @@ func TestCreate(t *testing.T) {
 					},
 				},
 				{
-					path:        "/resource_groups/",
-					handlerFunc: rgHandler,
+					Path:        "/resource_groups/",
+					HandlerFunc: rgHandler,
 				},
 				{
-					path:        "/v3/tags/",
-					handlerFunc: tagsHandler,
+					Path:        "/v3/tags/",
+					HandlerFunc: tagsHandler,
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
-			args: args{
-				mg: instance(withSpec(resourceInstanceSpec())),
+			args: tstutil.Args{
+				Managed: instance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg: instance(withSpec(resourceInstanceSpec()),
@@ -594,10 +601,10 @@ func TestCreate(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if r.Method == http.MethodGet {
 							listResourceInstancesNoItems(w, r)
 							return
@@ -618,20 +625,20 @@ func TestCreate(t *testing.T) {
 					},
 				},
 				{
-					path:        "/resource_groups/",
-					handlerFunc: rgHandler,
+					Path:        "/resource_groups/",
+					HandlerFunc: rgHandler,
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
-			args: args{
-				mg: instance(withSpec(resourceInstanceSpec())),
+			args: tstutil.Args{
+				Managed: instance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg:  instance(withSpec(resourceInstanceSpec()), withConditions(cpv1alpha1.Creating())),
@@ -642,23 +649,14 @@ func TestCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := resourceinstanceExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -672,7 +670,7 @@ func TestCreate(t *testing.T) {
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -680,24 +678,21 @@ func TestCreate(t *testing.T) {
 }
 
 func TestDelete(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -707,8 +702,8 @@ func TestDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(withID(id)),
+			args: tstutil.Args{
+				Managed: instance(withID(id)),
 			},
 			want: want{
 				mg:  instance(withID(id), withConditions(cpv1alpha1.Deleting())),
@@ -716,10 +711,10 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"AlreadyGone": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -729,8 +724,8 @@ func TestDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(withID(id)),
+			args: tstutil.Args{
+				Managed: instance(withID(id)),
 			},
 			want: want{
 				mg:  instance(withID(id), withConditions(cpv1alpha1.Deleting())),
@@ -738,10 +733,10 @@ func TestDelete(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -751,8 +746,8 @@ func TestDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: instance(withID(id)),
+			args: tstutil.Args{
+				Managed: instance(withID(id)),
 			},
 			want: want{
 				mg:  instance(withID(id), withConditions(cpv1alpha1.Deleting())),
@@ -763,23 +758,14 @@ func TestDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errServer := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			if errServer != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", errServer)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := resourceinstanceExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -790,7 +776,7 @@ func TestDelete(t *testing.T) {
 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -798,25 +784,22 @@ func TestDelete(t *testing.T) {
 }
 
 func TestUpdate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		upd managed.ExternalUpdate
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -828,16 +811,16 @@ func TestUpdate(t *testing.T) {
 					},
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
-			args: args{
-				mg: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
+			args: tstutil.Args{
+				Managed: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg:  genTestCRResourceInstance(),
@@ -846,10 +829,10 @@ func TestUpdate(t *testing.T) {
 			},
 		},
 		"PatchFails": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/v2/resource_instances/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/v2/resource_instances/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -859,17 +842,17 @@ func TestUpdate(t *testing.T) {
 					},
 				},
 				{
-					path:        "/",
-					handlerFunc: svcatHandler,
+					Path:        "/",
+					HandlerFunc: svcatHandler,
 				},
 				{
-					path:        "/" + serviceName + "/",
-					handlerFunc: pcatHandler,
+					Path:        "/" + serviceName + "/",
+					HandlerFunc: pcatHandler,
 				},
 			},
 
-			args: args{
-				mg: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
+			args: tstutil.Args{
+				Managed: genTestCRResourceInstance(withSpec(resourceInstanceSpec())),
 			},
 			want: want{
 				mg:  genTestCRResourceInstance(),
@@ -880,23 +863,14 @@ func TestUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalRI(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := resourceinstanceExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			upd, err := e.Update(context.Background(), tc.args.mg)
+			upd, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -908,7 +882,7 @@ func TestUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {

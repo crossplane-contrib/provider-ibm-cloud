@@ -9,5 +9,4 @@ spec:
       namespace: crossplane-system
       name: provider-ibm-cloud-secret
       key: credentials
-  region: us-south    
    

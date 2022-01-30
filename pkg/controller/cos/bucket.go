@@ -45,7 +45,6 @@ const (
 	errCreateBucketInp  = "could not generate the input params for a bucket"
 	errDeleteBucket     = "could not delete the bucket"
 	errGetBucketFailed  = "error getting the bucket"
-	errUpdBucket        = "error updating the bucket"
 )
 
 // SetupBucket adds a controller that reconciles Bucket objects
@@ -157,7 +156,7 @@ func (c *bucketExternal) Observe(ctx context.Context, mg resource.Managed) (mana
 	} else if s3Bucket != nil {
 		crossplaneBucket.Status.AtProvider, err = crossplaneClient.GenerateBucketObservation(s3Bucket)
 		if err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, errUpdBucket)
+			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 		}
 	}
 

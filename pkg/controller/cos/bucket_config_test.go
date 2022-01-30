@@ -22,7 +22,6 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/IBM/go-sdk-core/core"
 	ibmBucketConf "github.com/IBM/ibm-cos-sdk-go-config/resourceconfigurationv1"
 	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
@@ -40,6 +39,7 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 	cosClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/cos"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 // Interface to a function that takes as argument a bucket config and modifies it
@@ -116,15 +116,6 @@ func withBucketConfigForProvider(p *v1alpha1.BucketConfigParams) bucketConfigMod
 	}
 }
 
-/*
-// Returns a function that sets the AtProvider part of a bucket config
-func withBucketConfigAtProvider(p v1alpha1.BucketConfigObservation) bucketConfigModifier {
-	return func(b *v1alpha1.BucketConfig) {
-		b.Status.AtProvider = p
-	}
-}
-*/
-
 // Creates a crossplane bucket config, by creating a generic one + applying a list of modifiers
 func createCrossplaneBucketConfig(im ...bucketConfigModifier) *v1alpha1.BucketConfig {
 	i := &v1alpha1.BucketConfig{
@@ -150,7 +141,7 @@ func createCrossplaneBucketConfig(im ...bucketConfigModifier) *v1alpha1.BucketCo
 	return i
 }
 
-// Sets up a unit test http server, and creates an external bucket config appropriate for unit test.
+// Sets up a unit test http server, and creates an external bucket config structure appropriate for unit test.
 //
 // Params
 //	   testingObj - the test object
@@ -158,32 +149,19 @@ func createCrossplaneBucketConfig(im ...bucketConfigModifier) *v1alpha1.BucketCo
 //	   client - the controller runtime client
 //
 // Returns
-//		the external bucket config, ready for unit test
-//		the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		garbage collection)
-func setupServerAndGetUnitTestExternalBucketConfig(testingObj *testing.T, handlers *[]handler, kube *client.Client) (*bucketConfigExternal, *httptest.Server, error) {
-	mux := http.NewServeMux()
-	for _, h := range *handlers {
-		mux.HandleFunc(h.path, h.handlerFunc)
-	}
-
-	tstServer := httptest.NewServer(mux)
-
-	opts := ibmc.ClientOptions{
-		URL: tstServer.URL,
-		Authenticator: &core.BearerTokenAuthenticator{
-			BearerToken: ibmc.FakeBearerToken,
-		},
-	}
-
-	mClient, errNC := ibmc.NewClient(opts)
-	if errNC != nil {
-		return nil, tstServer, errNC
+//		- the external bucket config, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      - an error (iff...)
+func setupServerAndGetUnitTestExternalBucketConfig(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*bucketConfigExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil {
+		return nil, nil, err
 	}
 
 	return &bucketConfigExternal{
 			kube:   *kube,
-			client: mClient,
+			client: *mClient,
 			logger: logging.NewNopLogger(),
 		},
 		tstServer,
@@ -198,17 +176,17 @@ func TestBucketConfigObserve(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 		name     string // used for debugging convenience
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -221,18 +199,18 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusNotFound)), errGetBucketConfigFailed),
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -245,18 +223,18 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetBucketConfigFailed),
 			},
 		},
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -268,18 +246,18 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetBucketConfigFailed),
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -294,8 +272,8 @@ func TestBucketConfigObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				obs: managed.ExternalObservation{
@@ -317,7 +295,7 @@ func TestBucketConfigObserve(t *testing.T) {
 
 			defer server.Close()
 
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
 					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
@@ -331,7 +309,7 @@ func TestBucketConfigObserve(t *testing.T) {
 			}
 
 			if tc.want.mg != nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Observe(...): -want, +got:\n%s", diff)
 				}
 			}
@@ -347,17 +325,17 @@ func TestBucketConfigUpdate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 		name     string // used for debugging convenience
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
@@ -370,8 +348,8 @@ func TestBucketConfigUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				upd: managed.ExternalUpdate{},
@@ -379,10 +357,10 @@ func TestBucketConfigUpdate(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
@@ -395,8 +373,8 @@ func TestBucketConfigUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucketConfig(withBucketConfigForProvider(forBucketConfigProvider())),
 			},
 			want: want{
 				upd: managed.ExternalUpdate{},
@@ -415,7 +393,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 
 			defer server.Close()
 
-			xu, err := e.Update(context.Background(), tc.args.mg)
+			xu, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
 					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
@@ -429,7 +407,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 			}
 
 			if tc.want.mg != nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Observe(...): -want, +got:\n%s", diff)
 				}
 			}
