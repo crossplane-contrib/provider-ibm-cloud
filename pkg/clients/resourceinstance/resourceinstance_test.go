@@ -27,7 +27,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
-	"github.com/IBM/go-sdk-core/core"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
@@ -259,10 +258,7 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			r := &rcv2.UpdateResourceInstanceOptions{}
 			GenerateUpdateResourceInstanceOptions(mClient, observation().ID, tc.args.params, r)
