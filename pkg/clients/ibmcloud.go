@@ -159,12 +159,8 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 	}
 
 	result := ClientOptions{Authenticator: authenticator,
-		BearerToken: *bearerTok,
-	}
-
-	if s.Data[RefreshTokenKey] != nil {
-		rtkStr := string(s.Data[RefreshTokenKey])
-		result.RefreshToken = rtkStr
+		BearerToken:  *bearerTok,
+		RefreshToken: string(s.Data[RefreshTokenKey]), // Refresh key required - no point in setting it optionally
 	}
 
 	return result, nil
