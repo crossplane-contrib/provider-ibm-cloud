@@ -177,7 +177,7 @@ func GenerateBucketConfigObservation(in *ibmBucketConf.Bucket) (v1alpha1.BucketC
 	return result, nil
 }
 
-// GenerateCloudBucketConfig populates the `out' object with values from the `in' object and the 'eTag'
+// GenerateCloudBucketConfig returns an object created from the `in' object and the 'eTag'
 func GenerateCloudBucketConfig(spec *v1alpha1.BucketConfigParams, eTag *string) (*ibmBucketConf.UpdateBucketConfigOptions, error) { // nolint:gocyclo
 	result := ibmBucketConf.UpdateBucketConfigOptions{}
 
