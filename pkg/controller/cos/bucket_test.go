@@ -13,6 +13,7 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cos
 
 import (
@@ -24,14 +25,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/IBM/go-sdk-core/core"
 	"github.com/IBM/ibm-cos-sdk-go/aws/credentials"
 	"github.com/IBM/ibm-cos-sdk-go/service/s3"
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-
-	"github.com/google/go-cmp/cmp"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -40,7 +39,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
-	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 // Constants that we could not use as such because no address...
@@ -49,17 +48,6 @@ var (
 	aBucketName               = "a-bucket"
 	resourceInstanceIDInCloud = "cloudy"
 )
-
-// Used in testing, to hold the arguments passed to the crossplane functions
-type args struct {
-	mg resource.Managed
-}
-
-// Used further down in testing, to hold the function that will generate the response
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 // Applies a list of functions to a bucket observation creted locally
 func bucketObservation(m ...func(*v1alpha1.BucketObservation)) *v1alpha1.BucketObservation {
@@ -172,7 +160,7 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 	return result
 }
 
-// Sets up a unit test http server, and creates an external bucket appropriate for unit test.
+// Sets up a unit test http server, and creates an external bucket structure appropriate for unit test.
 //
 // Params
 //	   testingObj - the test object
@@ -180,28 +168,14 @@ func toXML(s3BucketArray []*s3.Bucket) string {
 //	   client - the controller runtime client
 //
 // Returns
-//		the external bucket, ready for unit test
-//		the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		garbage collection)
-func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
-	mux := http.NewServeMux()
-	for _, h := range *handlers {
-		mux.HandleFunc(h.path, h.handlerFunc)
-	}
-
-	tstServer := httptest.NewServer(mux)
-
-	opts := ibmc.ClientOptions{
-		URL: tstServer.URL,
-		Authenticator: &core.BearerTokenAuthenticator{
-			BearerToken: ibmc.FakeBearerToken,
-		},
-		BearerToken: ibmc.FakeBearerToken,
-	}
-
-	mClient, errNC := ibmc.NewClient(opts)
-	if errNC != nil {
-		return nil, tstServer, errNC
+//		- the external bucket, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*bucketExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
 
 	return &bucketExternal{
@@ -210,7 +184,7 @@ func setupServerAndGetUnitTestExternalBucket(testingObj *testing.T, handlers *[]
 				region:      "does not matter",
 			},
 			kube:   *kube,
-			client: mClient,
+			client: *mClient,
 			logger: logging.NewNopLogger(),
 		},
 		tstServer,
@@ -225,16 +199,16 @@ func TestBucketCreate(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
@@ -248,8 +222,8 @@ func TestBucketCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
@@ -260,10 +234,10 @@ func TestBucketCreate(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
@@ -277,8 +251,8 @@ func TestBucketCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider()),
@@ -298,7 +272,7 @@ func TestBucketCreate(t *testing.T) {
 
 			defer server.Close()
 
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -315,7 +289,7 @@ func TestBucketCreate(t *testing.T) {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -329,16 +303,16 @@ func TestBucketDelete(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -350,8 +324,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -359,10 +333,10 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"AlreadyGone": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -374,8 +348,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -383,10 +357,10 @@ func TestBucketDelete(t *testing.T) {
 			},
 		},
 		"Failed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
@@ -398,8 +372,8 @@ func TestBucketDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketAtProvider(*bucketObservation()), withConditions(cpv1alpha1.Deleting())),
@@ -417,7 +391,7 @@ func TestBucketDelete(t *testing.T) {
 
 			defer server.Close()
 
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -430,7 +404,7 @@ func TestBucketDelete(t *testing.T) {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -445,16 +419,16 @@ func TestBucketObserve(t *testing.T) {
 	}
 
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -467,8 +441,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -476,10 +450,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
@@ -491,8 +465,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -501,10 +475,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -515,8 +489,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
 			},
 			want: want{
 				mg:  createCrossplaneBucket(withBucketForProvider(forBucketProvider())),
@@ -525,10 +499,10 @@ func TestBucketObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -544,8 +518,8 @@ func TestBucketObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
+			args: tstutil.Args{
+				Managed: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
 			},
 			want: want{
 				mg: createCrossplaneBucket(withBucketAtProvider(*bucketObservation())),
@@ -567,7 +541,7 @@ func TestBucketObserve(t *testing.T) {
 
 			defer server.Close()
 
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
 				expectedNoSpace := strings.ReplaceAll(tc.want.err.Error(), " ", "")
@@ -584,7 +558,7 @@ func TestBucketObserve(t *testing.T) {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})

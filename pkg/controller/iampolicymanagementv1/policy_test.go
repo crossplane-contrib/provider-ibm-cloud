@@ -36,12 +36,12 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
-	"github.com/IBM/go-sdk-core/core"
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/iampolicymanagementv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 	ibmcp "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/policy"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 const (
@@ -78,11 +78,6 @@ var _ managed.ExternalConnecter = &pConnector{}
 var _ managed.ExternalClient = &pExternal{}
 
 type pModifier func(*v1alpha1.Policy)
-
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 func p(im ...pModifier) *v1alpha1.Policy {
 	i := &v1alpha1.Policy{
@@ -248,26 +243,49 @@ func instance(m ...func(*iampmv1.Policy)) *iampmv1.Policy {
 	return i
 }
 
-func TestPolicyObserve(t *testing.T) {
-	type args struct {
-		mg resource.Managed
+// Sets up a unit test http server, and creates an external policy structure, appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external object, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternalPM(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*pExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
+
+	return &pExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
+func TestPolicyObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -279,8 +297,8 @@ func TestPolicyObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(),
+			args: tstutil.Args{
+				Managed: p(),
 			},
 			want: want{
 				mg:  p(),
@@ -288,10 +306,10 @@ func TestPolicyObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -302,8 +320,8 @@ func TestPolicyObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(),
+			args: tstutil.Args{
+				Managed: p(),
 			},
 			want: want{
 				mg:  p(),
@@ -311,10 +329,10 @@ func TestPolicyObserve(t *testing.T) {
 			},
 		},
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -325,8 +343,8 @@ func TestPolicyObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(),
+			args: tstutil.Args{
+				Managed: p(),
 			},
 			want: want{
 				mg:  p(),
@@ -334,10 +352,10 @@ func TestPolicyObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -352,8 +370,8 @@ func TestPolicyObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: p(
+			args: tstutil.Args{
+				Managed: p(
 					pWithExternalNameAnnotation(policyID),
 					pWithSpec(*params()),
 				),
@@ -372,12 +390,11 @@ func TestPolicyObserve(t *testing.T) {
 				},
 			},
 		},
-
 		"NotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -394,8 +411,8 @@ func TestPolicyObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: p(
+			args: tstutil.Args{
+				Managed: p(
 					pWithExternalNameAnnotation(policyID),
 					pWithSpec(*params()),
 				),
@@ -418,23 +435,14 @@ func TestPolicyObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalPM(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -448,7 +456,7 @@ func TestPolicyObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -456,25 +464,22 @@ func TestPolicyObserve(t *testing.T) {
 }
 
 func TestPolicyCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -486,8 +491,8 @@ func TestPolicyCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params())),
 			},
 			want: want{
 				mg: p(pWithSpec(*params()),
@@ -498,10 +503,10 @@ func TestPolicyCreate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -513,8 +518,8 @@ func TestPolicyCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params())),
 			},
 			want: want{
 				mg: p(pWithSpec(*params()),
@@ -524,10 +529,10 @@ func TestPolicyCreate(t *testing.T) {
 			},
 		},
 		"Conflict": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -539,8 +544,8 @@ func TestPolicyCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params())),
 			},
 			want: want{
 				mg: p(pWithSpec(*params()),
@@ -550,10 +555,10 @@ func TestPolicyCreate(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -565,8 +570,8 @@ func TestPolicyCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params())),
 			},
 			want: want{
 				mg: p(pWithSpec(*params()),
@@ -579,23 +584,14 @@ func TestPolicyCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalPM(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -609,7 +605,7 @@ func TestPolicyCreate(t *testing.T) {
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -617,24 +613,21 @@ func TestPolicyCreate(t *testing.T) {
 }
 
 func TestPolicyDelete(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -644,8 +637,8 @@ func TestPolicyDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
@@ -653,10 +646,10 @@ func TestPolicyDelete(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -666,8 +659,8 @@ func TestPolicyDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
@@ -675,10 +668,10 @@ func TestPolicyDelete(t *testing.T) {
 			},
 		},
 		"InvalidToken": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -688,8 +681,8 @@ func TestPolicyDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
@@ -697,10 +690,10 @@ func TestPolicyDelete(t *testing.T) {
 			},
 		},
 		"Forbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -710,8 +703,8 @@ func TestPolicyDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithStatus(*observation()), pWithConditions(cpv1alpha1.Deleting())),
@@ -722,23 +715,14 @@ func TestPolicyDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, errServer := setupServerAndGetUnitTestExternalPM(t, &tc.handlers, &tc.kube)
+			if errServer != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", errServer)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -749,7 +733,7 @@ func TestPolicyDelete(t *testing.T) {
 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -757,25 +741,22 @@ func TestPolicyDelete(t *testing.T) {
 }
 
 func TestPolicyUpdate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		upd managed.ExternalUpdate
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -787,8 +768,8 @@ func TestPolicyUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation()), pWithEtagAnnotation(eTag)),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params()), pWithStatus(*observation()), pWithEtagAnnotation(eTag)),
 			},
 			want: want{
 				mg:  p(pWithSpec(*params()), pWithStatus(*observation()), pWithEtagAnnotation(eTag)),
@@ -797,10 +778,10 @@ func TestPolicyUpdate(t *testing.T) {
 			},
 		},
 		"BadRequest": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -810,8 +791,8 @@ func TestPolicyUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params()), pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithSpec(*params()), pWithStatus(*observation())),
@@ -819,10 +800,10 @@ func TestPolicyUpdate(t *testing.T) {
 			},
 		},
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPut, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -832,8 +813,8 @@ func TestPolicyUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: p(pWithSpec(*params()), pWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: p(pWithSpec(*params()), pWithStatus(*observation())),
 			},
 			want: want{
 				mg:  p(pWithSpec(*params()), pWithStatus(*observation())),
@@ -844,23 +825,14 @@ func TestPolicyUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, err := setupServerAndGetUnitTestExternalPM(t, &tc.handlers, &tc.kube)
+			if err != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", err)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := pExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			upd, err := e.Update(context.Background(), tc.args.mg)
+			upd, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -872,7 +844,7 @@ func TestPolicyUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {

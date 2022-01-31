@@ -21,6 +21,7 @@ import (
 	"k8s.io/apimachinery/pkg/runtime"
 
 	cv1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/cloudantv1/v1alpha1"
+	contv2 "github.com/crossplane-contrib/provider-ibm-cloud/apis/container/containerv2/v1alpha1"
 	cos "github.com/crossplane-contrib/provider-ibm-cloud/apis/cos/v1alpha1"
 	esav1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/eventstreamsadminv1/v1alpha1"
 	iamagv2 "github.com/crossplane-contrib/provider-ibm-cloud/apis/iamaccessgroupsv2/v1alpha1"
@@ -41,6 +42,7 @@ func init() {
 		esav1.SchemeBuilder.AddToScheme,
 		cv1.SchemeBuilder.AddToScheme,
 		cos.SchemeBuilder.AddToScheme,
+		contv2.SchemeBuilder.AddToScheme,
 	)
 }
 

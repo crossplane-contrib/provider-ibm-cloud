@@ -36,6 +36,9 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
+	bluemix "github.com/IBM-Cloud/bluemix-go"
+	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	bluemixSession "github.com/IBM-Cloud/bluemix-go/session"
 	cv1 "github.com/IBM/cloudant-go-sdk/cloudantv1"
 	arv1 "github.com/IBM/eventstreams-go-sdk/pkg/adminrestv1"
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
@@ -61,6 +64,9 @@ const (
 	// AccessTokenKey key for IBM Cloud API access token
 	AccessTokenKey = "access_token"
 
+	// RefreshTokenKey ...for the IBM Cloud API
+	RefreshTokenKey = "refresh_token"
+
 	// DefaultRegion is the default region for the IBM Cloud API
 	DefaultRegion = "us-south"
 
@@ -82,6 +88,7 @@ const (
 	errUnableToGet        = "unable to get"
 	errNotFound2          = "not_found"
 	errNotFound3          = "does not exist"
+	errNotFound4          = "not be found"
 	errPendingReclamation = "Instance is pending reclamation"
 	errGone               = "Gone"
 	errRemovedInvalid     = "The resource instance is removed/invalid"
@@ -119,6 +126,7 @@ type ClientOptions struct {
 	BearerToken string // This is contained in Authenticator (when it is of BearTokenAuthenticator type) - but we
 	// seem to not be able to look it up via reflection. So separately for the controllers that need it...
 	// Note that it should always be of the format 'Bearer <...>'
+	RefreshToken  string // not used every time....
 	Authenticator core.Authenticator
 }
 
@@ -150,7 +158,12 @@ func GetAuthInfo(ctx context.Context, c client.Client, mg resource.Managed) (opt
 		return ClientOptions{}, err
 	}
 
-	return ClientOptions{Authenticator: authenticator, BearerToken: *bearerTok}, nil
+	result := ClientOptions{Authenticator: authenticator,
+		BearerToken:  *bearerTok,
+		RefreshToken: string(s.Data[RefreshTokenKey]), // Refresh key required - no point in setting it optionally
+	}
+
+	return result, nil
 }
 
 func getAuthenticator(s *v1.Secret) (core.Authenticator, *string, error) {
@@ -180,7 +193,7 @@ func GetBearerFromAccessToken(aTok string) (string, error) {
 	return toks[1], nil
 }
 
-// NewClient returns an IBM API client
+// NewClient returns an IBM API client. Should not be used for unit-testing (unless you know what you are doing - use GetTestClient(...) instead)
 func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 	var err error
 	cs := clientSessionImpl{}
@@ -317,7 +330,41 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.bucketConfigClient = ibmBucketConfigClientConf
 
+	cs.clustersClientV2, err = generateClustersClientV2(opts.URL, opts.BearerToken, opts.RefreshToken)
+	if err != nil {
+		return nil, errors.Wrap(err, errInitClient)
+	}
+
 	return &cs, err
+}
+
+// Params
+//      url - the server url
+// 		bearerToken - the IAM access token
+//      refreshToken - sent from the server
+//
+// Returns
+//      a client which has established a connection with the server
+func generateClustersClientV2(url string, bearerToken string, refreshToken string) (ibmContainerV2.Clusters, error) {
+	blueMixConf := new(bluemix.Config)
+	if url != "" {
+		blueMixConf.Endpoint = &url
+	}
+
+	blueMixConf.IAMAccessToken = bearerToken
+	blueMixConf.IAMRefreshToken = refreshToken
+
+	sess, err := bluemixSession.New(blueMixConf)
+	if err != nil {
+		return nil, err
+	}
+
+	clusterClient, err := ibmContainerV2.New(sess)
+	if err != nil {
+		return nil, err
+	}
+
+	return clusterClient.Clusters(), nil
 }
 
 // ClientSession provides an interface for IBM Cloud APIs
@@ -333,6 +380,7 @@ type ClientSession interface {
 	CloudantV1() *cv1.CloudantV1
 	S3Client() *s3.S3
 	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
+	ClusterClientV2() ibmContainerV2.Clusters
 }
 
 type clientSessionImpl struct {
@@ -347,6 +395,11 @@ type clientSessionImpl struct {
 	cloudantV1            *cv1.CloudantV1
 	s3client              *s3.S3
 	bucketConfigClient    *ibmBucketConfig.ResourceConfigurationV1
+	clustersClientV2      ibmContainerV2.Clusters
+}
+
+func (c *clientSessionImpl) ClusterClientV2() ibmContainerV2.Clusters {
+	return c.clustersClientV2
 }
 
 func (c *clientSessionImpl) ResourceControllerV2() *rcv2.ResourceControllerV2 {
@@ -566,10 +619,10 @@ func IsResourceUnprocessable(err error) bool {
 	return strings.Contains(err.Error(), errUnprocEntity)
 }
 
-// IsResourceGone returns true if resource is gone
+// IsResourceGone returns true if the resource is gone
 func IsResourceGone(err error) bool {
-	return strings.Contains(err.Error(), errGone) ||
-		strings.Contains(err.Error(), http.StatusText(http.StatusNotFound))
+	return strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errGone)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(http.StatusText(http.StatusNotFound)))
 }
 
 // IsResourceInactive returns true if resource is inactive
@@ -583,7 +636,8 @@ func IsResourceNotFound(err error) bool {
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errFailedToFind)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errUnableToGet)) ||
 		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound2)) ||
-		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound3))
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound3)) ||
+		strings.Contains(strings.ToLower(err.Error()), strings.ToLower(errNotFound4))
 }
 
 // IsResourcePendingReclamation returns true if instance is being already deleted

@@ -27,7 +27,6 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
-	"github.com/IBM/go-sdk-core/core"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
@@ -207,10 +206,7 @@ func TestGenerateCreateResourceInstanceOptions(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			r := &rcv2.CreateResourceInstanceOptions{}
 			GenerateCreateResourceInstanceOptions(mClient, tc.args.params, r)
@@ -262,10 +258,7 @@ func TestGenerateUpdateResourceInstanceOptions(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			r := &rcv2.UpdateResourceInstanceOptions{}
 			GenerateUpdateResourceInstanceOptions(mClient, observation().ID, tc.args.params, r)
@@ -322,10 +315,7 @@ func TestResourceInstanceLateInitializeSpecs(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			LateInitializeSpec(mClient, tc.args.params, tc.args.instance)
 			if diff := cmp.Diff(tc.want.params, tc.args.params); diff != "" {
@@ -362,10 +352,7 @@ func TestResourceInstanceGenerateObservation(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			o, err := GenerateObservation(mClient, tc.args.instance)
 			if diff := cmp.Diff(nil, err); diff != "" {
@@ -419,10 +406,7 @@ func TestResourceInstanceIsUpToDate(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
+			mClient, _ := ibmc.GetTestClient(server.URL)
 
 			r, err := IsUpToDate(mClient, tc.args.params, tc.args.instance, logging.NewNopLogger())
 			if err != nil && !tc.want.isErr {
