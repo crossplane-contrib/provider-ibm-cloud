@@ -24,7 +24,6 @@ import (
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
-
 // GenerateCrossplaneClusterInfo returns a crossplane version of the Cluster info (built from the one returned by the IBM cloud)
 func GenerateCrossplaneClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
 	result := v1alpha1.ClusterInfo{
