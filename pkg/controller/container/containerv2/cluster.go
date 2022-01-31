@@ -155,7 +155,11 @@ func (c *clusterExternal) Create(ctx context.Context, mg resource.Managed) (mana
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
 	}
 
+<<<<<<< HEAD
 	meta.SetExternalName(crossplaneCluster, crossplaneCluster.Spec.ForProvider.Name)
+=======
+	meta.SetExternalName(crossplaneBucket, crossplaneBucket.Spec.ForProvider.Name)
+>>>>>>> cb632bf (Compiles!)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
@@ -174,7 +178,11 @@ func (c *clusterExternal) Delete(ctx context.Context, mg resource.Managed) error
 
 	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
 
+<<<<<<< HEAD
 	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
+=======
+	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Name, ibmContainerV2.ClusterTargetHeader{})
+>>>>>>> cb632bf (Compiles!)
 	if err != nil {
 		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
 	}
