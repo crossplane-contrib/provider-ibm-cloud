@@ -15,7 +15,6 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
-	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
 	gtagv1 "github.com/IBM/platform-services-go-sdk/globaltaggingv1"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
@@ -183,10 +182,7 @@ func TestGetResourcePlanID(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			planID, err := GetResourcePlanID(mClient, tc.args.serviceName, tc.args.planName)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
@@ -242,10 +238,7 @@ func TestGetResourcePlanName(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			planName, err := GetResourcePlanName(mClient, tc.args.serviceName, tc.args.planID)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
@@ -296,10 +289,7 @@ func TestGetResourceGroupID(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			rgID, err := GetResourceGroupID(mClient, tc.args.rgName)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
@@ -344,10 +334,7 @@ func TestGetResourceGroupName(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			rgName, err := GetResourceGroupName(mClient, tc.args.rgID)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
@@ -394,10 +381,7 @@ func TestGetResourceInstanceTags(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			tags, err := GetResourceInstanceTags(mClient, tc.args.crn)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {
@@ -445,10 +429,7 @@ func TestUpdateResourceInstanceTags(t *testing.T) {
 			server := httptest.NewServer(mux)
 			defer server.Close()
 
-			opts := ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: FakeBearerToken,
-			}}
-			mClient, _ := NewClient(opts)
+			mClient, _ := GetTestClient(server.URL)
 
 			err := UpdateResourceInstanceTags(mClient, tc.args.crn, tc.args.tags)
 			if tc.want.err != nil && tc.want.err.Error() != err.Error() {

@@ -7,7 +7,7 @@ cover.out
 cmd/provider/__*
 
 # ignore IDE folders
-.vscode/
+.vscode
 .DS_Store
 
 # ignore OpenAPI generator files

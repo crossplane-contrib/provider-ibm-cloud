@@ -36,10 +36,10 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/test"
 
 	icdv5 "github.com/IBM/experimental-go-sdk/ibmclouddatabasesv5"
-	"github.com/IBM/go-sdk-core/core"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/tstutil"
 )
 
 const (
@@ -89,11 +89,6 @@ var _ managed.ExternalConnecter = &sgConnector{}
 var _ managed.ExternalClient = &sgExternal{}
 
 type sgModifier func(*v1alpha1.ScalingGroup)
-
-type handler struct {
-	path        string
-	handlerFunc func(w http.ResponseWriter, r *http.Request)
-}
 
 func sg(im ...sgModifier) *v1alpha1.ScalingGroup {
 	i := &v1alpha1.ScalingGroup{
@@ -273,26 +268,50 @@ func instance(m ...func(*icdv5.Groups)) *icdv5.Groups {
 	return i
 }
 
-func TestScalingGroupObserve(t *testing.T) {
-	type args struct {
-		mg resource.Managed
+// Sets up a unit test http server, and creates an external scaling group structure appropriate for unit test.
+//
+// Params
+//	   testingObj - the test object
+//	   handlers - the handlers that create the responses
+//	   client - the controller runtime client
+//
+// Returns
+//		- the external object, ready for unit test
+//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//		  garbage collection)
+//      -- an error (if...)
+func setupServerAndGetUnitTestExternalSG(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*sgExternal, *httptest.Server, error) {
+	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
+	if err != nil || mClient == nil || tstServer == nil {
+		return nil, nil, err
 	}
+
+	return &sgExternal{
+			kube:   *kube,
+			client: *mClient,
+			logger: logging.NewNopLogger(),
+		},
+		tstServer,
+		nil
+}
+
+func TestScalingGroupObserve(t *testing.T) {
 	type want struct {
 		mg  resource.Managed
 		obs managed.ExternalObservation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"NotFound": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -304,8 +323,8 @@ func TestScalingGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(),
+			args: tstutil.Args{
+				Managed: sg(),
 			},
 			want: want{
 				mg:  sg(),
@@ -313,10 +332,10 @@ func TestScalingGroupObserve(t *testing.T) {
 			},
 		},
 		"GetFailed": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -327,8 +346,8 @@ func TestScalingGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(),
+			args: tstutil.Args{
+				Managed: sg(),
 			},
 			want: want{
 				mg:  sg(),
@@ -336,10 +355,10 @@ func TestScalingGroupObserve(t *testing.T) {
 			},
 		},
 		"GetForbidden": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -350,8 +369,8 @@ func TestScalingGroupObserve(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(),
+			args: tstutil.Args{
+				Managed: sg(),
 			},
 			want: want{
 				mg:  sg(),
@@ -359,10 +378,10 @@ func TestScalingGroupObserve(t *testing.T) {
 			},
 		},
 		"UpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -376,8 +395,8 @@ func TestScalingGroupObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: sg(
+			args: tstutil.Args{
+				Managed: sg(
 					sgWithExternalNameAnnotation(id),
 					sgWithSpec(*params()),
 				),
@@ -394,10 +413,10 @@ func TestScalingGroupObserve(t *testing.T) {
 			},
 		},
 		"NotUpToDate": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						_ = r.Body.Close()
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
@@ -414,8 +433,8 @@ func TestScalingGroupObserve(t *testing.T) {
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
 			},
-			args: args{
-				mg: sg(
+			args: tstutil.Args{
+				Managed: sg(
 					sgWithExternalNameAnnotation(id),
 					sgWithSpec(*params()),
 				),
@@ -439,23 +458,14 @@ func TestScalingGroupObserve(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, setupErr := setupServerAndGetUnitTestExternalSG(t, &tc.handlers, &tc.kube)
+			if setupErr != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			obs, err := e.Observe(context.Background(), tc.args.mg)
+			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -469,7 +479,7 @@ func TestScalingGroupObserve(t *testing.T) {
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Observe(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -477,25 +487,22 @@ func TestScalingGroupObserve(t *testing.T) {
 }
 
 func TestScalingGroupCreate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		cre managed.ExternalCreation
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPost, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -507,8 +514,8 @@ func TestScalingGroupCreate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(sgWithSpec(*params())),
+			args: tstutil.Args{
+				Managed: sg(sgWithSpec(*params())),
 			},
 			want: want{
 				mg: sg(sgWithSpec(*params()),
@@ -522,23 +529,14 @@ func TestScalingGroupCreate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, setupErr := setupServerAndGetUnitTestExternalSG(t, &tc.handlers, &tc.kube)
+			if setupErr != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			cre, err := e.Create(context.Background(), tc.args.mg)
+			cre, err := e.Create(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -552,7 +550,7 @@ func TestScalingGroupCreate(t *testing.T) {
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Create(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -560,24 +558,21 @@ func TestScalingGroupCreate(t *testing.T) {
 }
 
 func TestScalingGroupDelete(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodDelete, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -587,8 +582,8 @@ func TestScalingGroupDelete(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(sgWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: sg(sgWithStatus(*observation())),
 			},
 			want: want{
 				mg:  sg(sgWithStatus(*observation()), sgWithConditions(cpv1alpha1.Deleting())),
@@ -599,23 +594,14 @@ func TestScalingGroupDelete(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, setupErr := setupServerAndGetUnitTestExternalSG(t, &tc.handlers, &tc.kube)
+			if setupErr != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			err := e.Delete(context.Background(), tc.args.mg)
+			err := e.Delete(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -626,7 +612,7 @@ func TestScalingGroupDelete(t *testing.T) {
 					t.Errorf("Delete(...): -want, +got:\n%s", diff)
 				}
 			}
-			if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Delete(...): -want, +got:\n%s", diff)
 			}
 		})
@@ -634,25 +620,22 @@ func TestScalingGroupDelete(t *testing.T) {
 }
 
 func TestScalingGroupUpdate(t *testing.T) {
-	type args struct {
-		mg resource.Managed
-	}
 	type want struct {
 		mg  resource.Managed
 		upd managed.ExternalUpdate
 		err error
 	}
 	cases := map[string]struct {
-		handlers []handler
+		handlers []tstutil.Handler
 		kube     client.Client
-		args     args
+		args     tstutil.Args
 		want     want
 	}{
 		"Successful": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -664,8 +647,8 @@ func TestScalingGroupUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
 			},
 			want: want{
 				mg:  sg(sgWithSpec(*params()), sgWithStatus(*observation())),
@@ -674,10 +657,10 @@ func TestScalingGroupUpdate(t *testing.T) {
 			},
 		},
 		"PatchFails": {
-			handlers: []handler{
+			handlers: []tstutil.Handler{
 				{
-					path: "/",
-					handlerFunc: func(w http.ResponseWriter, r *http.Request) {
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
 						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
@@ -687,8 +670,8 @@ func TestScalingGroupUpdate(t *testing.T) {
 					},
 				},
 			},
-			args: args{
-				mg: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
+			args: tstutil.Args{
+				Managed: sg(sgWithSpec(*params()), sgWithStatus(*observation())),
 			},
 			want: want{
 				mg:  sg(sgWithSpec(*params()), sgWithStatus(*observation())),
@@ -699,23 +682,14 @@ func TestScalingGroupUpdate(t *testing.T) {
 
 	for name, tc := range cases {
 		t.Run(name, func(t *testing.T) {
-			mux := http.NewServeMux()
-			for _, h := range tc.handlers {
-				mux.HandleFunc(h.path, h.handlerFunc)
+			e, server, setupErr := setupServerAndGetUnitTestExternalSG(t, &tc.handlers, &tc.kube)
+			if setupErr != nil {
+				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
 			}
-			server := httptest.NewServer(mux)
+
 			defer server.Close()
 
-			opts := ibmc.ClientOptions{URL: server.URL, Authenticator: &core.BearerTokenAuthenticator{
-				BearerToken: ibmc.FakeBearerToken,
-			}}
-			mClient, _ := ibmc.NewClient(opts)
-			e := sgExternal{
-				kube:   tc.kube,
-				client: mClient,
-				logger: logging.NewNopLogger(),
-			}
-			upd, err := e.Update(context.Background(), tc.args.mg)
+			upd, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				// the case where our mock server returns error.
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
@@ -727,7 +701,7 @@ func TestScalingGroupUpdate(t *testing.T) {
 				}
 			}
 			if tc.want.err == nil {
-				if diff := cmp.Diff(tc.want.mg, tc.args.mg); diff != "" {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 					t.Errorf("Update(...): -want, +got:\n%s", diff)
 				}
 				if diff := cmp.Diff(tc.want.upd, upd); diff != "" {
