@@ -12,9 +12,10 @@ require (
 	github.com/IBM/ibm-cos-sdk-go v1.7.0
 	github.com/IBM/ibm-cos-sdk-go-config v1.2.0
 	github.com/IBM/platform-services-go-sdk v0.17.18
+	github.com/IBM/vpc-go-sdk v0.16.0 // indirect
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
-	github.com/go-openapi/strfmt v0.20.1
+	github.com/go-openapi/strfmt v0.21.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2 // indirect
