@@ -22,7 +22,7 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ResourceGroupReference refers to the resource group the VPC is created under.
+// ResourceGroupIdentityIntf refers to the resource group the VPC is created under.
 type ResourceGroupIdentityIntf struct {
 	// The URL for this resource group
 	//
@@ -43,7 +43,7 @@ type ResourceGroupIdentityIntf struct {
 	Name *string `json:"name,omitempty"`
 }
 
-// CreateVPCOptions are input params when creating a VOC
+// VPCParameters are input params when creating a VOC
 type VPCParameters struct {
 	// Indicates whether a default address prefix should be automatically created for each zone in this VPC. If `manual`,
 	// this VPC will be created with no default address prefixes.
@@ -78,7 +78,7 @@ type VPCParameters struct {
 	Headers *map[string]string `json:"headers,omitempty"`
 }
 
-// VPCSpec - desired end-state of a VPC in the IBM cloud
+// VPCSpec is the desired end-state of a VPC in the IBM cloud
 type VPCSpec struct {
 	runtimev1alpha1.ResourceSpec `json:",inline"`
 
@@ -103,7 +103,7 @@ type IP struct {
 	Address string `json:"address,omitempty"`
 }
 
-// VpccseSourceIP
+// VpccseSourceIP ...
 type VpccseSourceIP struct {
 	// The cloud service endpoint source IP address for this zone.
 	IP IP `json:"ip,omitempty"`
@@ -207,7 +207,7 @@ type VPCObservation struct {
 	// Indicates whether this VPC is connected to Classic Infrastructure. If true, this VPC's resources have private
 	// network connectivity to the account's Classic Infrastructure resources. Only one VPC, per region, may be connected
 	// in this way. This value is set at creation and subsequently immutable.
-	ClassicAccess bool `json:"classicAccess,omitempty""`
+	ClassicAccess bool `json:"classicAccess,omitempty"`
 
 	// The date and time that the VPC was created.
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
@@ -244,7 +244,7 @@ type VPCObservation struct {
 	Status string `json:"status,omitempty"`
 }
 
-// BucketStatus - whatever the status is (the IBM cloud decides that)
+// VPCStatus - whatever the status is (the IBM cloud decides that)
 type VPCStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
 
