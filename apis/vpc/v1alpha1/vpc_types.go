@@ -22,25 +22,13 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ResourceGroupIdentityIntf refers to the resource group the VPC is created under.
-type ResourceGroupIdentityIntf struct {
-	// The URL for this resource group
-	//
-	// +immutable
-	// +optional
-	Href *string `json:"href,omitempty"`
+// ResourceGroupIdentity is supposed to contain either a client ResourceGroupIdentity or a ResourceGroupIdentityByID
+type ResourceGroupIdentityBoth struct {
+	// The unique identifier for this resource group.
+	ID string `json:"id,omitempty"`
 
-	// The unique identifier for this resource group, in the cloud
-	//
-	// +immutable
-	// +optional
-	ID *string `json:"id,omitempty"`
-
-	// The user-defined name for this resource group, in the cloud
-	//
-	// +immutable
-	// +optional
-	Name *string `json:"name,omitempty"`
+	// Whether this is a by-id on the client side
+	IsByID bool `json:"isByID,omitempty"`
 }
 
 // VPCParameters are input params when creating a VOC
@@ -72,7 +60,7 @@ type VPCParameters struct {
 	//
 	// +immutable
 	// +optional
-	ResourceGroup *ResourceGroupIdentityIntf `json:"resourceGroup,omitempty"`
+	ResourceGroup *ResourceGroupIdentityBoth `json:"resourceGroup,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers *map[string]string `json:"headers,omitempty"`

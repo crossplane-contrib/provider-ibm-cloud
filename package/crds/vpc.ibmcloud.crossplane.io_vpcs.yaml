@@ -49,7 +49,7 @@ spec:
           metadata:
             type: object
           spec:
-            description: VPCSpec - desired end-state of a VPC in the IBM cloud
+            description: VPCSpec is the desired end-state of a VPC in the IBM cloud
             properties:
               deletionPolicy:
                 description: DeletionPolicy specifies what will happen to the underlying
@@ -89,17 +89,12 @@ spec:
                       [default resource group](https://cloud.ibm.com/apidocs/resource-manager#introduction)
                       is used.
                     properties:
-                      href:
-                        description: The URL for this resource group
-                        type: string
                       id:
-                        description: The unique identifier for this resource group,
-                          in the cloud
+                        description: The unique identifier for this resource group.
                         type: string
-                      name:
-                        description: The user-defined name for this resource group,
-                          in the cloud
-                        type: string
+                      isByID:
+                        description: Whether this is a by-id on the client side
+                        type: boolean
                     type: object
                 type: object
               providerConfigRef:
@@ -145,7 +140,7 @@ spec:
             - forProvider
             type: object
           status:
-            description: BucketStatus - whatever the status is (the IBM cloud decides
+            description: VPCStatus - whatever the status is (the IBM cloud decides
               that)
             properties:
               atProvider:
@@ -170,7 +165,7 @@ spec:
                       source IP addresses for the VPC. The VPC will have one CSE source
                       IP address per zone.
                     items:
-                      description: VpccseSourceIP
+                      description: VpccseSourceIP ...
                       properties:
                         ip:
                           description: The cloud service endpoint source IP address

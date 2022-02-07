@@ -68,6 +68,8 @@ github.com/IBM/ibm-cos-sdk-go-config v1.2.0 h1:1E93234yZgVS0ntm7eUwVb3h0AAayPGcx
 github.com/IBM/ibm-cos-sdk-go-config v1.2.0/go.mod h1:Wetfgv6m1xyuzpZLQTTLIBsWstxjYa15h+Utj7x53Dk=
 github.com/IBM/platform-services-go-sdk v0.17.18 h1:rI1Kqc7c+KmqE1MoXJh+Lhi/3EW5WfXi+53H3AEK+rg=
 github.com/IBM/platform-services-go-sdk v0.17.18/go.mod h1:MSg7VY5MecPRSClxTAD9kLlSIOur4vTjpbJZW9NCMDA=
+github.com/IBM/vpc-go-sdk v0.16.0 h1:VAkdJp1rJflFip+/AG01oLY51++63I2asczLDHumXTc=
+github.com/IBM/vpc-go-sdk v0.16.0/go.mod h1:+fTuJIR/SWXru/B5XEANwV4GCLV5fRppFEzlYGwGm7k=
 github.com/NYTimes/gziphandler v0.0.0-20170623195520-56545f4a5d46/go.mod h1:3wb06e3pkSAbeQ52E9H9iFoQsEEwGN64994WTCIhntQ=
 github.com/PuerkitoBio/purell v1.0.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
 github.com/PuerkitoBio/purell v1.1.0/go.mod h1:c11w/QuzBsJSee3cPx9rAFu61PvFxuPbtSwDGJws/X0=
