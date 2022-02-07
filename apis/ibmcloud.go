@@ -29,7 +29,7 @@ import (
 	icdv5 "github.com/crossplane-contrib/provider-ibm-cloud/apis/ibmclouddatabasesv5/v1alpha1"
 	rcv2 "github.com/crossplane-contrib/provider-ibm-cloud/apis/resourcecontrollerv2/v1alpha1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
-	// vpcv1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
+	vpcv1 "github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 )
 
 func init() {
@@ -44,7 +44,7 @@ func init() {
 		cv1.SchemeBuilder.AddToScheme,
 		cos.SchemeBuilder.AddToScheme,
 		contv2.SchemeBuilder.AddToScheme,
-		// vpcv1.SchemeBuilder.AddToScheme,
+		vpcv1.SchemeBuilder.AddToScheme,
 	)
 }
 
