@@ -4,7 +4,7 @@ go 1.13
 
 require (
 	github.com/IBM-Cloud/bluemix-go v0.0.0-20201019071904-51caa09553fb
-	github.com/IBM/cloudant-go-sdk v0.0.34
+	github.com/IBM/cloudant-go-sdk v0.0.41
 	github.com/IBM/eventstreams-go-sdk v1.1.0
 	github.com/IBM/experimental-go-sdk v0.0.0-20210112204617-192fc5b15655
 	github.com/IBM/go-sdk-core v1.1.0
@@ -15,6 +15,7 @@ require (
 	github.com/IBM/vpc-go-sdk v0.16.0
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
+	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
 	github.com/go-openapi/strfmt v0.21.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.5.5

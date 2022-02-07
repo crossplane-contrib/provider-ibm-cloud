@@ -14,78 +14,73 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package vpc1
+package vpcv1
 
-/*
+import (
+	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
+
+	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
+)
+
 // GenerateCrossplaneVPCParams returns a crossplane version of the VPC creation parameters
-func GenerateCrossplaneVPCParams(in *vpcv1.CreateVPCOptions) (v1alpha1.VPCParameters, error) {
+func GenerateCrossplaneVPCParams(in *ibmVPC.CreateVPCOptions) (v1alpha1.VPCParameters, error) {
 	result := v1alpha1.VPCParameters{
 		AddressPrefixManagement: in.AddressPrefixManagement,
 		ClassicAccess:           in.ClassicAccess,
 		Name:                    in.Name,
-		Headers:                 &in.Headers,
+	}
+
+	if len(in.Headers) > 0 {
+		result.Headers = &in.Headers
 	}
 
 	if in.ResourceGroup != nil {
-		ref, ok := in.ResourceGroup.(vpcv1.ResourceGroupIdentity)
+		ref, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentity)
 		if ok && ref.ID != nil {
-			result.ResourceGroup := &v1alpha1.ResourceGroupIdentityBoth{
-				ID: *ref.ID,
+			result.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
+				ID:     *ref.ID,
 				IsByID: false,
 			}
 		}
 
-		ref, ok := in.ResourceGroup.(vpcv1.ResourceGroupIdentityByID)
-		if ok && ref.ID != nil {
-			result.ResourceGroup := &v1alpha1.ResourceGroupIdentityBoth{
-				ID: *ref.ID,
+		refByID, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentityByID)
+		if ok && refByID.ID != nil {
+			result.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
+				ID:     *refByID.ID,
 				IsByID: true,
+			}
+		}
+
+	}
+
+	return result, nil
+}
+
+// GenerateCloudVPCParams returns a cloud-complieant version of the VPC creation parameters
+func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions, error) {
+	result := ibmVPC.CreateVPCOptions{
+		AddressPrefixManagement: in.AddressPrefixManagement,
+		ClassicAccess:           in.ClassicAccess,
+		Name:                    in.Name,
+	}
+
+	if in.Headers != nil && len(*in.Headers) > 0 {
+		result.SetHeaders(*in.DeepCopy().Headers)
+	}
+
+	if in.ResourceGroup != nil {
+		if in.ResourceGroup.IsByID {
+			result.ResourceGroup = &ibmVPC.ResourceGroupIdentityByID{
+				ID: reference.ToPtrValue(in.ResourceGroup.ID),
+			}
+		} else {
+			result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
+				ID: reference.ToPtrValue(in.ResourceGroup.ID),
 			}
 		}
 	}
 
 	return result, nil
 }
-
-// GenerateClusterCreateRequest populates the 'out' object from the 'in' one
-func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *ibmContainerV2.ClusterCreateRequest) error {
-	out.DisablePublicServiceEndpoint = in.DisablePublicServiceEndpoint
-	out.KubeVersion = in.KubeVersion
-	out.Billing = reference.FromPtrValue(in.Billing)
-	out.PodSubnet = in.PodSubnet
-	out.Provider = in.Provider
-	out.ServiceSubnet = in.ServiceSubnet
-	out.Name = in.Name
-	out.DefaultWorkerPoolEntitlement = in.DefaultWorkerPoolEntitlement
-	out.CosInstanceCRN = in.CosInstanceCRN
-	out.WorkerPools.DiskEncryption = ibmc.BoolValue(in.WorkerPools.DiskEncryption)
-	out.WorkerPools.Entitlement = in.WorkerPools.Entitlement
-	out.WorkerPools.Flavor = in.WorkerPools.Flavor
-	out.WorkerPools.Isolation = reference.FromPtrValue(in.WorkerPools.Isolation)
-
-	if in.WorkerPools.Labels != nil {
-		out.WorkerPools.Labels = map[string]string{}
-
-		for k, v := range *in.WorkerPools.Labels {
-			out.WorkerPools.Labels[k] = v
-		}
-	}
-
-	out.WorkerPools.Name = in.WorkerPools.Name
-	out.WorkerPools.VpcID = in.WorkerPools.VpcID
-	out.WorkerPools.WorkerCount = in.WorkerPools.WorkerCount
-
-	if len(in.WorkerPools.Zones) > 0 {
-		out.WorkerPools.Zones = make([]ibmContainerV2.Zone, len(in.WorkerPools.Zones))
-
-		for i, zo := range in.WorkerPools.Zones {
-			out.WorkerPools.Zones[i] = ibmContainerV2.Zone{
-				ID:       reference.FromPtrValue(zo.ID),
-				SubnetID: reference.FromPtrValue(zo.SubnetID),
-			}
-		}
-	}
-
-	return nil
-}
-*/

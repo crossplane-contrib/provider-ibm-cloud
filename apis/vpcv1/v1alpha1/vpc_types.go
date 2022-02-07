@@ -22,8 +22,8 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ResourceGroupIdentity is supposed to contain either a client ResourceGroupIdentity or a ResourceGroupIdentityByID
-type ResourceGroupIdentityBoth struct {
+// ResourceGroupIdentityAlsoByID is supposed to contain either a client ResourceGroupIdentity or a ResourceGroupIdentityByID
+type ResourceGroupIdentityAlsoByID struct {
 	// The unique identifier for this resource group.
 	ID string `json:"id,omitempty"`
 
@@ -60,7 +60,7 @@ type VPCParameters struct {
 	//
 	// +immutable
 	// +optional
-	ResourceGroup *ResourceGroupIdentityBoth `json:"resourceGroup,omitempty"`
+	ResourceGroup *ResourceGroupIdentityAlsoByID `json:"resourceGroup,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers *map[string]string `json:"headers,omitempty"`
