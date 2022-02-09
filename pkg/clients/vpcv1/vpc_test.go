@@ -101,11 +101,11 @@ func typeVal(value interface{}) interface{} {
 }
 
 // Params
-//    crossplaneRGIntf - a crossplane resource group (must be of type *v1alpha1.ResourceGroupIdentityAlsoByID; interface for convenience). Cannot be nil
-//    cloudRGIntf - a cloud resource group (must be of type *ibmVPC.ResourceGroupIdentityIntf; interface for convenience). Cannot be nil
+//    crossplaneRGIntf - a crossplane resource group (must be of type *v1alpha1.ResourceGroupIdentityAlsoByID; interface for convenience). May be nil
+//    cloudRGIntf - a cloud resource group (must be of type *ibmVPC.ResourceGroupIdentityIntf; interface for convenience). May be nil
 //
 // Returns
-//    whether they point to the same underlyig resource
+//    whether they point to the same underlying resource
 func sameResource(crossplaneRGIntf interface{}, cloudRGIntf interface{}) bool {
 	result := false
 
@@ -127,22 +127,22 @@ func sameResource(crossplaneRGIntf interface{}, cloudRGIntf interface{}) bool {
 
 // Tests the GenerateCrossplaneClusterInfo function
 func TestGenerateCrossplaneVPCParams(t *testing.T) {
+	functionTstName := "TestGenerateCrossplaneVPCParams"
 	numVariables := 5
 	allBooleanCombinations := generateCombinations(numVariables)
 
-	functionTstName := "TestGenerateCrossplaneVPCParams"
 	for i, booleanComb := range allBooleanCombinations {
 		varCombination := getBinaryRep(i, numVariables)
 
-		ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[3], booleanComb[3], booleanComb[4])
-		crossplaneVPCInfo, err := GenerateCrossplaneVPCParams(&ibmVPCInfo)
-		if err != nil {
-			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
-
-			return
-		}
-
 		t.Run(functionTstName, func(t *testing.T) {
+			ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
+			crossplaneVPCInfo, err := GenerateCrossplaneVPCParams(&ibmVPCInfo)
+			if err != nil {
+				t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+
+				return
+			}
+
 			tests := map[string]struct {
 				cloudVal      interface{}
 				crossplaneVal interface{}
@@ -171,39 +171,26 @@ func TestGenerateCrossplaneVPCParams(t *testing.T) {
 
 			for name, tc := range tests {
 				fullTstName := functionTstName + " " + varCombination + " " + name
-				if name != "ResourceGroup" && varCombination != "00010" {
+
+				cloudVal := typeVal(tc.cloudVal)
+				crossplaneVal := typeVal(tc.crossplaneVal)
+
+				if (cloudVal == nil || reflect.ValueOf(cloudVal).IsNil()) &&
+					(crossplaneVal == nil || reflect.ValueOf(crossplaneVal).IsNil()) {
 					continue
 				}
 
-				t.Run(name, func(t *testing.T) {
-					cloudVal := typeVal(tc.cloudVal)
-					crossplaneVal := typeVal(tc.crossplaneVal)
-
-					if cloudVal == nil && crossplaneVal == nil {
-						return
+				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentityAlsoByID" {
+					if !sameResource(crossplaneVal, cloudVal) {
+						t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
 					}
-
-					if (cloudVal == nil && crossplaneVal != nil) || (cloudVal != nil && crossplaneVal == nil) {
-						t.Errorf(fullTstName + ": -wanted both either nil or non-nil. Got ")
-						if cloudVal != nil {
-							t.Errorf("cloudVal != nil")
-						} else {
-							t.Errorf("crossplaneVal != nil")
-						}
-					} else {
-						if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentityAlsoByID" {
-							if !sameResource(crossplaneVal, cloudVal) {
-								t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
-							}
-						} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
-							if diff := cmp.Diff(&cloudVal, crossplaneVal); diff != "" {
-								t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-							}
-						} else if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
-							t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-						}
+				} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
+					if diff := cmp.Diff(cloudVal, *crossplaneVal.(*map[string]string)); diff != "" {
+						t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 					}
-				})
+				} else if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
+					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
+				}
 			}
 		})
 	}

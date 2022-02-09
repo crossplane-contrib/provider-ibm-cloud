@@ -41,36 +41,36 @@ var (
 // ones of the local constants above.
 //
 // Params
-//		addressNil - whether to set the 'AddressPrefixManagement' member to nil
-//  	classicAccessNil - whether to set the 'ClassicAccess' member to nil
-// 		nameNil - whether to set the 'Name' member to nil
-//		resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
-//      noHeaders - whether to include headers
+//		addressNonNil - whether to set the 'AddressPrefixManagement' member to nil
+//  	classicAccessNonNil - whether to set the 'ClassicAccess' member to nil
+// 		nameNonNil - whether to set the 'Name' member to nil
+//		resourceGroupIDNonNil - whether to set the 'resourceGroupIDNil' member to nil
+//      headersNonNil - whether to include headers
 //
 // Returns
 //	    an object appropriately populated
-func GetDummyCloudVPCParams(addressNil bool, classicAccessNil bool, nameNil bool, resourceGroupIDNil bool, noHeaders bool) ibmVPC.CreateVPCOptions {
+func GetDummyCloudVPCParams(addressNonNil bool, classicAccessNonNil bool, nameNonNil bool, resourceGroupIDNonNil bool, headersNonNil bool) ibmVPC.CreateVPCOptions {
 	result := ibmVPC.CreateVPCOptions{}
 
-	if !addressNil {
+	if addressNonNil {
 		result.AddressPrefixManagement = reference.ToPtrValue(addressPrefixVal)
 	}
 
-	if !classicAccessNil {
+	if classicAccessNonNil {
 		result.ClassicAccess = ibmc.BoolPtr(classicAccessVal)
 	}
 
-	if !nameNil {
+	if nameNonNil {
 		result.Name = reference.ToPtrValue(nameVal)
 	}
 
-	if !resourceGroupIDNil {
+	if resourceGroupIDNonNil {
 		result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
 			ID: reference.ToPtrValue(resourceGroupIDVal),
 		}
 	}
 
-	if !noHeaders {
+	if headersNonNil {
 		result.Headers = headersMapVal
 	}
 
