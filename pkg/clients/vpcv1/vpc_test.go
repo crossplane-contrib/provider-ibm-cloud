@@ -134,42 +134,42 @@ func TestGenerateCrossplaneVPCParams(t *testing.T) {
 	for i, booleanComb := range allBooleanCombinations {
 		varCombination := getBinaryRep(i, numVariables)
 
-		t.Run(functionTstName, func(t *testing.T) {
-			ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
-			crossplaneVPCInfo, err := GenerateCrossplaneVPCParams(&ibmVPCInfo)
-			if err != nil {
-				t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+		ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
+		crossplaneVPCInfo, err := GenerateCrossplaneVPCParams(&ibmVPCInfo)
+		if err != nil {
+			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
 
-				return
-			}
+			return
+		}
 
-			tests := map[string]struct {
-				cloudVal      interface{}
-				crossplaneVal interface{}
-			}{
-				"AddressPrefixManagement": {
-					cloudVal:      ibmVPCInfo.AddressPrefixManagement,
-					crossplaneVal: crossplaneVPCInfo.AddressPrefixManagement,
-				},
-				"ClassicAccess": {
-					cloudVal:      ibmVPCInfo.ClassicAccess,
-					crossplaneVal: crossplaneVPCInfo.ClassicAccess,
-				},
-				"Name": {
-					cloudVal:      ibmVPCInfo.Name,
-					crossplaneVal: crossplaneVPCInfo.Name,
-				},
-				"ResourceGroup": {
-					cloudVal:      ibmVPCInfo.ResourceGroup,
-					crossplaneVal: crossplaneVPCInfo.ResourceGroup,
-				},
-				"Headers": {
-					cloudVal:      ibmVPCInfo.Headers,
-					crossplaneVal: crossplaneVPCInfo.Headers,
-				},
-			}
+		tests := map[string]struct {
+			cloudVal      interface{}
+			crossplaneVal interface{}
+		}{
+			"AddressPrefixManagement": {
+				cloudVal:      ibmVPCInfo.AddressPrefixManagement,
+				crossplaneVal: crossplaneVPCInfo.AddressPrefixManagement,
+			},
+			"ClassicAccess": {
+				cloudVal:      ibmVPCInfo.ClassicAccess,
+				crossplaneVal: crossplaneVPCInfo.ClassicAccess,
+			},
+			"Name": {
+				cloudVal:      ibmVPCInfo.Name,
+				crossplaneVal: crossplaneVPCInfo.Name,
+			},
+			"ResourceGroup": {
+				cloudVal:      ibmVPCInfo.ResourceGroup,
+				crossplaneVal: crossplaneVPCInfo.ResourceGroup,
+			},
+			"Headers": {
+				cloudVal:      ibmVPCInfo.Headers,
+				crossplaneVal: crossplaneVPCInfo.Headers,
+			},
+		}
 
-			for name, tc := range tests {
+		for name, tc := range tests {
+			t.Run(functionTstName, func(t *testing.T) {
 				fullTstName := functionTstName + " " + varCombination + " " + name
 
 				cloudVal := typeVal(tc.cloudVal)
@@ -177,7 +177,7 @@ func TestGenerateCrossplaneVPCParams(t *testing.T) {
 
 				if (cloudVal == nil || reflect.ValueOf(cloudVal).IsNil()) &&
 					(crossplaneVal == nil || reflect.ValueOf(crossplaneVal).IsNil()) {
-					continue
+					return
 				}
 
 				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentityAlsoByID" {
@@ -191,7 +191,7 @@ func TestGenerateCrossplaneVPCParams(t *testing.T) {
 				} else if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
 					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 				}
-			}
-		})
+			})
+		}
 	}
 }
