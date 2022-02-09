@@ -37,15 +37,15 @@ var (
 	headersMapVal = map[string]string{"a": "b", "c": "d"} // maps cannot be constants hence var. Do not modify.
 )
 
-// GetDummyCloudVPCParams returns a dummy object, ready to create a cloud request. Non-nil values will be the
-// ones in the local constants above
+// GetDummyCloudVPCParams returns a dummy object, ready to be used in create-VPC-in-the-cloud request. Non-nil values will be the
+// ones of the local constants above.
 //
 // Params
 //		addressNil - whether to set the 'AddressPrefixManagement' member to nil
 //  	classicAccessNil - whether to set the 'ClassicAccess' member to nil
 // 		nameNil - whether to set the 'Name' member to nil
 //		resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
-//      noHeders - whether to include headers
+//      noHeaders - whether to include headers
 //
 // Returns
 //	    an object appropriately populated
@@ -77,15 +77,15 @@ func GetDummyCloudVPCParams(addressNil bool, classicAccessNil bool, nameNil bool
 	return result
 }
 
-// GetDummyCrossplaneVPCParams returns a dummy object, ready to create a cloud request. Non-nil values will be the
-// ones in the local constants above
+// GetDummyCrossplaneVPCParams returns a dummy object, ready to be used in a create-VPC-in-k8s request. Non-nil values will be the
+// ones of the local constants above
 //
 // Params
 //		addressNil - whether to set the 'AddressPrefixManagement' member to nil
 //  	classicAccessNil - whether to set the 'ClassicAccess' member to nil
 // 		nameNil - whether to set the 'Name' member to nil
 //		resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
-//      noHeders - whether to include headers
+//      noHeaders - whether to include headers
 //
 // Returns
 //	    an object appropriately populated
