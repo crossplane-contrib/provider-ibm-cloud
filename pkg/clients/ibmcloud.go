@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"strings"
 	"time"
@@ -56,6 +57,8 @@ import (
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
+
+	"github.com/IBM/vpc-go-sdk/vpcv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 )
@@ -335,6 +338,13 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 		return nil, errors.Wrap(err, errInitClient)
 	}
 
+	cs.vpcClient, err = vpcv1.NewVpcV1(&vpcv1.VpcV1Options{
+		Authenticator: opts.Authenticator,
+	})
+	if err != nil {
+		log.Fatal("Error creating VPC Client")
+	}
+
 	return &cs, err
 }
 
@@ -381,6 +391,7 @@ type ClientSession interface {
 	S3Client() *s3.S3
 	BucketConfigClient() *ibmBucketConfig.ResourceConfigurationV1
 	ClusterClientV2() ibmContainerV2.Clusters
+	VPCClient() *vpcv1.VpcV1
 }
 
 type clientSessionImpl struct {
@@ -396,6 +407,11 @@ type clientSessionImpl struct {
 	s3client              *s3.S3
 	bucketConfigClient    *ibmBucketConfig.ResourceConfigurationV1
 	clustersClientV2      ibmContainerV2.Clusters
+	vpcClient             *vpcv1.VpcV1
+}
+
+func (c *clientSessionImpl) VPCClient() *vpcv1.VpcV1 {
+	return c.vpcClient
 }
 
 func (c *clientSessionImpl) ClusterClientV2() ibmContainerV2.Clusters {
