@@ -18,12 +18,12 @@ package vpcv1
 
 import (
 	"context"
+	"net/http"
 
+	"github.com/IBM/vpc-go-sdk/vpcv1"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
-
-	// ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/event"
@@ -34,16 +34,18 @@ import (
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
+	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/vpcv1"
+
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 )
 
 // Various errors...
 const (
-	errThisIsNotAVPC    = "managed resource is not a VPC resource"
-	errCreateCluster    = "could not create a VPC"
-	errCreateClusterReq = "could not generate the input params for a VPC"
-	errDeleteCluster    = "could not delete the VPC"
-	errGetClusterFailed = "error getting the VOC"
+	errThisIsNotAVPC = "managed resource is not a VPC resource"
+	errCreateVPC     = "could not create a VPC"
+	errCreateVPCReq  = "could not generate the input params for a VPC"
+	errDeleteVPC     = "could not delete the VPC"
+	errGetVPCFailed  = "error getting the VOC"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -103,26 +105,27 @@ type vpcExternal struct {
 
 // Called by crossplane
 func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
-	vpc, ok := mg.(*v1alpha1.VPC)
+	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
 		return managed.ExternalObservation{}, errors.New(errThisIsNotAVPC)
 	}
 
-	externalClusterName := meta.GetExternalName(vpc)
+	externalClusterName := meta.GetExternalName(crossplaneVPC)
 	if externalClusterName == "" {
 		return managed.ExternalObservation{
 			ResourceExists: false,
 		}, nil
 	}
 
-	ibmClusterInfo, err := c.client.ClusterClientV2().GetCluster(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
+	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&vpcv1.ListVpcsOptions{})
 	if err != nil {
-		if ibmc.IsResourceNotFound(err) {
-			return managed.ExternalObservation{ResourceExists: false}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
-		}
+		return managed.ExternalObservation{}, errors.Wrap(err, errGetVPCFailed)
+	} else if response.StatusCode != http.StatusOK {
+		return managed.ExternalObservation{}, errors.New("ListVpcs returned status code: " + string(response.StatusCode) + ", and response: " + response.String())
+	} else if vpcCollection != nil {
+		for cloudVPC := range vpcCollection.Vpcs {
 
-		return managed.ExternalObservation{}, errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errGetClusterFailed)
-	} else if ibmClusterInfo != nil {
+		}
 		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneClusterInfo(ibmClusterInfo)
 		if err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
@@ -130,7 +133,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:    ibmClusterInfo != nil,
+		ResourceExists:    true, // ibmClusterInfo != nil,
 		ResourceUpToDate:  true,
 		ConnectionDetails: nil,
 	}, nil
@@ -138,24 +141,27 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 
 // Called by crossplane
 func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
-	crossplaneCluster, ok := mg.(*v1alpha1.VPC)
+	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
 		return managed.ExternalCreation{}, errors.New(errThisIsNotAVPC)
 	}
 
-	crossplaneCluster.SetConditions(runtimev1alpha1.Creating())
+	crossplaneVPC.SetConditions(runtimev1alpha1.Creating())
 
-	createRequest := ibmContainerV2.ClusterCreateRequest{}
-	if err := crossplaneClient.GenerateClusterCreateRequest(crossplaneCluster.Spec.ForProvider.DeepCopy(), &createRequest); err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateClusterReq)
-	}
-
-	_, err := c.client.ClusterClientV2().Create(createRequest, ibmContainerV2.ClusterTargetHeader{})
+	createOptions, err := crossplaneClient.GenerateCloudVPCParams(&crossplaneVPC.Spec.ForProvider)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateCluster)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPCReq)
 	}
 
-	meta.SetExternalName(crossplaneCluster, crossplaneCluster.Spec.ForProvider.Name)
+	vpc, response, err := c.client.VPCClient().CreateVPC(&createOptions)
+	if err != nil {
+		if response != nil {
+			response = nil
+		}
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPC)
+	}
+
+	meta.SetExternalName(crossplaneVPC, *vpc.Name)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
