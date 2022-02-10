@@ -17,14 +17,47 @@ limitations under the License.
 package vpcv1
 
 import (
+	"reflect"
+
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
+	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 )
 
+// LateInitializeSpec fills optional and unassigned fields with the values in the spec, from the info that comes from the cloud
+//
+// Params
+// 	  spec - what we get from k8s
+// 	  fromIBMCloud - ...what comes from the cloud
+//
+// Returns
+//    whether the resource was late-initialized, any error
+func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.CreateVPCOptions) (bool, error) {
+	wasLateInitialized := false
+
+	spec.AddressPrefixManagement, wasLateInitialized = ibmc.LateInitializeStr(spec.AddressPrefixManagement, fromIBMCloud.AddressPrefixManagement)
+	spec.ClassicAccess, wasLateInitialized = ibmc.LateInitializeBool(spec.ClassicAccess, fromIBMCloud.ClassicAccess)
+	spec.Name, wasLateInitialized = ibmc.LateInitializeStr(spec.Name, fromIBMCloud.Name)
+
+	if spec.ResourceGroup == nil && fromIBMCloud.ResourceGroup != nil && !reflect.ValueOf(fromIBMCloud.ResourceGroup).IsNil() {
+		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
+			ID: fromIBMCloud.ResourceGroup.ID,
+		}
+	}
+
+	return wasLateInitialized, nil
+}
+
 // GenerateCrossplaneVPCParams returns a crossplane version of the VPC creation parameters
+//
+// Params
+//     in - the create options, in IBM-cloud-style
+//
+// Returns
+//     the create options, crossplane-style
 func GenerateCrossplaneVPCParams(in *ibmVPC.CreateVPCOptions) (v1alpha1.VPCParameters, error) {
 	result := v1alpha1.VPCParameters{
 		AddressPrefixManagement: in.AddressPrefixManagement,
@@ -58,7 +91,10 @@ func GenerateCrossplaneVPCParams(in *ibmVPC.CreateVPCOptions) (v1alpha1.VPCParam
 	return result, nil
 }
 
-// GenerateCloudVPCParams returns a cloud-complieant version of the VPC creation parameters
+// GenerateCloudVPCParams returns a cloud-compliant version of the VPC creation parameters
+//
+// Params
+//    in - the creation options, crossplane style
 func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions, error) {
 	result := ibmVPC.CreateVPCOptions{
 		AddressPrefixManagement: in.AddressPrefixManagement,

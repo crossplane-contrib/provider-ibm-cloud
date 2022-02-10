@@ -35,6 +35,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	bluemix "github.com/IBM-Cloud/bluemix-go"
@@ -131,6 +132,49 @@ type ClientOptions struct {
 	// Note that it should always be of the format 'Bearer <...>'
 	RefreshToken  string // not used every time....
 	Authenticator core.Authenticator
+}
+
+// LateInitializeBook returns the new value of a parameter, if is nil and the new value is a legit one (non-nil + non-empty string)
+//
+// Params
+//    param - a parameter. May be nil, or an empty string. Does NOT get modified in the function
+//    newVal - the new value. May be nil or an empty string
+//
+// Returns
+//    the new value of the parameter (only if it is going to be a non-empty string - o/w the old one)
+//    whether the new value is different than the previous one
+func LateInitializeBool(param *bool, newVal *bool) (*bool, bool) {
+	var result *bool = nil
+
+	if param == nil && newVal != nil {
+		result = newVal
+	}
+
+	return result, result != nil
+}
+
+// LateInitializeStr returns the new value of a parameter, if is nil and the new value is a legit one (non-nil + non-empty string)
+//
+// Params
+//    param - a parameter. May be nil, or an empty string. Does NOT get modified in the function
+//    newVal - the new value. May be nil or an empty string
+//
+// Returns
+//    the new value of the parameter (only if it is going to be a non-empty string - o/w the old one)
+//    whether the new value is different than the previous one
+func LateInitializeStr(param *string, newVal *string) (*string, bool) {
+	var result *string = nil
+	changed := false
+
+	if reference.FromPtrValue(param) == "" {
+		if newValStr := reference.FromPtrValue(newVal); newValStr != "" {
+			result = &newValStr
+
+			changed = true
+		}
+	}
+
+	return result, changed
 }
 
 // GetAuthInfo returns the necessary authentication information that is necessary
