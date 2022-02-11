@@ -40,8 +40,17 @@ func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) 
 	wasLateInitializedName := false
 	wasLateInitializedNameRG := false
 
-	spec.ClassicAccess, wasLateInitializedCA = ibmc.LateInitializeBool(spec.ClassicAccess, fromIBMCloud.ClassicAccess)
-	spec.Name, wasLateInitializedName = ibmc.LateInitializeStr(spec.Name, fromIBMCloud.Name)
+	if spec.ClassicAccess == nil && fromIBMCloud.ClassicAccess != nil {
+		spec.ClassicAccess = fromIBMCloud.ClassicAccess
+
+		wasLateInitializedCA = true
+	}
+
+	if spec.Name == nil && fromIBMCloud.Name != nil {
+		spec.Name = fromIBMCloud.Name
+
+		wasLateInitializedName = true
+	}
 
 	if spec.ResourceGroup == nil && fromIBMCloud.ResourceGroup != nil && !reflect.ValueOf(fromIBMCloud.ResourceGroup).IsNil() {
 		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
@@ -60,29 +69,112 @@ func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) 
 //     in - the create options, in IBM-cloud-style
 //
 // Returns
-//     the create options, crossplane-style
+//     the status, crossplane-style
 func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, error) {
 	result := v1alpha1.VPCObservation{
 		ClassicAccess: in.ClassicAccess,
+		CreatedAt:     ibmc.DateTimeToMetaV1Time(in.CreatedAt),
+		CRN:           in.CRN,
+		Href:          in.Href,
+		ID:            in.ID,
 		Name:          in.Name,
+		Status:        in.Status,
 	}
 
-	if len(in.Headers) > 0 {
-		result.Headers = &in.Headers
+	if len(in.CseSourceIps) > 0 {
+		result.CseSourceIps = []v1alpha1.VpccseSourceIP{}
+		for _, cl := range in.CseSourceIps {
+			if (cl.IP != nil && cl.IP.Address != nil) ||
+				(cl.Zone != nil && (cl.Zone.Href != nil || cl.Zone.Name != nil)) {
+
+				newVSIP := v1alpha1.VpccseSourceIP{}
+
+				if cl.IP != nil && cl.IP.Address != nil {
+					newVSIP.IP = &v1alpha1.IP{
+						Address: *cl.IP.Address,
+					}
+				}
+
+				if cl.Zone != nil && (cl.Zone.Href != nil || cl.Zone.Name != nil) {
+					newVSIP.Zone = &v1alpha1.ZoneReference{
+						Href: cl.Zone.Href,
+						Name: cl.Zone.Name,
+					}
+				}
+
+				result.CseSourceIps = append(result.CseSourceIps, newVSIP)
+			}
+		}
+	}
+
+	if in.DefaultNetworkACL != nil {
+		if in.DefaultNetworkACL.CRN != nil ||
+			(in.DefaultNetworkACL.Deleted != nil && in.DefaultNetworkACL.Deleted.MoreInfo != nil) ||
+			in.DefaultNetworkACL.Href != nil ||
+			in.DefaultNetworkACL.ID != nil ||
+			in.DefaultNetworkACL.Name != nil {
+			result.DefaultNetworkACL = &v1alpha1.NetworkACLReference{
+				CRN:  in.DefaultNetworkACL.CRN,
+				Href: in.DefaultNetworkACL.Href,
+				ID:   in.DefaultNetworkACL.ID,
+				Name: in.DefaultNetworkACL.Name,
+			}
+
+			if in.DefaultNetworkACL.Deleted != nil && in.DefaultNetworkACL.Deleted.MoreInfo != nil {
+				result.DefaultNetworkACL.Deleted = &v1alpha1.NetworkACLReferenceDeleted{
+					MoreInfo: *in.DefaultNetworkACL.Deleted.MoreInfo,
+				}
+			}
+		}
+	}
+
+	if in.DefaultRoutingTable != nil {
+		if (in.DefaultRoutingTable.Deleted != nil && in.DefaultRoutingTable.Deleted.MoreInfo != nil) ||
+			in.DefaultRoutingTable.Href != nil ||
+			in.DefaultRoutingTable.Name != nil ||
+			in.DefaultRoutingTable.ResourceType != nil {
+			result.DefaultRoutingTable = &v1alpha1.RoutingTableReference{
+				Href:         in.DefaultRoutingTable.Href,
+				ID:           in.DefaultRoutingTable.ID,
+				Name:         in.DefaultRoutingTable.Name,
+				ResourceType: in.DefaultRoutingTable.ResourceType,
+			}
+
+			if in.DefaultRoutingTable.Deleted != nil && in.DefaultRoutingTable.Deleted.MoreInfo != nil {
+				result.DefaultRoutingTable.Deleted = &v1alpha1.RoutingTableReferenceDeleted{
+					MoreInfo: *in.DefaultNetworkACL.Deleted.MoreInfo,
+				}
+			}
+		}
+	}
+
+	if in.DefaultSecurityGroup != nil {
+		if in.DefaultSecurityGroup.CRN != nil ||
+			(in.DefaultSecurityGroup.Deleted != nil && in.DefaultSecurityGroup.Deleted.MoreInfo != nil) ||
+			in.DefaultSecurityGroup.Href != nil ||
+			in.DefaultSecurityGroup.ID != nil ||
+			in.DefaultSecurityGroup.Name != nil {
+			result.DefaultSecurityGroup = &v1alpha1.SecurityGroupReference{
+				CRN:  in.DefaultSecurityGroup.CRN,
+				Href: in.DefaultSecurityGroup.Href,
+				ID:   in.DefaultSecurityGroup.ID,
+				Name: in.DefaultSecurityGroup.Name,
+			}
+
+			if in.DefaultSecurityGroup.Deleted != nil && in.DefaultSecurityGroup.Deleted.MoreInfo != nil {
+				result.DefaultSecurityGroup.Deleted = &v1alpha1.SecurityGroupReferenceDeleted{
+					MoreInfo: *in.DefaultSecurityGroup.Deleted.MoreInfo,
+				}
+			}
+		}
 	}
 
 	if in.ResourceGroup != nil {
-		ref, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentity)
-		if ok && ref.ID != nil {
-			result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
-				ID: *ref.ID,
-			}
-		}
-
-		refByID, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentityByID)
-		if ok && refByID.ID != nil {
-			result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
-				ID: *refByID.ID,
+		if in.ResourceGroup.Name != nil || in.ResourceGroup.Href != nil || in.ResourceGroup.ID != nil {
+			result.ResourceGroup = &v1alpha1.ResourceGroupReference{
+				Name: in.ResourceGroup.Name,
+				Href: in.ResourceGroup.Href,
+				ID:   in.ResourceGroup.ID,
 			}
 		}
 	}
@@ -94,6 +186,9 @@ func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, 
 //
 // Params
 //    in - the creation options, crossplane style
+//
+//  Returns
+//     the struct to use in the cloud call
 func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions, error) {
 	result := ibmVPC.CreateVPCOptions{
 		AddressPrefixManagement: in.AddressPrefixManagement,

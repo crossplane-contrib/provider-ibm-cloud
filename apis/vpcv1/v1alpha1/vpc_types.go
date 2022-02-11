@@ -29,7 +29,7 @@ type ResourceGroupIdentity struct {
 	ID string `json:"id,omitempty"`
 }
 
-// VPCParameters are input params when creating a VOC
+// VPCParameters are input params when creating a VPC
 type VPCParameters struct {
 	// Indicates whether a default address prefix should be automatically created for each zone in this VPC. If `manual`,
 	// this VPC will be created with no default address prefixes.
@@ -75,10 +75,10 @@ type VPCSpec struct {
 // ZoneReference : ZoneReference struct
 type ZoneReference struct {
 	// The URL for this zone.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The globally unique name for this zone.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // IP contains the ip address
@@ -92,10 +92,10 @@ type IP struct {
 // VpccseSourceIP ...
 type VpccseSourceIP struct {
 	// The cloud service endpoint source IP address for this zone.
-	IP IP `json:"ip,omitempty"`
+	IP *IP `json:"ip,omitempty"`
 
 	// The zone this cloud service endpoint source IP resides in.
-	Zone ZoneReference `json:"zone,omitempty"`
+	Zone *ZoneReference `json:"zone,omitempty"`
 }
 
 // NetworkACLReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -108,20 +108,20 @@ type NetworkACLReferenceDeleted struct {
 // NetworkACLReference ...
 type NetworkACLReference struct {
 	// The CRN for this network ACL.
-	CRN string `json:"crn,omitempty"`
+	CRN *string `json:"crn,omitempty"`
 
 	// If present, this property indicates the referenced resource has been deleted and provides
 	// some supplementary information.
 	Deleted *NetworkACLReferenceDeleted `json:"deleted,omitempty"`
 
 	// The URL for this network ACL.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The unique identifier for this network ACL.
-	ID string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 
 	// The user-defined name for this network ACL.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // RoutingTableReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -135,19 +135,19 @@ type RoutingTableReferenceDeleted struct {
 type RoutingTableReference struct {
 	// If present, this property indicates the referenced resource has been deleted and provides
 	// some supplementary information.
-	Deleted RoutingTableReferenceDeleted `json:"deleted,omitempty"`
+	Deleted *RoutingTableReferenceDeleted `json:"deleted,omitempty"`
 
 	// The URL for this routing table.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The unique identifier for this routing table.
 	ID *string `json:"id,omitempty"`
 
 	// The user-defined name for this routing table.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// The resource type.
-	ResourceType string `json:"resourceType,omitempty"`
+	ResourceType *string `json:"resourceType,omitempty"`
 }
 
 // SecurityGroupReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -160,32 +160,32 @@ type SecurityGroupReferenceDeleted struct {
 // SecurityGroupReference : SecurityGroupReference struct
 type SecurityGroupReference struct {
 	// The security group's CRN.
-	CRN string `json:"crn,omitempty"`
+	CRN *string `json:"crn,omitempty"`
 
 	// If present, this property indicates the referenced resource has been deleted and provides
 	// some supplementary information.
-	Deleted SecurityGroupReferenceDeleted `json:"deleted,omitempty"`
+	Deleted *SecurityGroupReferenceDeleted `json:"deleted,omitempty"`
 
 	// The security group's canonical URL.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The unique identifier for this security group.
-	ID string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 
 	// The user-defined name for this security group. Names must be unique within the VPC the security group resides in.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // ResourceGroupReference ...
 type ResourceGroupReference struct {
 	// The URL for this resource group.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The unique identifier for this resource group.
-	ID string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 
 	// The user-defined name for this resource group.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 }
 
 // VPCObservation ...what comes back
