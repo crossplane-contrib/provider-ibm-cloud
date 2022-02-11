@@ -105,9 +105,8 @@ func GetDummyCrossplaneVPCParams(addressNil bool, classicAccessNil bool, nameNil
 	}
 
 	if !resourceGroupIDNil {
-		result.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
-			ID:     resourceGroupIDVal,
-			IsByID: false,
+		result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+			ID: resourceGroupIDVal,
 		}
 	}
 

@@ -35,20 +35,23 @@ import (
 //
 // Returns
 //    whether the resource was late-initialized, any error
-func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.CreateVPCOptions) (bool, error) {
-	wasLateInitialized := false
+func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) (bool, error) {
+	wasLateInitializedCA := false
+	wasLateInitializedName := false
+	wasLateInitializedNameRG := false
 
-	spec.AddressPrefixManagement, wasLateInitialized = ibmc.LateInitializeStr(spec.AddressPrefixManagement, fromIBMCloud.AddressPrefixManagement)
-	spec.ClassicAccess, wasLateInitialized = ibmc.LateInitializeBool(spec.ClassicAccess, fromIBMCloud.ClassicAccess)
-	spec.Name, wasLateInitialized = ibmc.LateInitializeStr(spec.Name, fromIBMCloud.Name)
+	spec.ClassicAccess, wasLateInitializedCA = ibmc.LateInitializeBool(spec.ClassicAccess, fromIBMCloud.ClassicAccess)
+	spec.Name, wasLateInitializedName = ibmc.LateInitializeStr(spec.Name, fromIBMCloud.Name)
 
 	if spec.ResourceGroup == nil && fromIBMCloud.ResourceGroup != nil && !reflect.ValueOf(fromIBMCloud.ResourceGroup).IsNil() {
-		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
-			ID: fromIBMCloud.ResourceGroup.ID,
+		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+			ID: *fromIBMCloud.ResourceGroup.ID,
 		}
+
+		wasLateInitializedNameRG = true
 	}
 
-	return wasLateInitialized, nil
+	return wasLateInitializedCA || wasLateInitializedName || wasLateInitializedNameRG, nil
 }
 
 // GenerateCrossplaneVPCParams returns a crossplane version of the VPC creation parameters
@@ -72,20 +75,17 @@ func GenerateCrossplaneVPCParams(in *ibmVPC.CreateVPCOptions) (v1alpha1.VPCParam
 	if in.ResourceGroup != nil {
 		ref, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentity)
 		if ok && ref.ID != nil {
-			result.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
-				ID:     *ref.ID,
-				IsByID: false,
+			result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+				ID: *ref.ID,
 			}
 		}
 
 		refByID, ok := in.ResourceGroup.(*ibmVPC.ResourceGroupIdentityByID)
 		if ok && refByID.ID != nil {
-			result.ResourceGroup = &v1alpha1.ResourceGroupIdentityAlsoByID{
-				ID:     *refByID.ID,
-				IsByID: true,
+			result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+				ID: *refByID.ID,
 			}
 		}
-
 	}
 
 	return result, nil
@@ -107,14 +107,8 @@ func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions
 	}
 
 	if in.ResourceGroup != nil {
-		if in.ResourceGroup.IsByID {
-			result.ResourceGroup = &ibmVPC.ResourceGroupIdentityByID{
-				ID: reference.ToPtrValue(in.ResourceGroup.ID),
-			}
-		} else {
-			result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
-				ID: reference.ToPtrValue(in.ResourceGroup.ID),
-			}
+		result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
+			ID: reference.ToPtrValue(in.ResourceGroup.ID),
 		}
 	}
 

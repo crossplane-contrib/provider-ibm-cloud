@@ -94,7 +94,7 @@ func typeVal(value interface{}) interface{} {
 		result = typed
 	case map[string]string:
 		result = typed
-	case *v1alpha1.ResourceGroupIdentityAlsoByID:
+	case *v1alpha1.ResourceGroupIdentity:
 		result = typed
 	case *ibmVPC.ResourceGroupIdentity:
 		result = typed
@@ -109,21 +109,24 @@ func typeVal(value interface{}) interface{} {
 //    crossplaneRGIntf - a crossplane resource group (must be of type *v1alpha1.ResourceGroupIdentityAlsoByID; interface for convenience). May be nil
 //    cloudRGIntf - a cloud resource group (must be of type *ibmVPC.ResourceGroupIdentityIntf; interface for convenience). May be nil
 //
+//    Note that both params should NOT be at the same time nil (or point to nil structures)
+//
 // Returns
 //    whether they point to the same underlying resource
 func sameResource(crossplaneRGIntf interface{}, cloudRGIntf interface{}) bool {
 	result := false
 
-	crossplaneRG := crossplaneRGIntf.(*v1alpha1.ResourceGroupIdentityAlsoByID)
-	if crossplaneRG.IsByID {
-		cloudRGStructVal, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentityByID)
-		if ok && cloudRGStructVal.ID != nil {
-			result = (crossplaneRG.ID == *cloudRGStructVal.ID)
+	if crossplaneRGIntf != nil && !reflect.ValueOf(crossplaneRGIntf).IsNil() && cloudRGIntf != nil && !reflect.ValueOf(cloudRGIntf).IsNil() {
+		crossplaneRG := crossplaneRGIntf.(*v1alpha1.ResourceGroupIdentity)
+
+		cloudRG, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentity)
+		if ok && cloudRG.ID != nil {
+			result = (crossplaneRG.ID == *cloudRG.ID)
 		}
-	} else {
-		cloudRGStructVal, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentity)
-		if ok && cloudRGStructVal.ID != nil {
-			result = (crossplaneRG.ID == *cloudRGStructVal.ID)
+
+		cloudRGByID, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentityByID)
+		if ok && cloudRGByID.ID != nil {
+			result = (crossplaneRG.ID == *cloudRGByID.ID)
 		}
 	}
 
@@ -167,6 +170,25 @@ func createTests(ibmVPCInfo *ibmVPC.CreateVPCOptions, crossplaneVPCInfo *v1alpha
 	}
 }
 
+// Compares 2 interface values for nilness (there own or the variable they point to..)
+//
+// Params
+//    a - an inteface. May be nil
+//    b - an interaface. May be nil
+//
+// Returns
+//    whether they are both pointing to nil values or are nil
+func areEquallyNil(a interface{}, b interface{}) bool {
+	result := false
+
+	if (a == nil || reflect.ValueOf(a).IsNil()) &&
+		(b == nil || reflect.ValueOf(b).IsNil()) {
+		result = true
+	}
+
+	return result
+}
+
 // Tests the GenerateCrossplaneVPCParams function
 func TestGenerateCrossplaneVPCParams(t *testing.T) {
 	functionTstName := "TestGenerateCrossplaneVPCParams"
@@ -190,12 +212,11 @@ func TestGenerateCrossplaneVPCParams(t *testing.T) {
 				cloudVal := typeVal(tc.cloudVal)
 				crossplaneVal := typeVal(tc.crossplaneVal)
 
-				if (cloudVal == nil || reflect.ValueOf(cloudVal).IsNil()) &&
-					(crossplaneVal == nil || reflect.ValueOf(crossplaneVal).IsNil()) {
+				if areEquallyNil(cloudVal, crossplaneVal) {
 					return
 				}
 
-				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentityAlsoByID" {
+				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
 					if !sameResource(crossplaneVal, cloudVal) {
 						t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
 					}
@@ -234,12 +255,11 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 				cloudVal := typeVal(tc.cloudVal)
 				crossplaneVal := typeVal(tc.crossplaneVal)
 
-				if (cloudVal == nil || reflect.ValueOf(cloudVal).IsNil()) &&
-					(crossplaneVal == nil || reflect.ValueOf(crossplaneVal).IsNil()) {
+				if areEquallyNil(crossplaneVal, cloudVal) {
 					return
 				}
 
-				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentityAlsoByID" {
+				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
 					if !sameResource(crossplaneVal, cloudVal) {
 						t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
 					}

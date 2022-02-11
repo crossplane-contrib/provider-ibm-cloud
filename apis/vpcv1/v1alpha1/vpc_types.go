@@ -22,13 +22,11 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ResourceGroupIdentityAlsoByID is supposed to contain either a client ResourceGroupIdentity or a ResourceGroupIdentityByID
-type ResourceGroupIdentityAlsoByID struct {
+// ResourceGroupIdentityRef is supposed to contain either a  ResourceGroupIdentity or a ResourceGroupIdentityByID (we do not really care which, as
+// we are not sent this info when querying the cloud)
+type ResourceGroupIdentity struct {
 	// The unique identifier for this resource group.
 	ID string `json:"id,omitempty"`
-
-	// Whether this is a by-id on the client side
-	IsByID bool `json:"isByID,omitempty"`
 }
 
 // VPCParameters are input params when creating a VOC
@@ -60,7 +58,7 @@ type VPCParameters struct {
 	//
 	// +immutable
 	// +optional
-	ResourceGroup *ResourceGroupIdentityAlsoByID `json:"resourceGroup,omitempty"`
+	ResourceGroup *ResourceGroupIdentity `json:"resourceGroup,omitempty"`
 
 	// Allows users to set headers on API requests
 	Headers *map[string]string `json:"headers,omitempty"`

@@ -92,9 +92,6 @@ spec:
                       id:
                         description: The unique identifier for this resource group.
                         type: string
-                      isByID:
-                        description: Whether this is a by-id on the client side
-                        type: boolean
                     type: object
                 type: object
               providerConfigRef:
