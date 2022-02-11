@@ -189,15 +189,15 @@ func areEquallyNil(a interface{}, b interface{}) bool {
 	return result
 }
 
-// Tests the GenerateCrossplaneVPCParams function
-func TestGenerateCrossplaneVPCParams(t *testing.T) {
-	functionTstName := "TestGenerateCrossplaneVPCParams"
+// Tests the GenerateCrossplaneVPCObservation function
+func TestGenerateCrossplaneVPCObservation(t *testing.T) {
+	functionTstName := "GenerateCrossplaneVPCObservation"
 
 	for i, booleanComb := range allBooleanCombinations {
 		varCombination := getBinaryRep(i, numVariables)
 
 		ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
-		crossplaneVPCInfo, err := GenerateCrossplaneVPCParams(&ibmVPCInfo)
+		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
 		if err != nil {
 			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
 

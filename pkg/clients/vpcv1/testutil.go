@@ -49,8 +49,8 @@ var (
 //
 // Returns
 //	    an object appropriately populated
-func GetDummyCloudVPCParams(addressNonNil bool, classicAccessNonNil bool, nameNonNil bool, resourceGroupIDNonNil bool, headersNonNil bool) ibmVPC.CreateVPCOptions {
-	result := ibmVPC.CreateVPCOptions{}
+func GetDummyCloudVPCObservation(addressNonNil bool, classicAccessNonNil bool, nameNonNil bool, resourceGroupIDNonNil bool, headersNonNil bool) ibmVPC.VPC {
+	result := ibmVPC.VPC{}
 
 	if addressNonNil {
 		result.AddressPrefixManagement = reference.ToPtrValue(addressPrefixVal)
