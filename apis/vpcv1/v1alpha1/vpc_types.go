@@ -193,41 +193,41 @@ type VPCObservation struct {
 	// Indicates whether this VPC is connected to Classic Infrastructure. If true, this VPC's resources have private
 	// network connectivity to the account's Classic Infrastructure resources. Only one VPC, per region, may be connected
 	// in this way. This value is set at creation and subsequently immutable.
-	ClassicAccess bool `json:"classicAccess,omitempty"`
+	ClassicAccess *bool `json:"classicAccess,omitempty"`
 
 	// The date and time that the VPC was created.
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
 
 	// The CRN for this VPC.
-	CRN string `json:"crn,omitempty"`
+	CRN *string `json:"crn,omitempty"`
 
 	// Array of CSE ([Cloud Service Endpoint](https://cloud.ibm.com/docs/resources?topic=resources-service-endpoints))
 	// source IP addresses for the VPC. The VPC will have one CSE source IP address per zone.
 	CseSourceIps []VpccseSourceIP `json:"cseSourceIps,omitempty"`
 
 	// The default network ACL to use for subnets created in this VPC.
-	DefaultNetworkACL NetworkACLReference `json:"defaultNetworkAcl,omitempty"`
+	DefaultNetworkACL *NetworkACLReference `json:"defaultNetworkAcl,omitempty"`
 
 	// The default routing table to use for subnets created in this VPC.
-	DefaultRoutingTable RoutingTableReference `json:"defaultRoutingTable,omitempty"`
+	DefaultRoutingTable *RoutingTableReference `json:"defaultRoutingTable,omitempty"`
 
 	// The default security group to use for network interfaces created in this VPC.
-	DefaultSecurityGroup SecurityGroupReference `json:"defaultSecurityGroup,omitempty"`
+	DefaultSecurityGroup *SecurityGroupReference `json:"defaultSecurityGroup,omitempty"`
 
 	// The URL for this VPC.
-	Href string `json:"href,omitempty"`
+	Href *string `json:"href,omitempty"`
 
 	// The unique identifier for this VPC.
-	ID string `json:"id,omitempty"`
+	ID *string `json:"id,omitempty"`
 
 	// The unique user-defined name for this VPC.
-	Name string `json:"name,omitempty"`
+	Name *string `json:"name,omitempty"`
 
 	// The resource group for this VPC.
-	ResourceGroup ResourceGroupReference `json:"resourceGroup,omitempty"`
+	ResourceGroup *ResourceGroupReference `json:"resourceGroup,omitempty"`
 
 	// The status of this VPC.
-	Status string `json:"status,omitempty"`
+	Status *string `json:"status,omitempty"`
 }
 
 // VPCStatus - whatever the status is (the IBM cloud decides that)
