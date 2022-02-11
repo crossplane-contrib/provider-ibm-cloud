@@ -124,9 +124,8 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 		return managed.ExternalObservation{}, errors.New("ListVpcs returned status code: " + string(response.StatusCode) + ", and response: " + response.String())
 	} else if vpcCollection != nil {
 		for cloudVPC := range vpcCollection.Vpcs {
-			
-		}
-		crossplaneCluster.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneClusterInfo(ibmClusterInfo)
+			if *crossplaneVPC.Spec.ForProvider.Name == *cloudVPC.Name {
+			}
 		if err != nil {
 			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 		}

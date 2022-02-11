@@ -54,18 +54,17 @@ func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) 
 	return wasLateInitializedCA || wasLateInitializedName || wasLateInitializedNameRG, nil
 }
 
-// GenerateCrossplaneVPCParams returns a crossplane version of the VPC creation parameters
+// GenerateCrossplaneVPCObservation returns a crossplane version of the cloud observation results parameters
 //
 // Params
 //     in - the create options, in IBM-cloud-style
 //
 // Returns
 //     the create options, crossplane-style
-func GenerateCrossplaneVPCParams(in *ibmVPC.CreateVPCOptions) (v1alpha1.VPCParameters, error) {
-	result := v1alpha1.VPCParameters{
-		AddressPrefixManagement: in.AddressPrefixManagement,
-		ClassicAccess:           in.ClassicAccess,
-		Name:                    in.Name,
+func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, error) {
+	result := v1alpha1.VPCObservation{
+		ClassicAccess: in.ClassicAccess,
+		Name:          in.Name,
 	}
 
 	if len(in.Headers) > 0 {
