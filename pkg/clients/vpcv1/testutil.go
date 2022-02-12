@@ -41,38 +41,46 @@ var (
 // ones of the local constants above.
 //
 // Params
-//		addressNonNil - whether to set the 'AddressPrefixManagement' member to nil
-//  	classicAccessNonNil - whether to set the 'ClassicAccess' member to nil
-// 		nameNonNil - whether to set the 'Name' member to nil
-//		resourceGroupIDNonNil - whether to set the 'resourceGroupIDNil' member to nil
-//      headersNonNil - whether to include headers
+//		each param is used in controlling the value of the similarly-named field in the returned structure
 //
 // Returns
 //	    an object appropriately populated
-func GetDummyCloudVPCObservation(addressNonNil bool, classicAccessNonNil bool, nameNonNil bool, resourceGroupIDNonNil bool, headersNonNil bool) ibmVPC.VPC {
+func GetDummyCloudVPCObservation(
+	classicAccessNonNil bool,
+	createedAtNonNil bool,
+	crnNonNil bool,
+	hrefNonNil bool,
+	idNonNil bool,
+	nameNonNil bool,
+	statusNonNil bool,
+	cseSourceIpsNonNil bool,
+	defaultNetworkACL_NonNil bool,
+	defaultNetworkACL_CRN_NonNil bool,
+	defaultNetworkACL_Deleted_NonNil bool,
+	defaultNetworkACL_Deleted_MoreInfoNonNil bool,
+	defaultNetworkACL_Href_NonNil bool,
+	defaultNetworkACL_ID_NonNil bool,
+	defaultNetworkACL_Name_NonNil bool,
+	defaultRoutingTable_NonNil bool,
+	defaultRoutingTable_Deleted_NonNil bool,
+	defaultRoutingTable_Deleted_MoreInfoNonNil,
+	defaultRoutingTable_HrefNonNil bool,
+	defaultRoutingTable_IDNonNil bool,
+	defaultRoutingTable_NameNil bool,
+	defaultRoutingTable_ResourceTypeNonNil bool,
+	defaultSecurityGroup_NonNil bool,
+	defaultSecurityGroup_CRN_NonNil bool,
+	defaultSecurityGroup_Deleted_NonNil bool,
+	defaultSecurityGroup_Deleted_MoreInfoNonNil bool,
+	defaultSecurityGroup_Href_NonNil bool,
+	defaultSecurityGroup_ID_NonNil bool,
+	defaultSecurityGroup_Name_NonNil bool,
+	resourceGroupNonNil bool,
+	resourceGroup_Name_NonNil bool,
+	resourceGroup_Href_NonNil bool,
+	resourceGroup_ID_NonNil bool) ibmVPC.VPC {
+
 	result := ibmVPC.VPC{}
-
-	if addressNonNil {
-		result.AddressPrefixManagement = reference.ToPtrValue(addressPrefixVal)
-	}
-
-	if classicAccessNonNil {
-		result.ClassicAccess = ibmc.BoolPtr(classicAccessVal)
-	}
-
-	if nameNonNil {
-		result.Name = reference.ToPtrValue(nameVal)
-	}
-
-	if resourceGroupIDNonNil {
-		result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
-			ID: reference.ToPtrValue(resourceGroupIDVal),
-		}
-	}
-
-	if headersNonNil {
-		result.Headers = headersMapVal
-	}
 
 	return result
 }

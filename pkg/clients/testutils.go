@@ -19,8 +19,10 @@ package clients
 import (
 	"encoding/json"
 	"net/http"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -37,6 +39,13 @@ var (
 const (
 	FakeBearerToken = "Bearer mock-token"
 )
+
+// ADateTimeInAYear returns a  (random, but fixed) date time in the given year
+func ADateTimeInAYear(year int) *strfmt.DateTime {
+	result := strfmt.DateTime(time.Date(year, 10, 12, 8, 5, 5, 0, time.UTC))
+
+	return &result
+}
 
 // GetTestClient creates a client appropriate for unit testing.
 //

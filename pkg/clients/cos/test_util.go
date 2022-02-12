@@ -16,19 +16,6 @@ limitations under the License.
 
 package cos
 
-import (
-	"time"
-
-	"github.com/go-openapi/strfmt"
-)
-
-// ADateTimeInAYear returns a  (random, but fixed) date time in the given year
-func ADateTimeInAYear(year int) *strfmt.DateTime {
-	result := strfmt.DateTime(time.Date(year, 10, 12, 8, 5, 5, 0, time.UTC))
-
-	return &result
-}
-
 // AStrArray returns an array of strings
 func AStrArray() []string {
 	result := []string{"a", "b", "cd"}
