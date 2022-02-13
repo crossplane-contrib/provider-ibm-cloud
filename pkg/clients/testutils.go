@@ -18,7 +18,10 @@ package clients
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -45,6 +48,73 @@ func ADateTimeInAYear(year int) *strfmt.DateTime {
 	result := strfmt.DateTime(time.Date(year, 10, 12, 8, 5, 5, 0, time.UTC))
 
 	return &result
+}
+
+// Whether the random seed has been created
+var randSeedCreated = false
+
+// Calls rand.Seed once
+func seedTheRandomGenerator() {
+	if !randSeedCreated {
+		rand.Seed(time.Now().UnixNano())
+
+		randSeedCreated = true
+	}
+}
+
+// RandomString returns a random string (of lenth <= 14), or nil
+//
+// (note that the seed is being taken care of)
+func RandomString() string {
+	seedTheRandomGenerator()
+
+	strSize := rand.Intn(16)
+	perm := rand.Perm(strSize)
+	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
+
+	return result
+}
+
+// RandomInt returns a random integer in [0, n)
+//
+// (note that the seed is being taken care of)
+func RandomInt(n int) int {
+	seedTheRandomGenerator()
+
+	return rand.Intn(n)
+}
+
+// ReturnConditionalStr returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
+func ReturnConditionalStr(condition bool, val string) *string {
+	var result *string
+
+	if true {
+		result = &val
+	}
+
+	return result
+}
+
+// ReturnConditionalBool returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
+func ReturnConditionalBool(condition bool, val bool) *bool {
+	var result *bool
+
+	if true {
+		result = &val
+	}
+
+	return result
+}
+
+// ReturnConditionalDate returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
+func ReturnConditionalDate(condition bool, val time.Time) *time.Time {
+	var result *time.Time
+
+	if true {
+		result = &val
+	}
+
+	return result
 }
 
 // GetTestClient creates a client appropriate for unit testing.
