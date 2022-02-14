@@ -70,7 +70,7 @@ func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) 
 //
 // Returns
 //     the status, crossplane-style
-func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, error) {
+func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, error) { // nolint:gocyclo
 	result := v1alpha1.VPCObservation{
 		ClassicAccess: in.ClassicAccess,
 		CreatedAt:     ibmc.DateTimeToMetaV1Time(in.CreatedAt),

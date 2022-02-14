@@ -104,7 +104,7 @@ func GetDummyCloudVPCObservation(
 	resourceGroupNonNil bool,
 	resourceGroup_Name_NonNil bool,
 	resourceGroup_Href_NonNil bool,
-	resourceGroup_ID_NonNil bool) ibmVPC.VPC {
+	resourceGroup_ID_NonNil bool) ibmVPC.VPC { // nolint:gocyclo
 
 	result := ibmVPC.VPC{
 		ClassicAccess: ibmc.ReturnConditionalBool(classicAccessNonNil, classicAccessVal),

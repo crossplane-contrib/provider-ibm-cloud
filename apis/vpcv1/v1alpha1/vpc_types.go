@@ -22,8 +22,7 @@ import (
 	runtimev1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 )
 
-// ResourceGroupIdentityRef is supposed to contain either a  ResourceGroupIdentity or a ResourceGroupIdentityByID (we do not really care which, as
-// we are not sent this info when querying the cloud)
+// ResourceGroupIdentity containt an identifier for the resour group
 type ResourceGroupIdentity struct {
 	// The unique identifier for this resource group.
 	ID string `json:"id,omitempty"`
