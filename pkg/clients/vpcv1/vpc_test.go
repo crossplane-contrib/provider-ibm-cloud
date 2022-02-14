@@ -29,11 +29,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 )
 
-const numVariables = 5
-
-// All the combinations of variables' values (with null ones) to use for testing
-var allBooleanCombinations = generateCombinations(numVariables)
-
 // Params
 //      i  - an integer >= 0
 //      size  >= 2^i
@@ -256,20 +251,27 @@ func areEquallyNil(a interface{}, b interface{}) bool {
 
 // Tests the GenerateCrossplaneVPCObservation function
 func TestGenerateCrossplaneVPCObservation(t *testing.T) {
-	functionTstName := "GenerateCrossplaneVPCObservation"
+	functionTstName := "TestGenerateCrossplaneVPCObservation"
 
-	for i, booleanComb := range allBooleanCombinations {
-		varCombination := getBinaryRep(i, numVariables)
+	numVars := 16
+	for i, booleanCombSubset := range generateCombinations(numVars) {
+		// Add as many variables as there are parameters
+		booleanComb := make([]bool, 36)
+		for j := 0; j < len(booleanComb); j++ {
+			booleanComb[j] = booleanCombSubset[j%len(booleanCombSubset)]
+		}
+
+		varCombination := getBinaryRep(i, numVars)
 
 		ibmVPCInfo := GetDummyCloudVPCObservation(
 			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[0])
+			booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
+			booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
+			booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
+			booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
+			booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34],
+			booleanComb[35])
 		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
 		if err != nil {
 			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
@@ -301,8 +303,9 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 func TestGenerateCloudVPCParams(t *testing.T) {
 	functionTstName := "TestGenerateCloudVPCParams"
 
-	for i, booleanComb := range allBooleanCombinations {
-		varCombination := getBinaryRep(i, numVariables)
+	numVars := 5
+	for i, booleanComb := range generateCombinations(numVars) {
+		varCombination := getBinaryRep(i, numVars)
 
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
 		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)

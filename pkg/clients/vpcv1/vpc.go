@@ -142,7 +142,7 @@ func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, 
 
 			if in.DefaultRoutingTable.Deleted != nil && in.DefaultRoutingTable.Deleted.MoreInfo != nil {
 				result.DefaultRoutingTable.Deleted = &v1alpha1.RoutingTableReferenceDeleted{
-					MoreInfo: *in.DefaultNetworkACL.Deleted.MoreInfo,
+					MoreInfo: *in.DefaultRoutingTable.Deleted.MoreInfo,
 				}
 			}
 		}
