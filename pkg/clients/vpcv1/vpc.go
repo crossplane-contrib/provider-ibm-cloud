@@ -21,10 +21,10 @@ import (
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
-	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
-	"github.com/crossplane/crossplane-runtime/pkg/reference"
-
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
+	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
+
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 )
 
 // LateInitializeSpec fills optional and unassigned fields with the values in the spec, from the info that comes from the cloud

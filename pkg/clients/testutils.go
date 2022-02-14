@@ -68,7 +68,7 @@ func seedTheRandomGenerator() {
 func RandomString() string {
 	seedTheRandomGenerator()
 
-	strSize := rand.Intn(16)
+	strSize := rand.Intn(16) // nolint (this is ok as we are not doing critical stuff here...)
 	perm := rand.Perm(strSize)
 	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
 
@@ -81,7 +81,7 @@ func RandomString() string {
 func RandomInt(n int) int {
 	seedTheRandomGenerator()
 
-	return rand.Intn(n)
+	return rand.Intn(n) // nolint (this is ok as we are not doing critical stuff here...)
 }
 
 // ReturnConditionalStr returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
