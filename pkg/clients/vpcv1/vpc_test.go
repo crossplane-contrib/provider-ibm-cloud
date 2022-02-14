@@ -139,7 +139,72 @@ func sameResource(crossplaneRGIntf interface{}, cloudRGIntf interface{}) bool {
 //
 // Returns
 //     a battery of tests
-func createTests(ibmVPCInfo *ibmVPC.CreateVPCOptions, crossplaneVPCInfo *v1alpha1.VPCParameters) map[string]struct {
+func createTestsObservation(ibmVPCInfo *ibmVPC.VPC, crossplaneVPCInfo *v1alpha1.VPCObservation) map[string]struct {
+	cloudVal      interface{}
+	crossplaneVal interface{}
+} {
+	return map[string]struct {
+		cloudVal      interface{}
+		crossplaneVal interface{}
+	}{
+		"ClassicAccess": {
+			cloudVal:      ibmVPCInfo.ClassicAccess,
+			crossplaneVal: crossplaneVPCInfo.ClassicAccess,
+		},
+		"CreatedAt": {
+			cloudVal:      ibmVPCInfo.CreatedAt,
+			crossplaneVal: crossplaneVPCInfo.CreatedAt,
+		},
+		"CRN": {
+			cloudVal:      ibmVPCInfo.CRN,
+			crossplaneVal: crossplaneVPCInfo.CRN,
+		},
+		"Href": {
+			cloudVal:      ibmVPCInfo.Href,
+			crossplaneVal: crossplaneVPCInfo.Href,
+		},
+		"ID": {
+			cloudVal:      ibmVPCInfo.ID,
+			crossplaneVal: crossplaneVPCInfo.ID,
+		},
+		"Name": {
+			cloudVal:      ibmVPCInfo.Name,
+			crossplaneVal: crossplaneVPCInfo.Name,
+		},
+		"Status": {
+			cloudVal:      ibmVPCInfo.Status,
+			crossplaneVal: crossplaneVPCInfo.Status,
+		},
+		"CseSourceIps": {
+			cloudVal:      ibmVPCInfo.CseSourceIps,
+			crossplaneVal: crossplaneVPCInfo.CseSourceIps,
+		},
+		"DefaultNetworkACL": {
+			cloudVal:      ibmVPCInfo.DefaultNetworkACL,
+			crossplaneVal: crossplaneVPCInfo.DefaultNetworkACL,
+		},
+		"DefaultRoutingTable": {
+			cloudVal:      ibmVPCInfo.DefaultRoutingTable,
+			crossplaneVal: crossplaneVPCInfo.DefaultRoutingTable,
+		},
+		"DefaultSecurityGroup": {
+			cloudVal:      ibmVPCInfo.DefaultSecurityGroup,
+			crossplaneVal: crossplaneVPCInfo.DefaultSecurityGroup,
+		},
+		"ResourceGroup": {
+			cloudVal:      ibmVPCInfo.ResourceGroup,
+			crossplaneVal: crossplaneVPCInfo.ResourceGroup,
+		},
+	}
+}
+
+// Params
+//     ibmVPCInfo - for/from the cloud (dummy)
+//     crossplaneVPCInfo - or/from the cloud (dummy)
+//
+// Returns
+//     a battery of tests
+func createTestsCreateParams(ibmVPCInfo *ibmVPC.CreateVPCOptions, crossplaneVPCInfo *v1alpha1.VPCParameters) map[string]struct {
 	cloudVal      interface{}
 	crossplaneVal interface{}
 } {
@@ -196,7 +261,15 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 	for i, booleanComb := range allBooleanCombinations {
 		varCombination := getBinaryRep(i, numVariables)
 
-		ibmVPCInfo := GetDummyCloudVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
+		ibmVPCInfo := GetDummyCloudVPCObservation(
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[0])
 		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
 		if err != nil {
 			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
@@ -204,7 +277,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 			return
 		}
 
-		tests := createTests(&ibmVPCInfo, &crossplaneVPCInfo)
+		tests := createTestsObservation(&ibmVPCInfo, &crossplaneVPCInfo)
 		for name, tc := range tests {
 			t.Run(functionTstName, func(t *testing.T) {
 				fullTstName := functionTstName + " " + varCombination + " " + name
@@ -216,15 +289,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 					return
 				}
 
-				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
-					if !sameResource(crossplaneVal, cloudVal) {
-						t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
-					}
-				} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
-					if diff := cmp.Diff(cloudVal, *crossplaneVal.(*map[string]string)); diff != "" {
-						t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-					}
-				} else if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
+				if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
 					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 				}
 			})
@@ -247,7 +312,7 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 			return
 		}
 
-		tests := createTests(&ibmVPCInfo, &crossplaneVPCInfo)
+		tests := createTestsCreateParams(&ibmVPCInfo, &crossplaneVPCInfo)
 		for name, tc := range tests {
 			t.Run(functionTstName, func(t *testing.T) {
 				fullTstName := functionTstName + " " + varCombination + " " + name

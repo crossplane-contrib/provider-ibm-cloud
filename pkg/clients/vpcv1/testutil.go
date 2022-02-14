@@ -35,27 +35,27 @@ var (
 	hrefVal                              = ibmc.RandomString()
 	idVal                                = ibmc.RandomString()
 	statusVal                            = ibmc.RandomString()
-	createdAtVal = ibmc.ADateTimeInAYear()
+	createdAtVal                         = ibmc.ADateTimeInAYear(2012)
 	cseSourceIpsLen                      = ibmc.RandomInt(3)
-	cseSourceIps_IP                      = ibmc.RandomString()
-	cseSource_Zone_Href         = ibmc.RandomString()
-	cseSource_Zone_Name         = ibmc.RandomString()
+	cseSourceIps_IP_Address              = ibmc.RandomString()
+	cseSource_Zone_Href                  = ibmc.RandomString()
+	cseSource_Zone_Name                  = ibmc.RandomString()
 	defaultNetworkACL_CRN                = ibmc.RandomString()
+	defaultNetworkACL_Href               = ibmc.RandomString()
+	defaultNetworkACL_ID                 = ibmc.RandomString()
+	defaultNetworkACL_Name               = ibmc.RandomString()
 	defaultNetworkACL_Deleted_MoreInfo   = ibmc.RandomString()
-	defaultNetworkACL_Deleted_Href       = ibmc.RandomString()
 	defaultRoutingTable_Deleted_MoreInfo = ibmc.RandomString()
 	defaultRoutingTable_Href             = ibmc.RandomString()
 	defaultRoutingTable_ID               = ibmc.RandomString()
 	defaultRoutingTable_Name             = ibmc.RandomString()
 	defaultRoutingTable_ResourceType     = ibmc.RandomString()
 	defaultSecurityGroup_CRN             = ibmc.RandomString()
-	defaultSecurityGroup_Deleted         = ibmc.RandomString()
 	defaultSecurityGroup_Href            = ibmc.RandomString()
-	defaultSecurityGroup_ID_             = ibmc.RandomString()
+	defaultSecurityGroup_ID              = ibmc.RandomString()
 	defaultSecurityGroup_Name            = ibmc.RandomString()
 	resourceGroup_Name                   = ibmc.RandomString()
 	resourceGroup_Href                   = ibmc.RandomString()
-	resourceGroup_ID                     = ibmc.RandomString()
 
 	headersMapVal = map[string]string{"a": "b", "c": "d"} // maps cannot be constants hence var. Do not modify.
 )
@@ -76,7 +76,7 @@ func GetDummyCloudVPCObservation(
 	idNonNil bool,
 	nameNonNil bool,
 	statusNonNil bool,
-	cseSourceIps_IP_NonNil bool,
+	cseSourceIps_IP_AdressNonNil bool,
 	cseSourceIps_Zone_NonNil bool,
 	cseSourceIps_Zone_Href_NonNil bool,
 	cseSourceIps_Zone_Name_NonNil bool,
@@ -92,7 +92,7 @@ func GetDummyCloudVPCObservation(
 	defaultRoutingTable_Deleted_MoreInfoNonNil,
 	defaultRoutingTable_HrefNonNil bool,
 	defaultRoutingTable_IDNonNil bool,
-	defaultRoutingTable_NameNil bool,
+	defaultRoutingTable_NameNonNil bool,
 	defaultRoutingTable_ResourceTypeNonNil bool,
 	defaultSecurityGroup_NonNil bool,
 	defaultSecurityGroup_CRN_NonNil bool,
@@ -108,23 +108,25 @@ func GetDummyCloudVPCObservation(
 
 	result := ibmVPC.VPC{
 		ClassicAccess: ibmc.ReturnConditionalBool(classicAccessNonNil, classicAccessVal),
-		CreatedAt: ibmc.ReturnConditionalDate(createdAtNonNil, createdAtVal),
-		CRN: ibmc.ReturnConditionalStr(crnNonNil, crnVal),
-		Href: ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
-		ID: ibmc.ReturnConditionalStr(idNonNil, idVal),
-		Name: ibmc.ReturnConditionalStr(nameNonNil, nameVal),
-		Status: ibmc.ReturnConditionalStr(statusNonNil, statusVal),
+		CreatedAt:     ibmc.ReturnConditionalDate(createdAtNonNil, createdAtVal),
+		CRN:           ibmc.ReturnConditionalStr(crnNonNil, crnVal),
+		Href:          ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
+		ID:            ibmc.ReturnConditionalStr(idNonNil, idVal),
+		Name:          ibmc.ReturnConditionalStr(nameNonNil, nameVal),
+		Status:        ibmc.ReturnConditionalStr(statusNonNil, statusVal),
 	}
 
 	if cseSourceIpsLen > 0 {
 		result.CseSourceIps = make([]ibmVPC.VpccseSourceIP, cseSourceIpsLen)
 
-		for i := range(cseSourceIpsLen) {
-			result.CseSourceIps[i] = &ibmVPC.VpccseSourceIP {
-				ID: ibmc.ReturnConditionalStr(cseSourceIps_IP_NonNilm, cseSourceIps_IP),
+		for i := 0; i < cseSourceIpsLen; i++ {
+			result.CseSourceIps[i] = ibmVPC.VpccseSourceIP{
+				IP: &ibmVPC.IP{
+					Address: ibmc.ReturnConditionalStr(cseSourceIps_IP_AdressNonNil, cseSourceIps_IP_Address),
+				},
 			}
 
-			if cseSourceIps_ZoneRef_NonNil {
+			if cseSourceIps_Zone_NonNil {
 				result.CseSourceIps[i].Zone = &ibmVPC.ZoneReference{
 					Href: ibmc.ReturnConditionalStr(cseSourceIps_Zone_Href_NonNil, cseSource_Zone_Href),
 					Name: ibmc.ReturnConditionalStr(cseSourceIps_Zone_Name_NonNil, cseSource_Zone_Name),
@@ -132,12 +134,12 @@ func GetDummyCloudVPCObservation(
 			}
 		}
 	}
-	
+
 	if defaultNetworkACL_NonNil {
-		result.DefaultNetworkACL = ibmVPC.NetworkACLReference{
-			CRN: ibmc.ReturnConditionalStr(defaultNetworkACL_CRN_NonNil, defaultNetworkACL_CRN),
+		result.DefaultNetworkACL = &ibmVPC.NetworkACLReference{
+			CRN:  ibmc.ReturnConditionalStr(defaultNetworkACL_CRN_NonNil, defaultNetworkACL_CRN),
 			Href: ibmc.ReturnConditionalStr(defaultNetworkACL_Href_NonNil, defaultNetworkACL_Href),
-			ID: ibmc.ReturnConditionalStr(defaultNetworkACL_ID_NonNil, defaultNetworkACL_ID),
+			ID:   ibmc.ReturnConditionalStr(defaultNetworkACL_ID_NonNil, defaultNetworkACL_ID),
 			Name: ibmc.ReturnConditionalStr(defaultNetworkACL_Name_NonNil, defaultNetworkACL_Name),
 		}
 
@@ -150,39 +152,40 @@ func GetDummyCloudVPCObservation(
 
 	if defaultRoutingTable_NonNil {
 		result.DefaultRoutingTable = &ibmVPC.RoutingTableReference{
-			Href: ibmc.ReturnConditionalStr(defaultRoutingTable_HrefNonNil, defaultRoutingTable_Href),
-			ID: ibmc.ReturnConditionalStr(defaultRoutingTable_IDNonNil, defaultRoutingTable_ID),
-			Name: ibmc.ReturnConditionalStr(defaultRoutingTable_NameNonNil, defaultRoutingTable_Name),
+			Href:         ibmc.ReturnConditionalStr(defaultRoutingTable_HrefNonNil, defaultRoutingTable_Href),
+			ID:           ibmc.ReturnConditionalStr(defaultRoutingTable_IDNonNil, defaultRoutingTable_ID),
+			Name:         ibmc.ReturnConditionalStr(defaultRoutingTable_NameNonNil, defaultRoutingTable_Name),
 			ResourceType: ibmc.ReturnConditionalStr(defaultRoutingTable_ResourceTypeNonNil, defaultRoutingTable_ResourceType),
 		}
 
 		if defaultRoutingTable_Deleted_NonNil {
 			result.DefaultRoutingTable.Deleted = &ibmVPC.RoutingTableReferenceDeleted{
-				MoreInfo:  ibmc.ReturnConditionalStr(defaultRoutingTable_Deleted_MoreInfoNonNil, defaultRoutingTable_Deleted_MoreInfo),
+				MoreInfo: ibmc.ReturnConditionalStr(defaultRoutingTable_Deleted_MoreInfoNonNil, defaultRoutingTable_Deleted_MoreInfo),
 			}
 		}
 	}
 
 	if defaultSecurityGroup_NonNil {
 		result.DefaultSecurityGroup = &ibmVPC.SecurityGroupReference{
-			CRN: ibmc.ReturnConditionalStr(defaultSecurityGroup_CRN_NonNil, defaultSecurityGroup_CRN),
+			CRN:  ibmc.ReturnConditionalStr(defaultSecurityGroup_CRN_NonNil, defaultSecurityGroup_CRN),
 			Href: ibmc.ReturnConditionalStr(defaultSecurityGroup_Href_NonNil, defaultSecurityGroup_Href),
-			ID: ibmc.ReturnConditionalStr(defaultSecurityGroup_ID_NonNil, defaultSecurityGroup_ID),	
-			Name: ibmc.ReturnConditionalStr(defaultSecurityGroup_Name_NonNil, defaultSecurityGroup_Name),	
+			ID:   ibmc.ReturnConditionalStr(defaultSecurityGroup_ID_NonNil, defaultSecurityGroup_ID),
+			Name: ibmc.ReturnConditionalStr(defaultSecurityGroup_Name_NonNil, defaultSecurityGroup_Name),
 		}
 
-		if defaultNetworkACL_Deleted_NonNil {
+		if defaultSecurityGroup_Deleted_NonNil {
 			result.DefaultSecurityGroup.Deleted = &ibmVPC.SecurityGroupReferenceDeleted{
 				MoreInfo: ibmc.ReturnConditionalStr(defaultNetworkACL_Deleted_MoreInfoNonNil, defaultNetworkACL_Deleted_MoreInfo),
 			}
 		}
 	}
 
-	
-	// The resource group for this VPC.
-	ResourceGroup *ResourceGroupReference `json:"resource_group" validate:"required"`
-
-
+	if resourceGroupNonNil {
+		result.ResourceGroup = &ibmVPC.ResourceGroupReference{
+			Href: ibmc.ReturnConditionalStr(resourceGroup_Href_NonNil, resourceGroup_Href),
+			ID:   ibmc.ReturnConditionalStr(resourceGroup_ID_NonNil, resourceGroupIDVal),
+			Name: ibmc.ReturnConditionalStr(resourceGroup_Name_NonNil, resourceGroup_Name),
+		}
 	}
 
 	return result

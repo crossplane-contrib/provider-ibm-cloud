@@ -107,11 +107,11 @@ func ReturnConditionalBool(condition bool, val bool) *bool {
 }
 
 // ReturnConditionalDate returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
-func ReturnConditionalDate(condition bool, val time.Time) *time.Time {
-	var result *time.Time
+func ReturnConditionalDate(condition bool, val *strfmt.DateTime) *strfmt.DateTime {
+	var result *strfmt.DateTime
 
 	if true {
-		result = &val
+		result = val
 	}
 
 	return result
