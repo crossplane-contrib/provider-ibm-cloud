@@ -41,11 +41,12 @@ import (
 
 // Various errors...
 const (
-	errThisIsNotAVPC = "managed resource is not a VPC resource"
-	errCreateVPC     = "could not create a VPC"
-	errCreateVPCReq  = "could not generate the input params for a VPC"
-	errDeleteVPC     = "could not delete the VPC"
-	errGetVPCFailed  = "error getting the VOC"
+	errThisIsNotAVPC            = "managed resource is not a VPC resource"
+	errCreateVPC                = "could not create a VPC"
+	errCreateVPCReq             = "could not generate the input params for a VPC"
+	errDeleteVPC                = "could not delete the VPC"
+	errGetVPCFailed             = "error getting the VOC"
+	errLateInitializationFailed = "cannot late initialize the k8s VPC resource"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -117,22 +118,33 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 		}, nil
 	}
 
+	found := false
 	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&vpcv1.ListVpcsOptions{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetVPCFailed)
-	} else if response.StatusCode != http.StatusOK {
+	}
+
+	if response.StatusCode != http.StatusOK {
 		return managed.ExternalObservation{}, errors.New("ListVpcs returned status code: " + string(response.StatusCode) + ", and response: " + response.String())
-	} else if vpcCollection != nil {
-		for cloudVPC := range vpcCollection.Vpcs {
-			if *crossplaneVPC.Spec.ForProvider.Name == *cloudVPC.Name {
+	}
+
+	if vpcCollection != nil {
+		for i := range vpcCollection.Vpcs {
+			cloudVPC := vpcCollection.Vpcs[i]
+			if externalClusterName == *cloudVPC.Name {
+				found = true
+
+				if err := crossplaneClient.LateInitializeSpec(&crossplaneVPC.Spec.ForProvider, &cloudVPC); err != nil {
+					return managed.ExternalObservation{}, errors.Wrap(err, errLateInitializationFailed)
+				}
+
+				break
 			}
-		if err != nil {
-			return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 		}
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:    true, // ibmClusterInfo != nil,
+		ResourceExists:    found,
 		ResourceUpToDate:  true,
 		ConnectionDetails: nil,
 	}, nil
@@ -152,11 +164,8 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPCReq)
 	}
 
-	vpc, response, err := c.client.VPCClient().CreateVPC(&createOptions)
+	vpc, _, err := c.client.VPCClient().CreateVPC(&createOptions)
 	if err != nil {
-		if response != nil {
-			response = nil
-		}
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPC)
 	}
 
@@ -172,16 +181,18 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 
 // Called by crossplane
 func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
-	crossplaneCluster, ok := mg.(*v1alpha1.VPC)
+	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
 		return errors.New(errThisIsNotAVPC)
 	}
 
-	crossplaneCluster.SetConditions(runtimev1alpha1.Deleting())
+	crossplaneVPC.SetConditions(runtimev1alpha1.Deleting())
 
-	err := c.client.ClusterClientV2().Delete(crossplaneCluster.Spec.ForProvider.Name, ibmContainerV2.ClusterTargetHeader{})
+	_, err := c.client.VPCClient().DeleteVPC(&vpcv1.DeleteVPCOptions{
+		ID: crossplaneVPC.Status.AtProvider.ID,
+	})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteCluster)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteVPC)
 	}
 
 	return nil

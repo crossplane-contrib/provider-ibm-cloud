@@ -34,33 +34,23 @@ import (
 // 	  fromIBMCloud - ...what comes from the cloud
 //
 // Returns
-//    whether the resource was late-initialized, any error
-func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) (bool, error) {
-	wasLateInitializedCA := false
-	wasLateInitializedName := false
-	wasLateInitializedNameRG := false
-
+//    currently always nil
+func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) error {
 	if spec.ClassicAccess == nil && fromIBMCloud.ClassicAccess != nil {
 		spec.ClassicAccess = fromIBMCloud.ClassicAccess
-
-		wasLateInitializedCA = true
 	}
 
 	if spec.Name == nil && fromIBMCloud.Name != nil {
 		spec.Name = fromIBMCloud.Name
-
-		wasLateInitializedName = true
 	}
 
 	if spec.ResourceGroup == nil && fromIBMCloud.ResourceGroup != nil && !reflect.ValueOf(fromIBMCloud.ResourceGroup).IsNil() {
 		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
 			ID: *fromIBMCloud.ResourceGroup.ID,
 		}
-
-		wasLateInitializedNameRG = true
 	}
 
-	return wasLateInitializedCA || wasLateInitializedName || wasLateInitializedNameRG, nil
+	return nil
 }
 
 // GenerateCrossplaneVPCObservation returns a crossplane version of the cloud observation results parameters
