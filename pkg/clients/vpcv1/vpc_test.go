@@ -17,9 +17,7 @@ limitations under the License.
 package vpcv1
 
 import (
-	"math"
 	"reflect"
-	"strconv"
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
@@ -28,73 +26,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 )
-
-// Params
-//      i  - an integer >= 0
-//      size  >= 2^i
-//
-// Returns
-//      a string with binary representation of the integer, of length == size
-func getBinaryRep(i int, size int) string {
-	result := strconv.FormatInt(int64(i), 2)
-
-	for len(result) < size {
-		result = "0" + result
-	}
-
-	return result
-}
-
-// Returns "some" the combinations (of booleans) for a given number of elements
-//
-// Params
-// 	  numElems - the number of elements
-//    returnSize - size of each return array
-//
-// Returns
-//    an array of boolean arrays (each of the given size)
-func GenerateSomeCombinations(numElems int, returnSize int) [][]bool {
-	result := make([][]bool, 0)
-
-	for _, booleanCombSubset := range generateCombinations(numElems) {
-		// Add as many variables as there are parameters
-		booleanComb := make([]bool, 35)
-		for j := 0; j < len(booleanComb); j++ {
-			booleanComb[j] = booleanCombSubset[j%len(booleanCombSubset)]
-		}
-
-		result = append(result, booleanComb)
-	}
-
-	return result
-}
-
-// Returns all the combinations (of booleans) for a given number of elements
-//
-// Params
-// 	  numElems - the number of elements
-//
-// Returns
-//    an array of boolean arrays
-func generateCombinations(numElems int) [][]bool {
-	result := make([][]bool, 0)
-
-	for i := 0; i < int(math.Pow(2, float64(numElems))); i++ {
-		str := getBinaryRep(i, numElems)
-
-		boolArray := make([]bool, numElems)
-		boolArrayIdx := len(boolArray) - 1
-		for j := len(str) - 1; j >= 0; j-- {
-			boolArray[boolArrayIdx] = (str[j] == '1')
-
-			boolArrayIdx--
-		}
-
-		result = append(result, boolArray)
-	}
-
-	return result
-}
 
 // Params
 //    value - a value. May be nil
@@ -279,7 +210,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 
 	numVars := 16
 	for i, booleanComb := range GenerateSomeCombinations(numVars, 35) {
-		varCombination := getBinaryRep(i, numVars)
+		varCombinationLogging := getBinaryRep(i, numVars)
 
 		ibmVPCInfo := GetDummyCloudVPCObservation(
 			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
@@ -291,7 +222,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
 		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
 		if err != nil {
-			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+			t.Errorf(functionTstName + " " + varCombinationLogging + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
 
 			return
 		}
@@ -299,7 +230,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 		tests := createTestsObservation(&ibmVPCInfo, &crossplaneVPCInfo)
 		for name, tc := range tests {
 			t.Run(functionTstName, func(t *testing.T) {
-				fullTstName := functionTstName + " " + varCombination + " " + name
+				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
 
 				cloudVal := typeVal(tc.cloudVal)
 				crossplaneVal := typeVal(tc.crossplaneVal)
@@ -322,12 +253,12 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 
 	numVars := 4
 	for i, booleanComb := range generateCombinations(numVars) {
-		varCombination := getBinaryRep(i, numVars)
+		varCombinationLogging := getBinaryRep(i, numVars)
 
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
 		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)
 		if err != nil {
-			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+			t.Errorf(functionTstName + " " + varCombinationLogging + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
 
 			return
 		}
@@ -335,7 +266,7 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 		tests := createTestsCreateParams(&ibmVPCInfo, &crossplaneVPCInfo)
 		for name, tc := range tests {
 			t.Run(functionTstName, func(t *testing.T) {
-				fullTstName := functionTstName + " " + varCombination + " " + name
+				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
 
 				cloudVal := typeVal(tc.cloudVal)
 				crossplaneVal := typeVal(tc.crossplaneVal)

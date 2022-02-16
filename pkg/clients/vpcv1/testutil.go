@@ -17,6 +17,9 @@ limitations under the License.
 package vpcv1
 
 import (
+	"math"
+	"strconv"
+
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
@@ -59,6 +62,73 @@ var (
 
 	headersMapVal = map[string]string{"a": "b", "c": "d"} // maps cannot be constants hence var. Do not modify.
 )
+
+// GenerateSomeCombinations returns "some" the combinations (of booleans) for a given number of elements
+//
+// Params
+// 	  numElems - the number of elements
+//    returnSize - size of each return array
+//
+// Returns
+//    an array of boolean arrays (each of the given size)
+func GenerateSomeCombinations(numElems int, returnSize int) [][]bool {
+	result := make([][]bool, 0)
+
+	for _, booleanCombSubset := range generateCombinations(numElems) {
+		// Add as many variables as there are parameters
+		booleanComb := make([]bool, 35)
+		for j := 0; j < len(booleanComb); j++ {
+			booleanComb[j] = booleanCombSubset[j%len(booleanCombSubset)]
+		}
+
+		result = append(result, booleanComb)
+	}
+
+	return result
+}
+
+// Params
+//      i  - an integer >= 0
+//      size  >= 2^i
+//
+// Returns
+//      a string with binary representation of the integer, of length == size
+func getBinaryRep(i int, size int) string {
+	result := strconv.FormatInt(int64(i), 2)
+
+	for len(result) < size {
+		result = "0" + result
+	}
+
+	return result
+}
+
+// Returns all the combinations (of booleans) for a given number of elements
+//
+// Params
+// 	  numElems - the number of elements
+//
+// Returns
+//    an array of boolean arrays
+func generateCombinations(numElems int) [][]bool {
+	result := make([][]bool, 0)
+
+	for i := 0; i < int(math.Pow(2, float64(numElems))); i++ {
+		str := getBinaryRep(i, numElems)
+
+		boolArray := make([]bool, numElems)
+		boolArrayIdx := len(boolArray) - 1
+		for j := len(str) - 1; j >= 0; j-- {
+			boolArray[boolArrayIdx] = (str[j] == '1')
+
+			boolArrayIdx--
+		}
+
+		result = append(result, boolArray)
+	}
+
+	return result
+}
 
 // GetDummyCloudVPCObservation returns a dummy object, ready to be used in create-VPC-in-the-cloud request. Non-nil values will be the
 // ones of the local constants above.
