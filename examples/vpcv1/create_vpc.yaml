@@ -1,0 +1,11 @@
+apiVersion: vpcv1.ibmcloud.crossplane.io/v1alpha1
+kind: VPC
+metadata:
+  name: harry-vpc-1
+  annotations:
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: harry-vpc-1
+  providerConfigRef:
+    name: ibm-cloud

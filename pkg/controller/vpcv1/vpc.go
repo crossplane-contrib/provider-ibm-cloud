@@ -111,8 +111,8 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 		return managed.ExternalObservation{}, errors.New(errThisIsNotAVPC)
 	}
 
-	externalClusterName := meta.GetExternalName(crossplaneVPC)
-	if externalClusterName == "" {
+	externalVPCName := meta.GetExternalName(crossplaneVPC)
+	if externalVPCName == "" {
 		return managed.ExternalObservation{
 			ResourceExists: false,
 		}, nil
@@ -131,11 +131,15 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	if vpcCollection != nil {
 		for i := range vpcCollection.Vpcs {
 			cloudVPC := vpcCollection.Vpcs[i]
-			if externalClusterName == *cloudVPC.Name {
+			if externalVPCName == *cloudVPC.Name {
 				found = true
 
 				if err := crossplaneClient.LateInitializeSpec(&crossplaneVPC.Spec.ForProvider, &cloudVPC); err != nil {
 					return managed.ExternalObservation{}, errors.Wrap(err, errLateInitializationFailed)
+				}
+
+				if crossplaneVPC.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneVPCObservation(&cloudVPC); err != nil {
+					return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 				}
 
 				break

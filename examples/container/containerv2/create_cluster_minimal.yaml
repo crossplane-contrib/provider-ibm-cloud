@@ -1,5 +1,5 @@
 apiVersion: container.containerv2.ibmcloud.crossplane.io/v1alpha1
-kind: Cluster
+kind: VPCKind
 metadata:
   name: crossplane-made-1
   annotations:
