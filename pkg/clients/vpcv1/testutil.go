@@ -69,7 +69,6 @@ var (
 // Returns
 //	    an object appropriately populated
 func GetDummyCloudVPCObservation( // nolint:gocyclo
-	classicAccessNonNil bool,
 	createdAtNonNil bool,
 	crnNonNil bool,
 	hrefNonNil bool,
