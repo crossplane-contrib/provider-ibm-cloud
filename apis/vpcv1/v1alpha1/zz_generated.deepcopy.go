@@ -392,11 +392,6 @@ func (in *VPCParameters) DeepCopyInto(out *VPCParameters) {
 		*out = new(string)
 		**out = **in
 	}
-	if in.ClassicAccess != nil {
-		in, out := &in.ClassicAccess, &out.ClassicAccess
-		*out = new(bool)
-		**out = **in
-	}
 	if in.Name != nil {
 		in, out := &in.Name, &out.Name
 		*out = new(string)

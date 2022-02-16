@@ -1,11 +1,14 @@
 apiVersion: vpcv1.ibmcloud.crossplane.io/v1alpha1
 kind: VPC
 metadata:
-  name: harry-vpc-1
+  name: harry-vpc-2
   annotations:
 spec:
-  deletionPolicy: Delete
+  deletionPolicy: Orphan
   forProvider:
-    name: harry-vpc-1
+    classicAccess: true
+    name: harry-vpc-2
+    resourceGroup:
+      id: 79bd19ee87314085bb8ac243e6e010c8
   providerConfigRef:
     name: ibm-cloud

@@ -69,11 +69,15 @@ spec:
                       this VPC will be created with no default address prefixes.
                     type: string
                   classicAccess:
-                    description: Indicates whether this VPC should be connected to
+                    description: "Indicates whether this VPC should be connected to
                       Classic Infrastructure. If true, this VPC's resources will have
                       private network connectivity to the account's Classic Infrastructure
                       resources. Only one VPC, per region, may be connected in this
                       way. This value is set at creation and subsequently immutable.
+                      \n Note that in the actual API this is an optional parameter
+                      (of type *bool, much more). We make it compulsory here as o/w
+                      we would be allowed to specicy an \"empty\" forProvider section
+                      in the yaml file, and crossplane would complain"
                     type: boolean
                   headers:
                     additionalProperties:
@@ -93,6 +97,8 @@ spec:
                         description: The unique identifier for this resource group.
                         type: string
                     type: object
+                required:
+                - classicAccess
                 type: object
               providerConfigRef:
                 description: ProviderConfigReference specifies how the provider that

@@ -41,9 +41,11 @@ type VPCParameters struct {
 	// private network connectivity to the account's Classic Infrastructure resources. Only one VPC, per region, may be
 	// connected in this way. This value is set at creation and subsequently immutable.
 	//
+	// Note that in the actual API this is an optional parameter (of type *bool, much more). We make it compulsory here
+	// as o/w we would be allowed to specicy an "empty" forProvider section in the yaml file, and crossplane would complain
+	//
 	// +immutable
-	// +optional
-	ClassicAccess *bool `json:"classicAccess,omitempty"`
+	ClassicAccess bool `json:"classicAccess"`
 
 	// The unique user-defined name for this VPC. If unspecified, the name will be a hyphenated list of randomly-selected
 	// words.

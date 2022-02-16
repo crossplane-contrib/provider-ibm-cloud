@@ -107,7 +107,7 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 	resourceGroupIDNonNil bool) ibmVPC.VPC {
 
 	result := ibmVPC.VPC{
-		ClassicAccess: ibmc.ReturnConditionalBool(classicAccessNonNil, classicAccessVal),
+		ClassicAccess: &classicAccessVal,
 		CreatedAt:     ibmc.ReturnConditionalDate(createdAtNonNil, createdAtVal),
 		CRN:           ibmc.ReturnConditionalStr(crnNonNil, crnVal),
 		Href:          ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
@@ -196,23 +196,20 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 //
 // Params
 //		addressNil - whether to set the 'AddressPrefixManagement' member to nil
-//  	classicAccessNil - whether to set the 'ClassicAccess' member to nil
 // 		nameNil - whether to set the 'Name' member to nil
 //		resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
 //      noHeaders - whether to include headers
 //
 // Returns
 //	    an object appropriately populated
-func GetDummyCrossplaneVPCParams(addressNil bool, classicAccessNil bool, nameNil bool, resourceGroupIDNil bool, noHeaders bool) v1alpha1.VPCParameters {
+func GetDummyCrossplaneVPCParams(addressNil bool, nameNil bool, resourceGroupIDNil bool, noHeaders bool) v1alpha1.VPCParameters {
 	result := v1alpha1.VPCParameters{}
 
 	if !addressNil {
 		result.AddressPrefixManagement = reference.ToPtrValue(addressPrefixVal)
 	}
 
-	if !classicAccessNil {
-		result.ClassicAccess = ibmc.BoolPtr(classicAccessVal)
-	}
+	result.ClassicAccess = classicAccessVal
 
 	if !nameNil {
 		result.Name = reference.ToPtrValue(nameVal)

@@ -303,11 +303,11 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 func TestGenerateCloudVPCParams(t *testing.T) {
 	functionTstName := "TestGenerateCloudVPCParams"
 
-	numVars := 5
+	numVars := 4
 	for i, booleanComb := range generateCombinations(numVars) {
 		varCombination := getBinaryRep(i, numVars)
 
-		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4])
+		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
 		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)
 		if err != nil {
 			t.Errorf(functionTstName + " " + varCombination + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())

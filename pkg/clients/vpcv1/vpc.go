@@ -34,12 +34,8 @@ import (
 // 	  fromIBMCloud - ...what comes from the cloud
 //
 // Returns
-//    currently always nil
+//    currently, always nil
 func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) error {
-	if spec.ClassicAccess == nil && fromIBMCloud.ClassicAccess != nil {
-		spec.ClassicAccess = fromIBMCloud.ClassicAccess
-	}
-
 	if spec.Name == nil && fromIBMCloud.Name != nil {
 		spec.Name = fromIBMCloud.Name
 	}
@@ -182,7 +178,7 @@ func GenerateCrossplaneVPCObservation(in *ibmVPC.VPC) (v1alpha1.VPCObservation, 
 func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions, error) {
 	result := ibmVPC.CreateVPCOptions{
 		AddressPrefixManagement: in.AddressPrefixManagement,
-		ClassicAccess:           in.ClassicAccess,
+		ClassicAccess:           &in.ClassicAccess,
 		Name:                    in.Name,
 	}
 

@@ -95,17 +95,6 @@ func ReturnConditionalStr(condition bool, val string) *string {
 	return result
 }
 
-// ReturnConditionalBool returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
-func ReturnConditionalBool(condition bool, val bool) *bool {
-	var result *bool
-
-	if true {
-		result = &val
-	}
-
-	return result
-}
-
 // ReturnConditionalDate returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
 func ReturnConditionalDate(condition bool, val *strfmt.DateTime) *strfmt.DateTime {
 	var result *strfmt.DateTime
