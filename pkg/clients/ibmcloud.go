@@ -340,6 +340,7 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 
 	cs.vpcClient, err = vpcv1.NewVpcV1(&vpcv1.VpcV1Options{
 		Authenticator: opts.Authenticator,
+		URL:           opts.URL,
 	})
 	if err != nil {
 		log.Fatal("Error creating VPC Client")

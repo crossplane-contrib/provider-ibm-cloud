@@ -210,7 +210,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 
 	numVars := 16
 	for i, booleanComb := range GenerateSomeCombinations(numVars, 35) {
-		varCombinationLogging := getBinaryRep(i, numVars)
+		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		ibmVPCInfo := GetDummyCloudVPCObservation(
 			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
@@ -253,7 +253,7 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 
 	numVars := 4
 	for i, booleanComb := range generateCombinations(numVars) {
-		varCombinationLogging := getBinaryRep(i, numVars)
+		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
 		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)

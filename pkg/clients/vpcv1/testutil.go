@@ -87,13 +87,15 @@ func GenerateSomeCombinations(numElems int, returnSize int) [][]bool {
 	return result
 }
 
+// GetBinaryRep generates a binary representation in string format
+//
 // Params
 //      i  - an integer >= 0
 //      size  >= 2^i
 //
 // Returns
 //      a string with binary representation of the integer, of length == size
-func getBinaryRep(i int, size int) string {
+func GetBinaryRep(i int, size int) string {
 	result := strconv.FormatInt(int64(i), 2)
 
 	for len(result) < size {
@@ -114,7 +116,7 @@ func generateCombinations(numElems int) [][]bool {
 	result := make([][]bool, 0)
 
 	for i := 0; i < int(math.Pow(2, float64(numElems))); i++ {
-		str := getBinaryRep(i, numElems)
+		str := GetBinaryRep(i, numElems)
 
 		boolArray := make([]bool, numElems)
 		boolArrayIdx := len(boolArray) - 1
