@@ -21,9 +21,10 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
+
+	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -35,6 +36,7 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	crossplaneApi "github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/vpcv1"
 
@@ -42,7 +44,7 @@ import (
 )
 
 const (
-	numTests = 1 // decent size + we do not time out
+	numTests = 10 // decent size + we do not time out
 )
 
 var (
@@ -54,10 +56,46 @@ var (
 // Interface to a function that takes as argument a VPC create request, and modifies it
 type vpcModifier func(*crossplaneApi.VPC)
 
-// Sets the external name of a VOC
+// Sets the external name of a VPC
 func withExternalName() vpcModifier {
 	return func(c *crossplaneApi.VPC) {
 		meta.SetExternalName(c, *c.Status.AtProvider.Name)
+	}
+}
+
+// Sets the name in the spec part of the VPC
+func withName() vpcModifier {
+	return func(c *crossplaneApi.VPC) {
+		// Make sure we use the same one everywhere, at the same time...
+		vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
+			booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+			booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
+			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
+			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
+			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+
+		c.Spec.ForProvider.Name = vpcObs.Name
+	}
+}
+
+// Sets the resource group in the spec part of the VPC
+func withResourceGroup() vpcModifier {
+	return func(c *crossplaneApi.VPC) {
+		// Make sure we use the same one everywhere, at the same time...
+		vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
+			booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+			booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
+			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
+			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
+			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+
+		if vpcObs.ResourceGroup != nil {
+			c.Spec.ForProvider.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+				ID: *vpcObs.ResourceGroup.ID,
+			}
+		}
 	}
 }
 
@@ -94,7 +132,7 @@ func withStatus() vpcModifier {
 //
 // Returns
 //      a VPC
-func createCrossplaneVPCSansStatus(addressNil bool, nameNil bool, resourceGroupIDNil bool, noHeaders bool, modifiers ...vpcModifier) *crossplaneApi.VPC {
+func createCrossplaneVPC(addressNil bool, nameNil bool, resourceGroupIDNil bool, noHeaders bool, modifiers ...vpcModifier) *crossplaneApi.VPC {
 	result := &crossplaneApi.VPC{
 		Spec: crossplaneApi.VPCSpec{
 			ForProvider: crossplaneClient.GetDummyCrossplaneVPCParams(addressNil, nameNil, resourceGroupIDNil, noHeaders),
@@ -190,10 +228,10 @@ func testCreate(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3]),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3]),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3],
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3],
 					withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
@@ -215,10 +253,10 @@ func testCreate(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3]),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3]),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3],
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3],
 					withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateVPC),
@@ -294,10 +332,10 @@ func testDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
 					withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
@@ -319,10 +357,10 @@ func testDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
 					withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
@@ -344,10 +382,10 @@ func testDelete(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus()),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
 					withConditions(cpv1alpha1.Deleting())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteVPC),
 			},
@@ -376,7 +414,7 @@ func testDelete(t *testing.T) {
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				t.Errorf("Test: "+varCombinationLogging+", Delete(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -393,7 +431,7 @@ func TestObserve(t *testing.T) {
 	}
 }
 
-// Tests the cluster "Observe" method
+// Tests the VPC "Observe" method
 func testObserve(t *testing.T) {
 	type errInfo struct {
 		err     error
@@ -420,7 +458,7 @@ func testObserve(t *testing.T) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
+							t.Errorf("Test: "+varCombinationLogging+", r: -want, +got:\n%s", diff)
 						}
 
 						// content type should always set before writeHeader()
@@ -430,10 +468,10 @@ func testObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 			},
 			want: want{
-				mg:  createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{ResourceExists: false},
 			},
 		},
@@ -445,7 +483,7 @@ func testObserve(t *testing.T) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
+							t.Errorf("Test: "+varCombinationLogging+", r: -want, +got:\n%s", diff)
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -454,13 +492,13 @@ func testObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 			},
 			want: want{
-				mg:  createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{},
 				errInfo: &errInfo{
-					err:     errors.Wrap(errors.New(strconv.Itoa(http.StatusBadRequest)+" "+http.StatusText(http.StatusBadRequest)), errGetVPCFailed),
+					err:     errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetVPCFailed),
 					errCode: http.StatusBadRequest,
 				},
 			},
@@ -473,7 +511,7 @@ func testObserve(t *testing.T) {
 						_ = r.Body.Close()
 
 						if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
+							t.Errorf("Test: "+varCombinationLogging+", r: -want, +got:\n%s", diff)
 						}
 
 						w.Header().Set("Content-Type", "application/json")
@@ -482,13 +520,13 @@ func testObserve(t *testing.T) {
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 			},
 			want: want{
-				mg:  createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{},
 				errInfo: &errInfo{
-					err:     errors.Wrap(errors.New(strconv.Itoa(http.StatusForbidden)+" "+http.StatusText(http.StatusForbidden)), errGetVPCFailed),
+					err:     errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetVPCFailed),
 					errCode: http.StatusForbidden,
 				},
 			},
@@ -506,23 +544,29 @@ func testObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 
-						cloudResponse := crossplaneClient.GetDummyCloudVPCObservation(
-							booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+						collection := ibmVPC.VPCCollection{
+							Vpcs: make([]ibmVPC.VPC, 1),
+						}
+
+						collection.Vpcs[0] = crossplaneClient.GetDummyCloudVPCObservation(
+							booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4],
 							booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
 							booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
 							booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 							booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 							booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
 							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
-						_ = json.NewEncoder(w).Encode(cloudResponse)
+
+						_ = json.NewEncoder(w).Encode(collection)
 					},
 				},
 			},
 			args: tstutil.Args{
-				Managed: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				Managed: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 			},
 			want: want{
-				mg: createCrossplaneVPCSansStatus(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
+				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName(),
+					withName(), withResourceGroup()),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -536,38 +580,28 @@ func testObserve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Observe(...): problem setting up the test server %s", errCr)
+				t.Errorf("Test: "+varCombinationLogging+", Observe(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
 
 			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.errInfo != nil && err != nil {
-				// the case where our mock server returns error, is tricky, as the returned error string is long/spans multiple lines
-				arrWantedError := strings.Split(tc.want.errInfo.err.Error(), ":")
-				arrActualError := strings.Split(err.Error(), ":")
-
-				wantedPrefix := arrWantedError[0]
-				actualPrefix := arrActualError[0]
-				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
-					t.Errorf("Observe(...): -want, +got:\n%s", diff)
-				}
-
-				if !strings.Contains(err.Error(), strconv.Itoa(tc.want.errInfo.errCode)) {
-					t.Errorf("Observe(...): -want response containing %s, +got:\n%s", strconv.Itoa(tc.want.errInfo.errCode), err.Error())
+				if diff := cmp.Diff(tc.want.errInfo.err.Error(), err.Error()); diff != "" {
+					t.Errorf("Test: "+varCombinationLogging+", Observe(...): -want, +got:\n%s", diff)
 				}
 			} else if tc.want.errInfo != nil {
 				if diff := cmp.Diff(tc.want.errInfo.err, err); diff != "" {
-					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+					t.Errorf("Test: "+varCombinationLogging+", Observe(...): want error != got error:\n%s", diff)
 				}
 			}
 
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf("Test: "+varCombinationLogging+", Observe(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf("Test: "+varCombinationLogging+", Observe(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

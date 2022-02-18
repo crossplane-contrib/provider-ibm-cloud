@@ -32,8 +32,8 @@ var (
 	// Values below are the ones that will be used if we decide that some parameters has to be non-nil
 	addressPrefixVal                   = ibmc.RandomString()
 	classicAccessVal                   = ibmc.RandomInt(2) == 0
-	nameVal                            = ibmc.RandomString()
-	resourceGroupIDVal                 = ibmc.RandomString()
+	randomName                         = ibmc.RandomString()
+	RandomResourceGroupID              = ibmc.RandomString()
 	crnVal                             = ibmc.RandomString()
 	hrefVal                            = ibmc.RandomString()
 	idVal                              = ibmc.RandomString()
@@ -63,14 +63,15 @@ var (
 	headersMapVal = map[string]string{"a": "b", "c": "d"} // maps cannot be constants hence var. Do not modify.
 )
 
-// GenerateSomeCombinations returns "some" the combinations (of booleans) for a given number of elements
+// GenerateSomeCombinations returns "some"  combinations (of booleans) for a given number of elements. Eg if numElems == 1,
+// 4 (ie 2^2) combibations will be returned...
 //
 // Params
 // 	  numElems - the number of elements
 //    returnSize - size of each return array
 //
 // Returns
-//    an array of boolean arrays (each of the given size)
+//    an array of boolean arrays (each of the given size), containing the combinations
 func GenerateSomeCombinations(numElems int, returnSize int) [][]bool {
 	result := make([][]bool, 0)
 
@@ -183,7 +184,7 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 		CRN:           ibmc.ReturnConditionalStr(crnNonNil, crnVal),
 		Href:          ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
 		ID:            ibmc.ReturnConditionalStr(idNonNil, idVal),
-		Name:          ibmc.ReturnConditionalStr(nameNonNil, nameVal),
+		Name:          ibmc.ReturnConditionalStr(nameNonNil, randomName),
 		Status:        ibmc.ReturnConditionalStr(statusNonNil, statusVal),
 	}
 
@@ -254,7 +255,7 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 	if resourceGroupNonNil {
 		result.ResourceGroup = &ibmVPC.ResourceGroupReference{
 			Href: ibmc.ReturnConditionalStr(resourceGroupHrefNonNil, resourceGroupHref),
-			ID:   ibmc.ReturnConditionalStr(resourceGroupIDNonNil, resourceGroupIDVal),
+			ID:   ibmc.ReturnConditionalStr(resourceGroupIDNonNil, RandomResourceGroupID),
 			Name: ibmc.ReturnConditionalStr(resourceGroupNameNonNil, resourceGroupName),
 		}
 	}
@@ -283,12 +284,12 @@ func GetDummyCrossplaneVPCParams(addressNil bool, nameNil bool, resourceGroupIDN
 	result.ClassicAccess = classicAccessVal
 
 	if !nameNil {
-		result.Name = reference.ToPtrValue(nameVal)
+		result.Name = reference.ToPtrValue(randomName)
 	}
 
 	if !resourceGroupIDNil {
 		result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
-			ID: resourceGroupIDVal,
+			ID: RandomResourceGroupID,
 		}
 	}
 

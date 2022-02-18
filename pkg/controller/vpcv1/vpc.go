@@ -20,7 +20,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/IBM/vpc-go-sdk/vpcv1"
+	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -45,7 +45,7 @@ const (
 	errCreateVPC                = "could not create a VPC"
 	errCreateVPCReq             = "could not generate the input params for a VPC"
 	errDeleteVPC                = "could not delete the VPC"
-	errGetVPCFailed             = "error getting the VOC"
+	errGetVPCFailed             = "error getting the VPC"
 	errLateInitializationFailed = "cannot late initialize the k8s VPC resource"
 )
 
@@ -119,7 +119,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	found := false
-	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&vpcv1.ListVpcsOptions{})
+	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&ibmVPC.ListVpcsOptions{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetVPCFailed)
 	}
@@ -192,7 +192,7 @@ func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 
 	crossplaneVPC.SetConditions(runtimev1alpha1.Deleting())
 
-	_, err := c.client.VPCClient().DeleteVPC(&vpcv1.DeleteVPCOptions{
+	_, err := c.client.VPCClient().DeleteVPC(&ibmVPC.DeleteVPCOptions{
 		ID: crossplaneVPC.Status.AtProvider.ID,
 	})
 	if err != nil {
