@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -41,12 +42,11 @@ import (
 
 // Various errors...
 const (
-	errThisIsNotAVPC            = "managed resource is not a VPC resource"
-	errCreateVPC                = "could not create a VPC"
-	errCreateVPCReq             = "could not generate the input params for a VPC"
-	errDeleteVPC                = "could not delete the VPC"
-	errGetVPCFailed             = "error getting the VPC"
-	errLateInitializationFailed = "cannot late initialize the k8s VPC resource"
+	errThisIsNotAVPC = "managed resource is not a VPC resource"
+	errCreateVPC     = "could not create a VPC"
+	errCreateVPCReq  = "could not generate the input params for a VPC"
+	errDeleteVPC     = "could not delete the VPC"
+	errGetVPCFailed  = "error getting the VPC"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -134,8 +134,15 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 			if externalVPCName == *cloudVPC.Name {
 				found = true
 
+				currentSpec := crossplaneVPC.Spec.ForProvider.DeepCopy()
 				if err := crossplaneClient.LateInitializeSpec(&crossplaneVPC.Spec.ForProvider, &cloudVPC); err != nil {
-					return managed.ExternalObservation{}, errors.Wrap(err, errLateInitializationFailed)
+					return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
+				}
+
+				if !cmp.Equal(currentSpec, &crossplaneVPC.Spec.ForProvider) {
+					if err := c.kube.Update(ctx, crossplaneVPC); err != nil {
+						return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
+					}
 				}
 
 				if crossplaneVPC.Status.AtProvider, err = crossplaneClient.GenerateCrossplaneVPCObservation(&cloudVPC); err != nil {
