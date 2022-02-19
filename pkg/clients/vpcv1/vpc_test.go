@@ -18,6 +18,7 @@ package vpcv1
 
 import (
 	"reflect"
+	"strconv"
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
@@ -284,6 +285,117 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 						t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 					}
 				} else if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
+					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
+				}
+			})
+		}
+	}
+}
+
+// Params
+//    params - ...
+//    setName - whether to set the name
+//
+// Returns
+//    a copy of the argument but with the name set
+func withName(params v1alpha1.VPCParameters, setName bool) v1alpha1.VPCParameters {
+	result := params.DeepCopy()
+
+	if setName && result.Name != nil {
+		result.Name = &randomName
+	}
+
+	return *result
+}
+
+// Params
+//    params - ...
+//    setRG - whether to set the resource group id
+//
+// Returns
+//    a copy of the argument but with the name set
+func withResourceGroup(params v1alpha1.VPCParameters, setRG bool) v1alpha1.VPCParameters {
+	result := params.DeepCopy()
+
+	if setRG && result.ResourceGroup != nil {
+		result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
+			ID: randomResourceGroupID,
+		}
+	}
+
+	return *result
+}
+
+// Used to old the late initialization spec tests
+type lateInitTstSpec struct {
+	spec            v1alpha1.VPCParameters
+	setName         bool
+	setReourceGroup bool
+	expects         v1alpha1.VPCParameters
+}
+
+// Creates tests for LateInitializeSpec
+func createLateInitializeSpecTests(orig v1alpha1.VPCParameters) map[string]lateInitTstSpec {
+	result := make(map[string]lateInitTstSpec)
+
+	for _, nameIsNil := range []bool{true, false} {
+		for _, rgIsNil := range []bool{true, false} {
+			result[strconv.FormatBool(nameIsNil)+","+strconv.FormatBool(nameIsNil)] = lateInitTstSpec{
+				spec:            orig,
+				setName:         nameIsNil,
+				setReourceGroup: rgIsNil,
+				expects:         withResourceGroup(withName(orig, nameIsNil), rgIsNil),
+			}
+		}
+	}
+
+	return result
+}
+
+// Tests the LateInitializeSpec function
+func TestLateInitializeSpec(t *testing.T) {
+	functionTstName := "TestLateInitializeSpec"
+
+	numVars := 16 // reasonable default for unit test (so we do not run out of time)
+	for i, booleanComb := range GenerateSomeCombinations(numVars, 35) {
+		varCombinationLogging := GetBinaryRep(i, numVars)
+
+		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
+
+		tests := createLateInitializeSpecTests(crossplaneVPCInfo)
+		for name, tc := range tests {
+			t.Run(functionTstName, func(t *testing.T) {
+				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
+
+				cloudVPC := GetDummyCloudVPCObservation(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+					booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
+					booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
+					booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
+					booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
+					booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+
+				if tc.setName {
+					cloudVPC.Name = &randomName
+				} else {
+					cloudVPC.Name = nil
+				}
+
+				if tc.setReourceGroup {
+					cloudVPC.ResourceGroup = &ibmVPC.ResourceGroupReference{
+						ID: &resourceGroupName,
+					}
+				} else {
+					cloudVPC.ResourceGroup = nil
+				}
+
+				if err := LateInitializeSpec(crossplaneVPCInfo.DeepCopy(), &cloudVPC); err != nil {
+					t.Errorf(fullTstName+": got error in LateInitializeSpec:\n%s", err)
+
+					return
+				}
+
+				if diff := cmp.Diff(tc.spec, tc.expects); diff != "" {
 					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 				}
 			})

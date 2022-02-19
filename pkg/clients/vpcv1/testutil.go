@@ -33,7 +33,7 @@ var (
 	addressPrefixVal                   = ibmc.RandomString()
 	classicAccessVal                   = ibmc.RandomInt(2) == 0
 	randomName                         = ibmc.RandomString()
-	RandomResourceGroupID              = ibmc.RandomString()
+	randomResourceGroupID              = ibmc.RandomString()
 	crnVal                             = ibmc.RandomString()
 	hrefVal                            = ibmc.RandomString()
 	idVal                              = ibmc.RandomString()
@@ -255,7 +255,7 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 	if resourceGroupNonNil {
 		result.ResourceGroup = &ibmVPC.ResourceGroupReference{
 			Href: ibmc.ReturnConditionalStr(resourceGroupHrefNonNil, resourceGroupHref),
-			ID:   ibmc.ReturnConditionalStr(resourceGroupIDNonNil, RandomResourceGroupID),
+			ID:   ibmc.ReturnConditionalStr(resourceGroupIDNonNil, randomResourceGroupID),
 			Name: ibmc.ReturnConditionalStr(resourceGroupNameNonNil, resourceGroupName),
 		}
 	}
@@ -289,7 +289,7 @@ func GetDummyCrossplaneVPCParams(addressNil bool, nameNil bool, resourceGroupIDN
 
 	if !resourceGroupIDNil {
 		result.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
-			ID: RandomResourceGroupID,
+			ID: randomResourceGroupID,
 		}
 	}
 
