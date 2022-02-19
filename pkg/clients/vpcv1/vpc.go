@@ -182,14 +182,26 @@ func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions
 		Name:                    in.Name,
 	}
 
-	if in.Headers != nil && len(*in.Headers) > 0 {
-		result.SetHeaders(*in.DeepCopy().Headers)
+	dc := in.DeepCopy()
+
+	if dc.AddressPrefixManagement != nil {
+		result.SetAddressPrefixManagement(*dc.AddressPrefixManagement)
 	}
 
-	if in.ResourceGroup != nil {
-		result.ResourceGroup = &ibmVPC.ResourceGroupIdentity{
-			ID: reference.ToPtrValue(in.ResourceGroup.ID),
-		}
+	if dc.Name != nil {
+		result.SetName(*dc.Name)
+	}
+
+	result.SetClassicAccess(dc.ClassicAccess)
+
+	if dc.Headers != nil && len(*dc.Headers) > 0 {
+		result.SetHeaders(*dc.Headers)
+	}
+
+	if dc.ResourceGroup != nil {
+		result.SetResourceGroup(&ibmVPC.ResourceGroupIdentity{
+			ID: reference.ToPtrValue(dc.ResourceGroup.ID),
+		})
 	}
 
 	return result, nil
