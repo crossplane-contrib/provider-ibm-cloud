@@ -36,6 +36,8 @@ import (
 	"github.com/pkg/errors"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
+	"github.com/crossplane/crossplane-runtime/pkg/test"
+
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	crossplaneApi "github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	crossplaneClient "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/vpcv1"
@@ -236,6 +238,9 @@ func testCreate(t *testing.T) {
 				cre: managed.ExternalCreation{ExternalNameAssigned: true},
 				err: nil,
 			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
+			},
 		},
 		"Failed": {
 			handlers: []tstutil.Handler{
@@ -260,6 +265,9 @@ func testCreate(t *testing.T) {
 					withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateVPC),
+			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 		},
 	}
@@ -339,6 +347,9 @@ func testDelete(t *testing.T) {
 					withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
+			},
 		},
 		"AlreadyGone": {
 			handlers: []tstutil.Handler{
@@ -364,6 +375,9 @@ func testDelete(t *testing.T) {
 					withConditions(cpv1alpha1.Deleting())),
 				err: nil,
 			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
+			},
 		},
 		"Failed": {
 			handlers: []tstutil.Handler{
@@ -388,6 +402,9 @@ func testDelete(t *testing.T) {
 				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
 					withConditions(cpv1alpha1.Deleting())),
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteVPC),
+			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 		},
 	}
@@ -474,6 +491,9 @@ func testObserve(t *testing.T) {
 				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{ResourceExists: false},
 			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
+			},
 		},
 		"GetFailed": {
 			handlers: []tstutil.Handler{
@@ -502,6 +522,9 @@ func testObserve(t *testing.T) {
 					errCode: http.StatusBadRequest,
 				},
 			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
+			},
 		},
 		"GetForbidden": {
 			handlers: []tstutil.Handler{
@@ -529,6 +552,9 @@ func testObserve(t *testing.T) {
 					err:     errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetVPCFailed),
 					errCode: http.StatusForbidden,
 				},
+			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 		},
 		"UpToDate": {
@@ -572,6 +598,9 @@ func testObserve(t *testing.T) {
 					ResourceUpToDate:  true,
 					ConnectionDetails: nil,
 				},
+			},
+			kube: &test.MockClient{
+				MockUpdate: test.NewMockUpdateFn(nil),
 			},
 		},
 	}
