@@ -32,19 +32,27 @@ import (
 //    value - a value. May be nil
 //
 // Returns
-//    the  value of the parameter (of the appopriate type), or nil
+//    the value of the parameter (of the appopriate type), or nil
 func typeVal(value interface{}) interface{} {
 	var result interface{}
 
 	switch typed := value.(type) {
+	case string:
+		result = &typed
 	case *string:
 		result = typed
+	case bool:
+		result = &typed
 	case *bool:
 		result = typed
 	case *map[string]string:
 		result = typed
 	case map[string]string:
-		result = typed
+		if typed == nil {
+			result = nil
+		} else {
+			result = &typed
+		}
 	case *v1alpha1.ResourceGroupIdentity:
 		result = typed
 	case *ibmVPC.ResourceGroupIdentity:
@@ -209,8 +217,8 @@ func areEquallyNil(a interface{}, b interface{}) bool {
 func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 	functionTstName := "TestGenerateCrossplaneVPCObservation"
 
-	numVars := 16
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 35) {
+	numVars := 10 // as many as the params of booleanComb we will be using
+	for i, booleanComb := range GenerateSomeCombinations(numVars, 35, true) {
 		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		ibmVPCInfo := GetDummyCloudVPCObservation(
@@ -252,7 +260,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 func TestGenerateCloudVPCParams(t *testing.T) {
 	functionTstName := "TestGenerateCloudVPCParams"
 
-	numVars := 4
+	numVars := 4 // does not make sense to have more than the num of vars used...
 	for i, booleanComb := range generateCombinations(numVars) {
 		varCombinationLogging := GetBinaryRep(i, numVars)
 
@@ -276,15 +284,23 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 					return
 				}
 
-				if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
-					if !sameResource(crossplaneVal, cloudVal) {
-						t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
+				if crossplaneVal != nil {
+					if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
+						if !sameResource(crossplaneVal, cloudVal) {
+							t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
+						}
+
+						return
+					} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
+						if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
+							t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
+						}
+
+						return
 					}
-				} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
-					if diff := cmp.Diff(*crossplaneVal.(*map[string]string), cloudVal); diff != "" {
-						t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-					}
-				} else if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
+				}
+
+				if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
 					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
 				}
 			})
@@ -356,8 +372,9 @@ func createLateInitializeSpecTests(orig v1alpha1.VPCParameters) map[string]lateI
 func TestLateInitializeSpec(t *testing.T) {
 	functionTstName := "TestLateInitializeSpec"
 
-	numVars := 16 // reasonable default for unit test (so we do not run out of time)
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 35) {
+	numVars := 10 // does not make sense to have more than the num of vars used... If we put too many,
+	// then testing timeouts (30 secs)
+	for i, booleanComb := range GenerateSomeCombinations(numVars, 35, true) {
 		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])

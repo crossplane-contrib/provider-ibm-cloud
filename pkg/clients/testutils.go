@@ -62,7 +62,7 @@ func seedTheRandomGenerator() {
 	}
 }
 
-// RandomString returns a random string (of lenth <= 14), or nil
+// RandomString returns a random string (of lenth <= 15), or nil
 //
 // (note that the seed is being taken care of)
 func RandomString() string {

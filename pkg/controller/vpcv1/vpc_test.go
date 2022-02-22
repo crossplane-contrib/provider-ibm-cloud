@@ -182,7 +182,7 @@ func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstuti
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestCreate(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testCreate(t)
@@ -303,7 +303,7 @@ func testCreate(t *testing.T) {
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestDelete(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testDelete(t)
@@ -441,7 +441,7 @@ func testDelete(t *testing.T) {
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestObserve(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testObserve(t)

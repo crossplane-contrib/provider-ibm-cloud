@@ -18,7 +18,9 @@ package vpcv1
 
 import (
 	"math"
+	"math/rand"
 	"strconv"
+	"time"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
 
@@ -69,17 +71,26 @@ var (
 // Params
 // 	  numElems - the number of elements
 //    returnSize - size of each return array
+//    boolean -  randomize the elements that "fill" the random array. false = no randomization => deterministic values
 //
 // Returns
 //    an array of boolean arrays (each of the given size), containing the combinations
-func GenerateSomeCombinations(numElems int, returnSize int) [][]bool {
+func GenerateSomeCombinations(numElems int, returnSize int, randAll bool) [][]bool {
 	result := make([][]bool, 0)
+
+	if !randAll {
+		rand.Seed(int64(numElems))
+	} else {
+		rand.Seed(time.Now().UnixNano())
+	}
 
 	for _, booleanCombSubset := range generateCombinations(numElems) {
 		// Add as many variables as there are parameters
-		booleanComb := make([]bool, 35)
-		for j := 0; j < len(booleanComb); j++ {
-			booleanComb[j] = booleanCombSubset[j%len(booleanCombSubset)]
+		booleanComb := make([]bool, returnSize)
+		copy(booleanComb[returnSize-len(booleanCombSubset):], booleanCombSubset)
+
+		for j := 0; j < returnSize-len(booleanCombSubset); j++ {
+			booleanComb[j] = rand.Intn(1) == 1 // nolint - this is ok as we are not doing critical stuff here...)
 		}
 
 		result = append(result, booleanComb)

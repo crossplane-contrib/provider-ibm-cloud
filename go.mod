@@ -15,7 +15,6 @@ require (
 	github.com/IBM/vpc-go-sdk v0.16.0
 	github.com/crossplane/crossplane-runtime v0.11.1-0.20201116232334-1b691efff491
 	github.com/crossplane/crossplane-tools v0.0.0-20201007233256-88b291e145bb
-	github.com/form3tech-oss/jwt-go v3.2.2+incompatible // indirect
 	github.com/go-openapi/strfmt v0.21.1
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/google/go-cmp v0.5.5

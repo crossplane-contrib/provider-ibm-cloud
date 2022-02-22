@@ -57,7 +57,6 @@ import (
 	iampmv1 "github.com/IBM/platform-services-go-sdk/iampolicymanagementv1"
 	rcv2 "github.com/IBM/platform-services-go-sdk/resourcecontrollerv2"
 	rmgrv2 "github.com/IBM/platform-services-go-sdk/resourcemanagerv2"
-
 	"github.com/IBM/vpc-go-sdk/vpcv1"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
