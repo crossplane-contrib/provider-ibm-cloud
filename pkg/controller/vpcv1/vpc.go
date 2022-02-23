@@ -47,6 +47,7 @@ const (
 	errCreateVPCReq  = "could not generate the input params for a VPC"
 	errDeleteVPC     = "could not delete the VPC"
 	errGetVPCFailed  = "error getting the VPC"
+	errUpdateVPC     = "error updating the VPC"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -185,11 +186,6 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
 
-// (Not) called by crossplane - as the bucket cannot be changed once created... Here only to satisfy the compiler
-func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
-	return managed.ExternalUpdate{}, nil
-}
-
 // Called by crossplane
 func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
@@ -207,4 +203,27 @@ func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	}
 
 	return nil
+}
+
+// Called by crossplane
+func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
+	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
+	if !ok {
+		return managed.ExternalUpdate{}, errors.New(errThisIsNotAVPC)
+	}
+
+	crossplaneVPCCopy := crossplaneVPC.DeepCopy()
+	updateOptions := ibmVPC.UpdateVPCOptions{
+		VPCPatch: map[string]interface{}{
+			"name": *crossplaneVPC.Spec.ForProvider.Name,
+		},
+	}
+
+	updateOptions.SetID(*crossplaneVPCCopy.Status.AtProvider.ID)
+
+	if _, _, err := c.client.VPCClient().UpdateVPC(&updateOptions); err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateVPC)
+	}
+
+	return managed.ExternalUpdate{}, nil
 }
