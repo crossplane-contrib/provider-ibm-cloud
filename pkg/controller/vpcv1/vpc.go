@@ -215,7 +215,7 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 	crossplaneVPCCopy := crossplaneVPC.DeepCopy()
 	updateOptions := ibmVPC.UpdateVPCOptions{
 		VPCPatch: map[string]interface{}{
-			"name": *crossplaneVPC.Spec.ForProvider.Name,
+			"name": *crossplaneVPCCopy.Spec.ForProvider.Name,
 		},
 	}
 
