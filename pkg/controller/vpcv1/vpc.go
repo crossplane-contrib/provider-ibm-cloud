@@ -212,14 +212,13 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalUpdate{}, errors.New(errThisIsNotAVPC)
 	}
 
-	crossplaneVPCCopy := crossplaneVPC.DeepCopy()
 	updateOptions := ibmVPC.UpdateVPCOptions{
 		VPCPatch: map[string]interface{}{
-			"name": *crossplaneVPCCopy.Spec.ForProvider.Name,
+			"name": *crossplaneVPC.Spec.ForProvider.Name,
 		},
 	}
 
-	updateOptions.SetID(*crossplaneVPCCopy.Status.AtProvider.ID)
+	updateOptions.SetID(*crossplaneVPC.Status.AtProvider.ID)
 
 	if _, _, err := c.client.VPCClient().UpdateVPC(&updateOptions); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateVPC)
