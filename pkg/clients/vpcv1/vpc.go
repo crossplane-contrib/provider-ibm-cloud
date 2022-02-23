@@ -24,6 +24,7 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
 
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 )
 
@@ -202,6 +203,22 @@ func GenerateCloudVPCParams(in *v1alpha1.VPCParameters) (ibmVPC.CreateVPCOptions
 		result.SetResourceGroup(&ibmVPC.ResourceGroupIdentity{
 			ID: reference.ToPtrValue(dc.ResourceGroup.ID),
 		})
+	}
+
+	return result, nil
+}
+
+// IsUpToDate checks whether the current VPC config (in the cloud) is up-to-date compared to the crossplane one (only
+// the name is checked, as this is the only one that can be updated).
+//
+// No error is currently returned
+func IsUpToDate(crossplane *v1alpha1.VPCParameters, observed *ibmVPC.VPC, l logging.Logger) (bool, error) {
+	result := false
+
+	if crossplane.Name == nil && observed.Name == nil {
+		result = true
+	} else if crossplane.Name != nil && observed.Name != nil {
+		result = *crossplane.Name == *observed.Name
 	}
 
 	return result, nil

@@ -69,9 +69,9 @@ var (
 // 4 (ie 2^2) combibations will be returned...
 //
 // Params
-// 	  numElems - the number of elements
-//    returnSize - size of each return array
-//    boolean -  randomize the elements that "fill" the random array. false = no randomization => deterministic values
+// 	  numElems - the number of elements of each array.. in the return array
+//    returnSize - size of each return array (may require padding. Which can be with random vars or not...)
+//    randAll - randomize the elements that "fill" the random array (we pad at the beginning). false = no randomization => deterministic values
 //
 // Returns
 //    an array of boolean arrays (each of the given size), containing the combinations

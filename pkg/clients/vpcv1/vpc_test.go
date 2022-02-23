@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+	"github.com/crossplane/crossplane-runtime/pkg/logging"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 
@@ -366,6 +368,81 @@ func createLateInitializeSpecTests(orig v1alpha1.VPCParameters) map[string]lateI
 	}
 
 	return result
+}
+
+// Tests the IsUpToDate function
+func TestIsUpToDate(t *testing.T) {
+	functionTstName := "TestIsUpToDate"
+
+	cases := map[string]struct {
+		spec     v1alpha1.VPCParameters
+		observed ibmVPC.VPC
+		want     bool
+	}{
+		"TestIsUpToDate-1": {
+			spec: v1alpha1.VPCParameters{
+				Name: reference.ToPtrValue("foo"),
+			},
+			observed: ibmVPC.VPC{
+				Name: reference.ToPtrValue("foo"),
+			},
+			want: true,
+		},
+		"TestIsUpToDate-2": {
+			spec: v1alpha1.VPCParameters{
+				Name: reference.ToPtrValue("foo"),
+			},
+			observed: ibmVPC.VPC{
+				Name: reference.ToPtrValue("bar"),
+			},
+			want: false,
+		},
+		"TestIsUpToDate-3": {
+			spec: v1alpha1.VPCParameters{
+				Name: nil,
+			},
+			observed: ibmVPC.VPC{
+				Name: reference.ToPtrValue("bar"),
+			},
+			want: false,
+		},
+		"TestIsUpToDate-4": {
+			spec: v1alpha1.VPCParameters{
+				Name: reference.ToPtrValue("bar"),
+			},
+			observed: ibmVPC.VPC{
+				Name: nil,
+			},
+			want: false,
+		},
+		"TestIsUpToDate-5": {
+			spec: v1alpha1.VPCParameters{
+				Name: nil,
+			},
+			observed: ibmVPC.VPC{
+				Name: nil,
+			},
+			want: true,
+		},
+		"TestIsUpToDate-6": {
+			spec: v1alpha1.VPCParameters{
+				Name: reference.ToPtrValue(""),
+			},
+			observed: ibmVPC.VPC{
+				Name: nil,
+			},
+			want: true,
+		},
+	}
+
+	for name, tc := range cases {
+		t.Run(name, func(t *testing.T) {
+			rc, _ := IsUpToDate(&tc.spec, &tc.observed, logging.NewNopLogger())
+			if rc != tc.want {
+				t.Errorf(functionTstName+" "+name+"IsUpToDate(...): -want:%t, +got:%t\n", tc.want, rc)
+			}
+		})
+	}
 }
 
 // Tests the LateInitializeSpec function
