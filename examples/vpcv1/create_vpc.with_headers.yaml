@@ -4,7 +4,7 @@ metadata:
   name: harry-vpc-3
   annotations:
 spec:
-  deletionPolicy: Orphan
+  deletionPolicy: Delete
   forProvider:
     classicAccess: false
     name: harry-vpc-3

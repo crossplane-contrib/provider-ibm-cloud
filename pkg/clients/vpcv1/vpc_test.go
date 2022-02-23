@@ -483,7 +483,7 @@ func TestLateInitializeSpec(t *testing.T) {
 					cloudVPC.ResourceGroup = nil
 				}
 
-				if err := LateInitializeSpec(crossplaneVPCInfo.DeepCopy(), &cloudVPC); err != nil {
+				if _, err := LateInitializeSpec(crossplaneVPCInfo.DeepCopy(), &cloudVPC); err != nil {
 					t.Errorf(fullTstName+": got error in LateInitializeSpec:\n%s", err)
 
 					return

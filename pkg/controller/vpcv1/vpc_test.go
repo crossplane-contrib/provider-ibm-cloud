@@ -30,6 +30,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/google/go-cmp/cmp"
@@ -66,18 +67,64 @@ func withExternalName() vpcModifier {
 }
 
 // Sets the name in the spec part of the VPC
-func withName() vpcModifier {
+//
+// Params
+//    newName - the new name. If nil, it will be ignored, unless the second parameter is set
+//    acceptNilAsNewName - will set the name to nil
+func withSpecName(newName *string, acceptNilAsNewName bool) vpcModifier {
 	return func(c *crossplaneApi.VPC) {
-		// Make sure we use the same one everywhere, at the same time...
-		vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-			booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
-			booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
-			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
-			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
-			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+		if newName != nil {
+			c.Spec.ForProvider.Name = newName
+		} else if acceptNilAsNewName {
+			c.Spec.ForProvider.Name = nil
+		} else {
+			// Make sure we use the same one everywhere, at the same time...
+			vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
+				booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+				booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
+				booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
+				booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
+				booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+				booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
 
-		c.Spec.ForProvider.Name = vpcObs.Name
+			c.Spec.ForProvider.Name = vpcObs.Name
+		}
+	}
+}
+
+// Sets the name in the status part of the VPC
+//
+// Params
+//    newName - optional. If nil, the randomly generated one will be used
+//    acceptNilAsNewName - will set the name to nil
+func withStatusName(newName *string, acceptNilAsNewName bool) vpcModifier {
+	return func(c *crossplaneApi.VPC) {
+		if newName != nil {
+			c.Status.AtProvider.Name = newName
+		} else if acceptNilAsNewName {
+			c.Status.AtProvider.Name = nil
+		} else {
+			// Make sure we use the same one everywhere, at the same time...
+			vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
+				booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+				booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
+				booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
+				booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
+				booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+				booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+
+			c.Status.AtProvider.Name = vpcObs.Name
+		}
+	}
+}
+
+// Sets the id in the status part of the VPC
+//
+// Params
+//    id - if nil, it will be set to nil
+func withID(id *string) vpcModifier {
+	return func(c *crossplaneApi.VPC) {
+		c.Status.AtProvider.ID = id
 	}
 }
 
@@ -592,7 +639,7 @@ func testObserve(t *testing.T) {
 			},
 			want: want{
 				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName(),
-					withName(), withResourceGroup()),
+					withSpecName(nil, false), withResourceGroup()),
 				obs: managed.ExternalObservation{
 					ResourceExists:    true,
 					ResourceUpToDate:  true,
@@ -631,6 +678,168 @@ func testObserve(t *testing.T) {
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
 				t.Errorf("Test: "+varCombinationLogging+", Observe(...): -want, +got:\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestUpdate(t *testing.T) {
+	booleanComb = crossplaneClient.GenerateSomeCombinations(1, 35, true)[0]
+
+	type want struct {
+		mg  resource.Managed
+		upd managed.ExternalUpdate
+		err error
+	}
+
+	cases := map[string]struct {
+		handlers []tstutil.Handler
+		kube     client.Client
+		args     tstutil.Args
+		want     want
+		name     string // used for debugging convenience
+	}{
+		"Successful-1": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						// content type should always set before writeHeader()
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(reference.ToPtrValue("new name"), false),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+			},
+			want: want{
+				mg: createCrossplaneVPC(true, false, true, true, withSpecName(reference.ToPtrValue("new name"), false),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+				upd: managed.ExternalUpdate{},
+			},
+		},
+		"Successful-2": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						// content type should always set before writeHeader()
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusOK)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+			},
+			want: want{
+				mg: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+				upd: managed.ExternalUpdate{},
+			},
+		},
+		"Failed-1": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						// content type should always set before writeHeader()
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+			},
+			want: want{
+				mg: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
+					withStatus(), withID(reference.ToPtrValue("an id"))),
+				upd: managed.ExternalUpdate{},
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdateVPC),
+			},
+		},
+		"Failed-2": {
+			handlers: []tstutil.Handler{
+				{
+					Path: "/",
+					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
+						_ = r.Body.Close()
+
+						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
+							t.Errorf("r: -want, +got:\n%s", diff)
+						}
+
+						// content type should always set before writeHeader()
+						w.Header().Set("Content-Type", "application/json")
+						w.WriteHeader(http.StatusBadRequest)
+					},
+				},
+			},
+			args: tstutil.Args{
+				Managed: createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
+			},
+			want: want{
+				mg:  createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
+				upd: managed.ExternalUpdate{},
+				err: errors.New(errUpdateVPCNoId),
+			},
+		},
+	}
+
+	for name, tc := range cases {
+		if name != "Failed-2" {
+			continue
+		}
+		tc.name = name
+
+		t.Run(name, func(t *testing.T) {
+			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
+			if errCr != nil {
+				t.Errorf(tc.name+": problem setting up the test server %s", errCr)
+			}
+
+			defer server.Close()
+
+			xu, err := e.Update(context.Background(), tc.args.Managed)
+			if tc.want.err != nil && err != nil {
+				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
+					t.Errorf(tc.name+", Update(...): want error string != got error string:\n%s", diff)
+				}
+			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
+				t.Errorf(tc.name+", Update(...): want error != got error:\n%s", diff)
+			}
+
+			if diff := cmp.Diff(tc.want.upd, xu); diff != "" {
+				t.Errorf(tc.name+", Update(...): -want, +got:\n%s", diff)
+			}
+
+			if tc.want.mg != nil {
+				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
+					t.Errorf(tc.name+", Update(...): -want, +got:\n%s", diff)
+				}
 			}
 		})
 	}

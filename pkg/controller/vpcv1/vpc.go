@@ -48,6 +48,7 @@ const (
 	errDeleteVPC     = "could not delete the VPC"
 	errGetVPCFailed  = "error getting the VPC"
 	errUpdateVPC     = "error updating the VPC"
+	errUpdateVPCNoId = "error updating the VPC - the current one does not seem to have an id"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -120,6 +121,9 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	found := false
+	wasLateInitialized := false
+	isUpToDate := false
+
 	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&ibmVPC.ListVpcsOptions{})
 	if err != nil {
 		return managed.ExternalObservation{}, errors.Wrap(err, errGetVPCFailed)
@@ -136,7 +140,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 				found = true
 
 				currentSpec := crossplaneVPC.Spec.ForProvider.DeepCopy()
-				if err := crossplaneClient.LateInitializeSpec(&crossplaneVPC.Spec.ForProvider, &cloudVPC); err != nil {
+				if wasLateInitialized, err = crossplaneClient.LateInitializeSpec(&crossplaneVPC.Spec.ForProvider, &cloudVPC); err != nil {
 					return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrManagedUpdateFailed)
 				}
 
@@ -150,15 +154,23 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 					return managed.ExternalObservation{}, errors.Wrap(err, ibmc.ErrGenObservation)
 				}
 
+				if isUpToDate, err = crossplaneClient.IsUpToDate(&crossplaneVPC.Spec.ForProvider, &cloudVPC, c.logger); err != nil {
+					return managed.ExternalObservation{
+						ResourceExists:          true,
+						ResourceLateInitialized: wasLateInitialized,
+					}, errors.Wrap(err, ibmc.ErrCheckUpToDate)
+				}
+
 				break
 			}
 		}
 	}
 
 	return managed.ExternalObservation{
-		ResourceExists:    found,
-		ResourceUpToDate:  true,
-		ConnectionDetails: nil,
+		ResourceExists:          found,
+		ResourceUpToDate:        isUpToDate,
+		ResourceLateInitialized: wasLateInitialized,
+		ConnectionDetails:       nil,
 	}, nil
 }
 
@@ -210,6 +222,10 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
 		return managed.ExternalUpdate{}, errors.New(errThisIsNotAVPC)
+	}
+
+	if crossplaneVPC.Status.AtProvider.ID == nil {
+		return managed.ExternalUpdate{}, errors.New(errUpdateVPCNoId)
 	}
 
 	updateOptions := ibmVPC.UpdateVPCOptions{

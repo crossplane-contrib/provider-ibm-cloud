@@ -17,9 +17,11 @@ limitations under the License.
 package vpcv1
 
 import (
+	"fmt"
 	"reflect"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+	"github.com/google/go-cmp/cmp"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
 	ibmc "github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients"
@@ -35,19 +37,26 @@ import (
 // 	  fromIBMCloud - ...what comes from the cloud
 //
 // Returns
+//    whether late initialization happened
 //    currently, always nil
-func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) error {
+func LateInitializeSpec(spec *v1alpha1.VPCParameters, fromIBMCloud *ibmVPC.VPC) (bool, error) {
+	result := false
+
 	if spec.Name == nil && fromIBMCloud.Name != nil {
 		spec.Name = fromIBMCloud.Name
+
+		result = true
 	}
 
 	if spec.ResourceGroup == nil && fromIBMCloud.ResourceGroup != nil && !reflect.ValueOf(fromIBMCloud.ResourceGroup).IsNil() {
 		spec.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
 			ID: *fromIBMCloud.ResourceGroup.ID,
 		}
+
+		result = true
 	}
 
-	return nil
+	return result, nil
 }
 
 // GenerateCrossplaneVPCObservation returns a crossplane version of the cloud observation results parameters
@@ -218,7 +227,13 @@ func IsUpToDate(crossplane *v1alpha1.VPCParameters, observed *ibmVPC.VPC, l logg
 	if crossplane.Name == nil && observed.Name == nil {
 		result = true
 	} else if crossplane.Name != nil && observed.Name != nil {
-		result = *crossplane.Name == *observed.Name
+		if result = *crossplane.Name == *observed.Name; !result {
+			diff := cmp.Diff(observed.Name, crossplane.Name)
+			fmt.Printf(">>> %s\n", diff)
+			l.Info("IsUpToDate", "Diff", diff)
+
+			return false, nil
+		}
 	}
 
 	return result, nil
