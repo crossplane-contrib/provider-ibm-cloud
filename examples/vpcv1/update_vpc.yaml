@@ -3,13 +3,11 @@ kind: VPC
 metadata:
   name: the-meta-name
   annotations:
+    crossplane.io/external-name: harry-vpc-3
 spec:
   deletionPolicy: Delete
   forProvider:
     classicAccess: false
-    name: harry-vpc-3
-    headers:
-        key_uno: value_uno
-        key_due: value_due 
+    name: harry-vpc-3-updated
   providerConfigRef:
     name: ibm-cloud

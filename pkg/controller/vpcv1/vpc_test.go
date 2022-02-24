@@ -75,45 +75,21 @@ func withSpecName(newName *string, acceptNilAsNewName bool) vpcModifier {
 	return func(c *crossplaneApi.VPC) {
 		if newName != nil {
 			c.Spec.ForProvider.Name = newName
-		} else if acceptNilAsNewName {
-			c.Spec.ForProvider.Name = nil
 		} else {
-			// Make sure we use the same one everywhere, at the same time...
-			vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-				booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
-				booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
-				booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
-				booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
-				booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-				booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+			if acceptNilAsNewName {
+				c.Spec.ForProvider.Name = nil
+			} else {
+				// Make sure we use the same one everywhere, at the same time...
+				vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
+					booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+					booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
+					booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
+					booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
+					booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
 
-			c.Spec.ForProvider.Name = vpcObs.Name
-		}
-	}
-}
-
-// Sets the name in the status part of the VPC
-//
-// Params
-//    newName - optional. If nil, the randomly generated one will be used
-//    acceptNilAsNewName - will set the name to nil
-func withStatusName(newName *string, acceptNilAsNewName bool) vpcModifier {
-	return func(c *crossplaneApi.VPC) {
-		if newName != nil {
-			c.Status.AtProvider.Name = newName
-		} else if acceptNilAsNewName {
-			c.Status.AtProvider.Name = nil
-		} else {
-			// Make sure we use the same one everywhere, at the same time...
-			vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-				booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
-				booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
-				booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
-				booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
-				booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-				booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
-
-			c.Status.AtProvider.Name = vpcObs.Name
+				c.Spec.ForProvider.Name = vpcObs.Name
+			}
 		}
 	}
 }
@@ -804,7 +780,7 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				mg:  createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
 				upd: managed.ExternalUpdate{},
-				err: errors.New(errUpdateVPCNoId),
+				err: errors.New(errUpdateVPCNoID),
 			},
 		},
 	}

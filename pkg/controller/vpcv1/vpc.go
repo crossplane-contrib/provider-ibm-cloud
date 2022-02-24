@@ -21,6 +21,7 @@ import (
 	"net/http"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	ctrl "sigs.k8s.io/controller-runtime"
@@ -42,13 +43,14 @@ import (
 
 // Various errors...
 const (
-	errThisIsNotAVPC = "managed resource is not a VPC resource"
-	errCreateVPC     = "could not create a VPC"
-	errCreateVPCReq  = "could not generate the input params for a VPC"
-	errDeleteVPC     = "could not delete the VPC"
-	errGetVPCFailed  = "error getting the VPC"
-	errUpdateVPC     = "error updating the VPC"
-	errUpdateVPCNoId = "error updating the VPC - the current one does not seem to have an id"
+	errThisIsNot                               = "managed resource is not a VPC resource"
+	errCreate                                  = "could not create a VPC"
+	errCreateReq                               = "could not generate the input params for a VPC"
+	errDelete                                  = "could not delete the VPC"
+	errGetFailed                               = "error getting the VPC"
+	errUpdate                                  = "error updating the VPC"
+	errUpdateNoID                              = "error updating the VPC - the current one does not seem to have an id"
+	errUpdateFailedToResetExternalResourceName = "failed to update the external name of the VPC"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -110,7 +112,7 @@ type vpcExternal struct {
 func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed.ExternalObservation, error) { // nolint:gocyclo
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
-		return managed.ExternalObservation{}, errors.New(errThisIsNotAVPC)
+		return managed.ExternalObservation{}, errors.New(errThisIsNot)
 	}
 
 	externalVPCName := meta.GetExternalName(crossplaneVPC)
@@ -126,7 +128,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 
 	vpcCollection, response, err := c.client.VPCClient().ListVpcs(&ibmVPC.ListVpcsOptions{})
 	if err != nil {
-		return managed.ExternalObservation{}, errors.Wrap(err, errGetVPCFailed)
+		return managed.ExternalObservation{}, errors.Wrap(err, errGetFailed)
 	}
 
 	if response.StatusCode != http.StatusOK {
@@ -136,7 +138,10 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	if vpcCollection != nil {
 		for i := range vpcCollection.Vpcs {
 			cloudVPC := vpcCollection.Vpcs[i]
-			if externalVPCName == *cloudVPC.Name {
+
+			if externalVPCName == *cloudVPC.Name ||
+				(crossplaneVPC.Status.AtProvider.ID != nil && cloudVPC.ID != nil &&
+					*crossplaneVPC.Status.AtProvider.ID == *cloudVPC.ID) {
 				found = true
 
 				currentSpec := crossplaneVPC.Spec.ForProvider.DeepCopy()
@@ -178,19 +183,19 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.ExternalCreation, error) {
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
-		return managed.ExternalCreation{}, errors.New(errThisIsNotAVPC)
+		return managed.ExternalCreation{}, errors.New(errThisIsNot)
 	}
 
 	crossplaneVPC.SetConditions(runtimev1alpha1.Creating())
 
 	createOptions, err := crossplaneClient.GenerateCloudVPCParams(&crossplaneVPC.Spec.DeepCopy().ForProvider)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPCReq)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
 	}
 
 	vpc, _, err := c.client.VPCClient().CreateVPC(&createOptions)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreateVPC)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
 	}
 
 	meta.SetExternalName(crossplaneVPC, *vpc.Name)
@@ -202,7 +207,7 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
-		return errors.New(errThisIsNotAVPC)
+		return errors.New(errThisIsNot)
 	}
 
 	crossplaneVPC.SetConditions(runtimev1alpha1.Deleting())
@@ -211,7 +216,7 @@ func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 		ID: crossplaneVPC.Status.AtProvider.ID,
 	})
 	if err != nil {
-		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDeleteVPC)
+		return errors.Wrap(resource.Ignore(ibmc.IsResourceNotFound, err), errDelete)
 	}
 
 	return nil
@@ -221,11 +226,11 @@ func (c *vpcExternal) Delete(ctx context.Context, mg resource.Managed) error {
 func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.ExternalUpdate, error) {
 	crossplaneVPC, ok := mg.(*v1alpha1.VPC)
 	if !ok {
-		return managed.ExternalUpdate{}, errors.New(errThisIsNotAVPC)
+		return managed.ExternalUpdate{}, errors.New(errThisIsNot)
 	}
 
 	if crossplaneVPC.Status.AtProvider.ID == nil {
-		return managed.ExternalUpdate{}, errors.New(errUpdateVPCNoId)
+		return managed.ExternalUpdate{}, errors.New(errUpdateNoID)
 	}
 
 	updateOptions := ibmVPC.UpdateVPCOptions{
@@ -236,8 +241,14 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 
 	updateOptions.SetID(*crossplaneVPC.Status.AtProvider.ID)
 
-	if _, _, err := c.client.VPCClient().UpdateVPC(&updateOptions); err != nil {
-		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdateVPC)
+	cloudVPC, _, err := c.client.VPCClient().UpdateVPC(&updateOptions)
+	if err != nil {
+		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdate)
+	}
+
+	meta.SetExternalName(crossplaneVPC, *cloudVPC.Name)
+	if err := c.kube.Update(ctx, crossplaneVPC); err != nil {
+		return managed.ExternalUpdate{}, errors.New(errUpdateFailedToResetExternalResourceName)
 	}
 
 	return managed.ExternalUpdate{}, nil
