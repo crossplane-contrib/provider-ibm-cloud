@@ -287,7 +287,7 @@ func testCreate(t *testing.T) {
 				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3],
 					withConditions(cpv1alpha1.Creating())),
 				cre: managed.ExternalCreation{ExternalNameAssigned: false},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreateVPC),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errCreate),
 			},
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -424,7 +424,7 @@ func testDelete(t *testing.T) {
 			want: want{
 				mg: createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(),
 					withConditions(cpv1alpha1.Deleting())),
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDeleteVPC),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errDelete),
 			},
 			kube: &test.MockClient{
 				MockUpdate: test.NewMockUpdateFn(nil),
@@ -541,7 +541,7 @@ func testObserve(t *testing.T) {
 				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{},
 				errInfo: &errInfo{
-					err:     errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetVPCFailed),
+					err:     errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errGetFailed),
 					errCode: http.StatusBadRequest,
 				},
 			},
@@ -572,7 +572,7 @@ func testObserve(t *testing.T) {
 				mg:  createCrossplaneVPC(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], withStatus(), withExternalName()),
 				obs: managed.ExternalObservation{},
 				errInfo: &errInfo{
-					err:     errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetVPCFailed),
+					err:     errors.Wrap(errors.New(http.StatusText(http.StatusForbidden)), errGetFailed),
 					errCode: http.StatusForbidden,
 				},
 			},
@@ -754,7 +754,7 @@ func TestUpdate(t *testing.T) {
 				mg: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
 					withStatus(), withID(reference.ToPtrValue("an id"))),
 				upd: managed.ExternalUpdate{},
-				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdateVPC),
+				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdate),
 			},
 		},
 		"Failed-2": {
@@ -780,7 +780,7 @@ func TestUpdate(t *testing.T) {
 			want: want{
 				mg:  createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
 				upd: managed.ExternalUpdate{},
-				err: errors.New(errUpdateVPCNoID),
+				err: errors.New(errUpdateNoID),
 			},
 		},
 	}

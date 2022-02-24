@@ -190,7 +190,7 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 
 	createOptions, err := crossplaneClient.GenerateCloudVPCParams(&crossplaneVPC.Spec.DeepCopy().ForProvider)
 	if err != nil {
-		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
+		return managed.ExternalCreation{}, errors.Wrap(err, errCreateReq)
 	}
 
 	vpc, _, err := c.client.VPCClient().CreateVPC(&createOptions)
