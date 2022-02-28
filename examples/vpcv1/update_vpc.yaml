@@ -1,0 +1,13 @@
+apiVersion: vpcv1.ibmcloud.crossplane.io/v1alpha1
+kind: VPC
+metadata:
+  name: the-meta-name
+  annotations:
+    crossplane.io/external-name: r006-2232d36e-1281-4a9a-9f31-e2880e53c9a7
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    classicAccess: false
+    name: harry-vpc-3-updated
+  providerConfigRef:
+    name: ibm-cloud

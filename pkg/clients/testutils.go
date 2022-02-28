@@ -18,9 +18,14 @@ package clients
 
 import (
 	"encoding/json"
+	"fmt"
+	"math/rand"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
+	"github.com/go-openapi/strfmt"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -37,6 +42,69 @@ var (
 const (
 	FakeBearerToken = "Bearer mock-token"
 )
+
+// ADateTimeInAYear returns a  (random, but fixed) date time in the given year
+func ADateTimeInAYear(year int) *strfmt.DateTime {
+	result := strfmt.DateTime(time.Date(year, 10, 12, 8, 5, 5, 0, time.UTC))
+
+	return &result
+}
+
+// Whether the random seed has been created
+var randSeedCreated = false
+
+// Calls rand.Seed once
+func seedTheRandomGenerator() {
+	if !randSeedCreated {
+		rand.Seed(time.Now().UnixNano())
+
+		randSeedCreated = true
+	}
+}
+
+// RandomString returns a random string (of lenth <= 15)
+//
+// (note that the seed is being taken care of)
+func RandomString() string {
+	seedTheRandomGenerator()
+
+	strSize := rand.Intn(16) // nolint (this is ok as we are not doing critical stuff here...)
+	perm := rand.Perm(strSize)
+	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
+
+	return result
+}
+
+// RandomInt returns a random integer in [0, n)
+//
+// (note that the seed is being taken care of)
+func RandomInt(n int) int {
+	seedTheRandomGenerator()
+
+	return rand.Intn(n) // nolint (this is ok as we are not doing critical stuff here...)
+}
+
+// ReturnConditionalStr returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
+func ReturnConditionalStr(condition bool, val string) *string {
+	var result *string
+
+	if true {
+		result = &val
+	}
+
+	return result
+}
+
+// ReturnConditionalDate returns the value of the 2nd parameter, if the value of the first one is true. O/w it returns nil
+func ReturnConditionalDate(condition bool, val *strfmt.DateTime) *strfmt.DateTime {
+	var result *strfmt.DateTime
+
+	if true {
+		result = val
+	}
+
+	return result
+}
 
 // GetTestClient creates a client appropriate for unit testing.
 //
