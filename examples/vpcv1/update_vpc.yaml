@@ -3,7 +3,7 @@ kind: VPC
 metadata:
   name: the-meta-name
   annotations:
-    crossplane.io/external-name: harry-vpc-3
+    crossplane.io/external-name: r006-2232d36e-1281-4a9a-9f31-e2880e53c9a7
 spec:
   deletionPolicy: Delete
   forProvider:

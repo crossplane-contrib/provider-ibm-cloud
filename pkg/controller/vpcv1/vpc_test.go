@@ -62,7 +62,7 @@ type vpcModifier func(*crossplaneApi.VPC)
 // Sets the external name of a VPC
 func withExternalName() vpcModifier {
 	return func(c *crossplaneApi.VPC) {
-		meta.SetExternalName(c, *c.Status.AtProvider.Name)
+		meta.SetExternalName(c, *c.Status.AtProvider.ID)
 	}
 }
 
@@ -86,21 +86,11 @@ func withSpecName(newName *string, acceptNilAsNewName bool) vpcModifier {
 					booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 					booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 					booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
 
 				c.Spec.ForProvider.Name = vpcObs.Name
 			}
 		}
-	}
-}
-
-// Sets the id in the status part of the VPC
-//
-// Params
-//    id - if nil, it will be set to nil
-func withID(id *string) vpcModifier {
-	return func(c *crossplaneApi.VPC) {
-		c.Status.AtProvider.ID = id
 	}
 }
 
@@ -114,7 +104,7 @@ func withResourceGroup() vpcModifier {
 			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
 
 		if vpcObs.ResourceGroup != nil {
 			c.Spec.ForProvider.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
@@ -140,7 +130,7 @@ func withStatus() vpcModifier {
 			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
 
 		c.Status.AtProvider, _ = crossplaneClient.GenerateCrossplaneVPCObservation(&vpcObs)
 	}
@@ -246,7 +236,7 @@ func testCreate(t *testing.T) {
 							booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 							booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 							booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
 
 						_ = json.NewEncoder(w).Encode(ibmVPCInfo)
 					},
@@ -604,7 +594,7 @@ func testObserve(t *testing.T) {
 							booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 							booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 							booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33], booleanComb[34])
+							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
 
 						_ = json.NewEncoder(w).Encode(collection)
 					},
@@ -694,11 +684,11 @@ func TestUpdate(t *testing.T) {
 			},
 			args: tstutil.Args{
 				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(reference.ToPtrValue("new name"), false),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 			},
 			want: want{
 				mg: createCrossplaneVPC(true, false, true, true, withSpecName(reference.ToPtrValue("new name"), false),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 				upd: managed.ExternalUpdate{},
 			},
 		},
@@ -721,11 +711,11 @@ func TestUpdate(t *testing.T) {
 			},
 			args: tstutil.Args{
 				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 			},
 			want: want{
 				mg: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 				upd: managed.ExternalUpdate{},
 			},
 		},
@@ -748,47 +738,18 @@ func TestUpdate(t *testing.T) {
 			},
 			args: tstutil.Args{
 				Managed: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 			},
 			want: want{
 				mg: createCrossplaneVPC(true, false, true, true, withSpecName(nil, true),
-					withStatus(), withID(reference.ToPtrValue("an id"))),
+					withStatus()),
 				upd: managed.ExternalUpdate{},
 				err: errors.Wrap(errors.New(http.StatusText(http.StatusBadRequest)), errUpdate),
-			},
-		},
-		"Failed-2": {
-			handlers: []tstutil.Handler{
-				{
-					Path: "/",
-					HandlerFunc: func(w http.ResponseWriter, r *http.Request) {
-						_ = r.Body.Close()
-
-						if diff := cmp.Diff(http.MethodPatch, r.Method); diff != "" {
-							t.Errorf("r: -want, +got:\n%s", diff)
-						}
-
-						// content type should always set before writeHeader()
-						w.Header().Set("Content-Type", "application/json")
-						w.WriteHeader(http.StatusBadRequest)
-					},
-				},
-			},
-			args: tstutil.Args{
-				Managed: createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
-			},
-			want: want{
-				mg:  createCrossplaneVPC(true, false, true, true, withStatus(), withID(nil)),
-				upd: managed.ExternalUpdate{},
-				err: errors.New(errUpdateNoID),
 			},
 		},
 	}
 
 	for name, tc := range cases {
-		if name != "Failed-2" {
-			continue
-		}
 		tc.name = name
 
 		t.Run(name, func(t *testing.T) {

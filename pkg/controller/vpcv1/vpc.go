@@ -32,6 +32,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
 	"github.com/crossplane/crossplane-runtime/pkg/reconciler/managed"
+	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/crossplane/crossplane-runtime/pkg/resource"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/v1beta1"
@@ -43,14 +44,12 @@ import (
 
 // Various errors...
 const (
-	errThisIsNot                               = "managed resource is not a VPC resource"
-	errCreate                                  = "could not create a VPC"
-	errCreateReq                               = "could not generate the input params for a VPC"
-	errDelete                                  = "could not delete the VPC"
-	errGetFailed                               = "error getting the VPC"
-	errUpdate                                  = "error updating the VPC"
-	errUpdateNoID                              = "error updating the VPC - the current one does not seem to have an id"
-	errUpdateFailedToResetExternalResourceName = "failed to update the external name of the VPC"
+	errThisIsNot = "managed resource is not a VPC resource"
+	errCreate    = "could not create a VPC"
+	errCreateReq = "could not generate the input params for a VPC"
+	errDelete    = "could not delete the VPC"
+	errGetFailed = "error getting the VPC"
+	errUpdate    = "error updating the VPC"
 )
 
 // SetupVPC adds a controller that reconciles VPC objects
@@ -139,9 +138,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 		for i := range vpcCollection.Vpcs {
 			cloudVPC := vpcCollection.Vpcs[i]
 
-			if externalVPCName == *cloudVPC.Name ||
-				(crossplaneVPC.Status.AtProvider.ID != nil && cloudVPC.ID != nil &&
-					*crossplaneVPC.Status.AtProvider.ID == *cloudVPC.ID) {
+			if externalVPCName == *cloudVPC.ID {
 				found = true
 
 				currentSpec := crossplaneVPC.Spec.ForProvider.DeepCopy()
@@ -198,7 +195,7 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
 	}
 
-	meta.SetExternalName(crossplaneVPC, *vpc.Name)
+	meta.SetExternalName(crossplaneVPC, *vpc.ID)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }
@@ -229,26 +226,16 @@ func (c *vpcExternal) Update(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalUpdate{}, errors.New(errThisIsNot)
 	}
 
-	if crossplaneVPC.Status.AtProvider.ID == nil {
-		return managed.ExternalUpdate{}, errors.New(errUpdateNoID)
-	}
-
 	updateOptions := ibmVPC.UpdateVPCOptions{
 		VPCPatch: map[string]interface{}{
-			"name": *crossplaneVPC.Spec.ForProvider.Name,
+			"name": reference.FromPtrValue(crossplaneVPC.Spec.ForProvider.Name),
 		},
 	}
 
 	updateOptions.SetID(*crossplaneVPC.Status.AtProvider.ID)
 
-	cloudVPC, _, err := c.client.VPCClient().UpdateVPC(&updateOptions)
-	if err != nil {
+	if _, _, err := c.client.VPCClient().UpdateVPC(&updateOptions); err != nil {
 		return managed.ExternalUpdate{}, errors.Wrap(err, errUpdate)
-	}
-
-	meta.SetExternalName(crossplaneVPC, *cloudVPC.Name)
-	if err := c.kube.Update(ctx, crossplaneVPC); err != nil {
-		return managed.ExternalUpdate{}, errors.New(errUpdateFailedToResetExternalResourceName)
 	}
 
 	return managed.ExternalUpdate{}, nil

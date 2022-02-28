@@ -156,7 +156,6 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 	createdAtNonNil bool,
 	crnNonNil bool,
 	hrefNonNil bool,
-	idNonNil bool,
 	nameNonNil bool,
 	statusNonNil bool,
 	cseSourceIpsIPAdressNonNil bool,
@@ -194,7 +193,7 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 		CreatedAt:     ibmc.ReturnConditionalDate(createdAtNonNil, createdAtVal),
 		CRN:           ibmc.ReturnConditionalStr(crnNonNil, crnVal),
 		Href:          ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
-		ID:            ibmc.ReturnConditionalStr(idNonNil, idVal),
+		ID:            reference.ToPtrValue(idVal),
 		Name:          ibmc.ReturnConditionalStr(nameNonNil, randomName),
 		Status:        ibmc.ReturnConditionalStr(statusNonNil, statusVal),
 	}
