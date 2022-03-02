@@ -67,7 +67,7 @@ func createCrossplaneClusterSansStatus(modifiers ...clusterModifier) *crossplane
 			ForProvider: *crossplaneClient.GetClusterCreateCrossplaneRequest(),
 		},
 		Status: crossplaneApi.ClusterStatus{
-			AtProvider: crossplaneApi.ClusterInfo{},
+			AtProvider: crossplaneApi.ClusterObservation{},
 		},
 	}
 

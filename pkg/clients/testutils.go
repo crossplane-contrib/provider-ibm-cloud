@@ -64,6 +64,7 @@ func seedTheRandomGenerator() {
 
 // RandomString returns a random string (of lenth <= 15)
 //
+<<<<<<< HEAD
 // (note that the seed is being taken care of)
 func RandomString() string {
 	seedTheRandomGenerator()
@@ -71,6 +72,28 @@ func RandomString() string {
 	strSize := rand.Intn(16) // nolint (this is ok as we are not doing critical stuff here...)
 	perm := rand.Perm(strSize)
 	result := strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
+=======
+// Params
+//     withMinLen - if true, the return value has a minimum size of 1 (we need to avoid the reference.ToPtrValue() returning nil
+//
+// (note that the seed is being taken care of)
+func RandomString(withMinLen bool) string {
+	result := ""
+
+	seedTheRandomGenerator()
+
+	if withMinLen {
+		for len(result) == 0 {
+			strSize := rand.Intn(16) // nolint (this is ok as we are not doing critical stuff here...)
+			perm := rand.Perm(strSize)
+			result = strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
+		}
+	} else {
+		strSize := rand.Intn(16) // nolint (this is ok as we are not doing critical stuff here...)
+		perm := rand.Perm(strSize)
+		result = strings.Trim(strings.Join(strings.Fields(fmt.Sprint(perm)), ""), "[]")
+	}
+>>>>>>> 90b51371a5c47187a61bd83aa140e7bea15ff394
 
 	return result
 }
