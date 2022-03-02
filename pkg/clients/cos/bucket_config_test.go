@@ -160,7 +160,7 @@ func TestLateInitializeSpec(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			LateInitializeSpec(&tc.spec, &tc.ibmConfig)
 			if diff := cmp.Diff(tc.want, tc.spec); diff != "" {
-				t.Errorf("LateInitializeSpec(...): -want, +got:\n%s", diff)
+				t.Errorf(name+",LateInitializeSpec(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -205,7 +205,7 @@ func TestGenerateBucketConfigObservation(t *testing.T) {
 			obs, _ := GenerateBucketConfigObservation(&tc.ibmConfig)
 
 			if diff := cmp.Diff(tc.want, obs); diff != "" {
-				t.Errorf("GenerateBucketConfigObservation(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", GenerateBucketConfigObservation(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -264,7 +264,7 @@ func TestGenerateCloudBucketConfig(t *testing.T) {
 			obs, _ := GenerateCloudBucketConfig(&tc.kubeBC, nil)
 
 			if diff := cmp.Diff(tc.want, *obs); diff != "" {
-				t.Errorf("GenerateCloudBucketConfig(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", GenerateCloudBucketConfig(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -319,7 +319,7 @@ func TestGenerateBucketConfigFromServerParams(t *testing.T) {
 			kubeBC, _ := GenerateBucketConfigFromServerParams(&tc.ibmConfig)
 
 			if diff := cmp.Diff(tc.want, *kubeBC); diff != "" {
-				t.Errorf("GenerateBucketConfigFromServerParams(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", GenerateBucketConfigFromServerParams(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -476,13 +476,10 @@ func TestIsUpToDate(t *testing.T) {
 	}
 
 	for name, tc := range cases {
-		if name != "TestIsUpToDate-3" {
-			continue
-		}
 		t.Run(name, func(t *testing.T) {
 			rc, _ := IsUpToDate(&tc.spec, &tc.observed, logging.NewNopLogger())
 			if rc != tc.want {
-				t.Errorf("IsUpToDate(...): -want:%t, +got:%t\n", tc.want, rc)
+				t.Errorf(name+", IsUpToDate(...): -want:%t, +got:%t\n", tc.want, rc)
 			}
 		})
 	}

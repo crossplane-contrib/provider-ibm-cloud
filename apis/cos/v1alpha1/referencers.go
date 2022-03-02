@@ -59,14 +59,15 @@ func (mg *BucketConfig) ResolveReferences(ctx context.Context, c client.Reader) 
 		CurrentValue: reference.FromPtrValue(mg.Spec.ForProvider.Name),
 		Reference:    mg.Spec.ForProvider.NameRef,
 		Selector:     mg.Spec.ForProvider.NameSelector,
-		To:           reference.To{Managed: &rc2.ResourceInstance{}, List: &rc2.ResourceInstanceList{}},
-		Extract:      SourceGUID(),
+		To:           reference.To{Managed: &Bucket{}, List: &BucketList{}},
+		Extract:      SourceName(),
 	})
 
 	if err != nil {
 		return errors.Wrap(err, "spec.forProvider.Source")
 	}
 
+	mg.Spec.ForProvider.Name = reference.ToPtrValue(rsp.ResolvedValue)
 	mg.Spec.ForProvider.NameRef = rsp.ResolvedReference
 
 	return nil
@@ -81,5 +82,17 @@ func SourceGUID() reference.ExtractValueFn {
 		}
 
 		return cr.Status.AtProvider.GUID
+	}
+}
+
+// SourceName extracts the resolved Bucket's name - "" if it cannot
+func SourceName() reference.ExtractValueFn {
+	return func(mg resource.Managed) string {
+		cr, ok := mg.(*Bucket)
+		if !ok {
+			return ""
+		}
+
+		return cr.Spec.ForProvider.Name
 	}
 }

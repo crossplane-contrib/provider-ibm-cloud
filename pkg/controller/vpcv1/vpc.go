@@ -138,7 +138,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 		for i := range vpcCollection.Vpcs {
 			cloudVPC := vpcCollection.Vpcs[i]
 
-			if externalVPCName == *cloudVPC.ID {
+			if externalVPCName == *cloudVPC.CRN {
 				found = true
 
 				currentSpec := crossplaneVPC.Spec.ForProvider.DeepCopy()
@@ -195,7 +195,7 @@ func (c *vpcExternal) Create(ctx context.Context, mg resource.Managed) (managed.
 		return managed.ExternalCreation{}, errors.Wrap(err, errCreate)
 	}
 
-	meta.SetExternalName(crossplaneVPC, *vpc.ID)
+	meta.SetExternalName(crossplaneVPC, *vpc.CRN)
 
 	return managed.ExternalCreation{ExternalNameAssigned: true}, nil
 }

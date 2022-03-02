@@ -62,7 +62,7 @@ type vpcModifier func(*crossplaneApi.VPC)
 // Sets the external name of a VPC
 func withExternalName() vpcModifier {
 	return func(c *crossplaneApi.VPC) {
-		meta.SetExternalName(c, *c.Status.AtProvider.ID)
+		meta.SetExternalName(c, *c.Status.AtProvider.CRN)
 	}
 }
 
@@ -81,12 +81,12 @@ func withSpecName(newName *string, acceptNilAsNewName bool) vpcModifier {
 			} else {
 				// Make sure we use the same one everywhere, at the same time...
 				vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-					booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+					booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[4], booleanComb[5],
 					booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
 					booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 					booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 					booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+					booleanComb[30], booleanComb[31], booleanComb[32])
 
 				c.Spec.ForProvider.Name = vpcObs.Name
 			}
@@ -99,12 +99,12 @@ func withResourceGroup() vpcModifier {
 	return func(c *crossplaneApi.VPC) {
 		// Make sure we use the same one everywhere, at the same time...
 		vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-			booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[4], booleanComb[5],
 			booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
 			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+			booleanComb[30], booleanComb[31], booleanComb[32])
 
 		if vpcObs.ResourceGroup != nil {
 			c.Spec.ForProvider.ResourceGroup = &v1alpha1.ResourceGroupIdentity{
@@ -125,12 +125,12 @@ func withConditions(c ...cpv1alpha1.Condition) vpcModifier {
 func withStatus() vpcModifier {
 	return func(c *crossplaneApi.VPC) {
 		vpcObs := crossplaneClient.GetDummyCloudVPCObservation(
-			booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4], booleanComb[5],
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[4], booleanComb[5],
 			booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9], booleanComb[10], booleanComb[11],
 			booleanComb[12], booleanComb[13], booleanComb[14], booleanComb[15], booleanComb[16], booleanComb[17],
 			booleanComb[18], booleanComb[19], booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23],
 			booleanComb[24], booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+			booleanComb[30], booleanComb[31], booleanComb[32])
 
 		c.Status.AtProvider, _ = crossplaneClient.GenerateCrossplaneVPCObservation(&vpcObs)
 	}
@@ -195,7 +195,7 @@ func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstuti
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestCreate(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 33, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testCreate(t)
@@ -236,7 +236,7 @@ func testCreate(t *testing.T) {
 							booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 							booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 							booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+							booleanComb[30], booleanComb[31])
 
 						_ = json.NewEncoder(w).Encode(ibmVPCInfo)
 					},
@@ -316,7 +316,7 @@ func testCreate(t *testing.T) {
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestDelete(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 33, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testDelete(t)
@@ -454,7 +454,7 @@ func testDelete(t *testing.T) {
 //
 // The # of times/combinations is the value of variable 'numTests'
 func TestObserve(t *testing.T) {
-	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 35, true) {
+	for tstNum, booleanComb = range crossplaneClient.GenerateSomeCombinations(numTests, 33, true) {
 		varCombinationLogging = crossplaneClient.GetBinaryRep(tstNum, numTests)
 
 		testObserve(t)
@@ -588,13 +588,13 @@ func testObserve(t *testing.T) {
 						}
 
 						collection.Vpcs[0] = crossplaneClient.GetDummyCloudVPCObservation(
-							booleanComb[0], booleanComb[1], booleanComb[2], true, booleanComb[4],
+							booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[4],
 							booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
 							booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
 							booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 							booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 							booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-							booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+							booleanComb[30], booleanComb[31], booleanComb[32])
 
 						_ = json.NewEncoder(w).Encode(collection)
 					},
@@ -755,7 +755,7 @@ func TestUpdate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf(tc.name+": problem setting up the test server %s", errCr)
+				t.Errorf(tc.name+", Update(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()

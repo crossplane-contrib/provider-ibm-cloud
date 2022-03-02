@@ -217,10 +217,10 @@ func areEquallyNil(a interface{}, b interface{}) bool {
 
 // Tests the GenerateCrossplaneVPCObservation function
 func TestGenerateCrossplaneVPCObservation(t *testing.T) {
-	functionTstName := "TestGenerateCrossplaneVPCObservation"
+	functionTstName := "GenerateCrossplaneVPCObservation"
 
 	numVars := 10 // as many as the params of booleanComb we will be using
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 34, true) {
+	for i, booleanComb := range GenerateSomeCombinations(numVars, 32, true) {
 		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		ibmVPCInfo := GetDummyCloudVPCObservation(
@@ -230,10 +230,10 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 			booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 			booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 			booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+			booleanComb[30], booleanComb[31])
 		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
 		if err != nil {
-			t.Errorf(functionTstName + " " + varCombinationLogging + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateCrossplaneVPCObservation() returned error: " + err.Error())
 
 			return
 		}
@@ -260,7 +260,7 @@ func TestGenerateCrossplaneVPCObservation(t *testing.T) {
 
 // Tests the GenerateCloudVPCParams function
 func TestGenerateCloudVPCParams(t *testing.T) {
-	functionTstName := "TestGenerateCloudVPCParams"
+	functionTstName := "GenerateCloudVPCParams"
 
 	numVars := 4 // does not make sense to have more than the num of vars used...
 	for i, booleanComb := range generateCombinations(numVars) {
@@ -269,7 +269,7 @@ func TestGenerateCloudVPCParams(t *testing.T) {
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
 		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)
 		if err != nil {
-			t.Errorf(functionTstName + " " + varCombinationLogging + ": function GenerateCrossplaneVPCParams() returned error: " + err.Error())
+			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateCloudVPCParams() returned error: " + err.Error())
 
 			return
 		}
@@ -439,7 +439,7 @@ func TestIsUpToDate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			rc, _ := IsUpToDate(&tc.spec, &tc.observed, logging.NewNopLogger())
 			if rc != tc.want {
-				t.Errorf(functionTstName+" "+name+"IsUpToDate(...): -want:%t, +got:%t\n", tc.want, rc)
+				t.Errorf(functionTstName+" "+name+", IsUpToDate(...): -want:%t, +got:%t\n", tc.want, rc)
 			}
 		})
 	}
@@ -447,11 +447,11 @@ func TestIsUpToDate(t *testing.T) {
 
 // Tests the LateInitializeSpec function
 func TestLateInitializeSpec(t *testing.T) {
-	functionTstName := "TestLateInitializeSpec"
+	functionTstName := "LateInitializeSpec"
 
 	numVars := 10 // does not make sense to have more than the num of vars used... If we put too many,
 	// then testing timeouts (30 secs)
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 34, true) {
+	for i, booleanComb := range GenerateSomeCombinations(numVars, 32, true) {
 		varCombinationLogging := GetBinaryRep(i, numVars)
 
 		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
@@ -467,7 +467,7 @@ func TestLateInitializeSpec(t *testing.T) {
 					booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
 					booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
 					booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-					booleanComb[30], booleanComb[31], booleanComb[32], booleanComb[33])
+					booleanComb[30], booleanComb[31])
 
 				if tc.setName {
 					cloudVPC.Name = &randomName

@@ -1,0 +1,28 @@
+apiVersion: container.containerv2.ibmcloud.crossplane.io/v1alpha1
+kind: Cluster
+metadata:
+  name: meta-harry-crossplane-made-1
+  annotations:
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    name: harry-crossplane-made-1
+    disablePublicServiceEndpoint: true
+    provider: vpc-gen2
+    kubeVersion: 1.21.7_1541
+    podSubnet: 172.17.0.0/18
+    serviceSubnet: 172.21.0.0/16
+    cosInstanceCRN: 'crn:v1:bluemix:public:containers-kubernetes:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:c7jkited0fh21rkqk92g::'
+    defaultWorkerPoolEntitlement: ''
+    workerPool:
+      name: my-worker-pool
+      entitlement: ''
+      flavor: cx2.2x4
+      vpcRef: 
+        name: the-meta-name
+      workerCount: 3
+      zones:
+        - id: us-south-1
+          subnetID: 0717-2af44258-e749-481a-868e-a7cc167464d0
+  providerConfigRef:
+    name: ibm-cloud

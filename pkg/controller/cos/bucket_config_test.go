@@ -290,7 +290,7 @@ func TestBucketConfigObserve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternalBucketConfig(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+				t.Errorf(name+", Observe(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
@@ -298,19 +298,19 @@ func TestBucketConfigObserve(t *testing.T) {
 			obs, err := e.Observe(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
+					t.Errorf(name+", Observe(...): want error string != got error string:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				t.Errorf(name+", Observe(...): want error != got error:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 			}
 
 			if tc.want.mg != nil {
 				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-					t.Errorf("Observe(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 				}
 			}
 		})
@@ -388,7 +388,7 @@ func TestBucketConfigUpdate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternalBucketConfig(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+				t.Errorf(name+", Update(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
@@ -396,19 +396,19 @@ func TestBucketConfigUpdate(t *testing.T) {
 			xu, err := e.Update(context.Background(), tc.args.Managed)
 			if tc.want.err != nil && err != nil {
 				if diff := cmp.Diff(tc.want.err.Error(), err.Error()); diff != "" {
-					t.Errorf("Observe(...): want error string != got error string:\n%s", diff)
+					t.Errorf(name+", Update...): want error string != got error string:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				t.Errorf(name+", Update(...): want error != got error:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.upd, xu); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Update(...): -want, +got:\n%s", diff)
 			}
 
 			if tc.want.mg != nil {
 				if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-					t.Errorf("Observe(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Update(...): -want, +got:\n%s", diff)
 				}
 			}
 		})

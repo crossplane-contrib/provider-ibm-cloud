@@ -67,7 +67,7 @@ func createCrossplaneClusterSansStatus(modifiers ...clusterModifier) *crossplane
 			ForProvider: *crossplaneClient.GetClusterCreateCrossplaneRequest(),
 		},
 		Status: crossplaneApi.ClusterStatus{
-			AtProvider: crossplaneApi.ClusterInfo{},
+			AtProvider: crossplaneApi.ClusterObservation{},
 		},
 	}
 
@@ -189,7 +189,7 @@ func TestCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, err := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if err != nil {
-				t.Errorf("Create(...): problem setting up the test server %s", err)
+				t.Errorf(name+",Create(...): problem setting up the test server %s", err)
 			}
 
 			defer server.Close()
@@ -199,14 +199,14 @@ func TestCreate(t *testing.T) {
 				wantedPrefix := strings.Split(tc.want.err.Error(), ":")[0]
 				actualPrefix := strings.Split(err.Error(), ":")[0]
 				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
-					t.Errorf("Create(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -303,7 +303,7 @@ func TestDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, setupErr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if setupErr != nil {
-				t.Errorf("Create(...): problem setting up the test server %s", setupErr)
+				t.Errorf(name+", Delete(...): problem setting up the test server %s", setupErr)
 			}
 
 			defer server.Close()
@@ -314,14 +314,14 @@ func TestDelete(t *testing.T) {
 				wantedPrefix := strings.Split(tc.want.err.Error(), ":")[0]
 				actualPrefix := strings.Split(err.Error(), ":")[0]
 				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
-					t.Errorf("Create(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -463,7 +463,7 @@ func TestObserve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternal(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+				t.Errorf(name+", Observe(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
@@ -477,24 +477,24 @@ func TestObserve(t *testing.T) {
 				wantedPrefix := arrWantedError[0]
 				actualPrefix := arrActualError[0]
 				if diff := cmp.Diff(wantedPrefix, actualPrefix); diff != "" {
-					t.Errorf("Create(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 				}
 
 				if !strings.Contains(err.Error(), strconv.Itoa(tc.want.errInfo.errCode)) {
-					t.Errorf("Create(...): -want response containing %s, +got:\n%s", strconv.Itoa(tc.want.errInfo.errCode), err.Error())
+					t.Errorf(name+", Observe(...): -want response containing %s, +got:\n%s", strconv.Itoa(tc.want.errInfo.errCode), err.Error())
 				}
 			} else if tc.want.errInfo != nil {
 				if diff := cmp.Diff(tc.want.errInfo.err, err); diff != "" {
-					t.Errorf("Observe(...): want error != got error:\n%s", diff)
+					t.Errorf(name+", Observe(...): want error != got error:\n%s", diff)
 				}
 			}
 
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 			}
 		})
 	}

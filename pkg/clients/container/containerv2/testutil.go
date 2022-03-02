@@ -64,7 +64,7 @@ func GetClusterCreateCrossplaneRequest() *v1alpha1.ClusterCreateRequest {
 			Isolation:      reference.ToPtrValue("...due to COVID"),
 			Labels:         randomMap(),
 			Name:           "another name",
-			VpcID:          "whoooooa",
+			VpcID:          reference.ToPtrValue("whooooaaa"),
 			WorkerCount:    33,
 			Zones: []v1alpha1.Zone{{ID: reference.ToPtrValue(zoneName1), SubnetID: reference.ToPtrValue("subnet uno")},
 				{ID: reference.ToPtrValue(zoneName2), SubnetID: reference.ToPtrValue("subnet due")},

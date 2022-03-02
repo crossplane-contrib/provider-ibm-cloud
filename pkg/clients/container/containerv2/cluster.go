@@ -25,8 +25,8 @@ import (
 )
 
 // GenerateCrossplaneClusterInfo returns a crossplane version of the Cluster info (built from the one returned by the IBM cloud)
-func GenerateCrossplaneClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterInfo, error) {
-	result := v1alpha1.ClusterInfo{
+func GenerateCrossplaneClusterInfo(in *ibmContainerV2.ClusterInfo) (v1alpha1.ClusterObservation, error) {
+	result := v1alpha1.ClusterObservation{
 		CreatedDate:       ibmc.ParseMetaV1Time(in.CreatedDate),
 		DataCenter:        in.DataCenter,
 		ID:                in.ID,
@@ -115,7 +115,7 @@ func GenerateClusterCreateRequest(in *v1alpha1.ClusterCreateRequest, out *ibmCon
 	}
 
 	out.WorkerPools.Name = in.WorkerPools.Name
-	out.WorkerPools.VpcID = in.WorkerPools.VpcID
+	out.WorkerPools.VpcID = *in.WorkerPools.VpcID
 	out.WorkerPools.WorkerCount = in.WorkerPools.WorkerCount
 
 	if len(in.WorkerPools.Zones) > 0 {

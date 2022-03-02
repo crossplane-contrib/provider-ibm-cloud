@@ -32,35 +32,35 @@ import (
 
 var (
 	// Values below are the ones that will be used if we decide that some parameters has to be non-nil
-	addressPrefixVal                   = ibmc.RandomString()
+	addressPrefixVal                   = ibmc.RandomString(false)
 	classicAccessVal                   = ibmc.RandomInt(2) == 0
-	randomName                         = ibmc.RandomString()
-	randomResourceGroupID              = ibmc.RandomString()
-	crnVal                             = ibmc.RandomString()
-	hrefVal                            = ibmc.RandomString()
-	idVal                              = ibmc.RandomString()
-	statusVal                          = ibmc.RandomString()
+	randomName                         = ibmc.RandomString(true)
+	randomResourceGroupID              = ibmc.RandomString(false)
+	crnVal                             = ibmc.RandomString(true)
+	hrefVal                            = ibmc.RandomString(false)
+	idVal                              = ibmc.RandomString(false)
+	statusVal                          = ibmc.RandomString(false)
 	createdAtVal                       = ibmc.ADateTimeInAYear(2012)
 	cseSourceIpsLen                    = ibmc.RandomInt(3)
-	cseSourceIpsIPAddress              = ibmc.RandomString()
-	cseSourceZoneHref                  = ibmc.RandomString()
-	cseSourceZoneName                  = ibmc.RandomString()
-	defaultNetworkACLCRN               = ibmc.RandomString()
-	defaultNetworkACLHref              = ibmc.RandomString()
-	defaultNetworkACLID                = ibmc.RandomString()
-	defaultNetworkACLName              = ibmc.RandomString()
-	defaultNetworkACLDeletedMoreInfo   = ibmc.RandomString()
-	defaultRoutingTableDeletedMoreInfo = ibmc.RandomString()
-	defaultRoutingTableHref            = ibmc.RandomString()
-	defaultRoutingTableID              = ibmc.RandomString()
-	defaultRoutingTableName            = ibmc.RandomString()
-	defaultRoutingTableResourceType    = ibmc.RandomString()
-	defaultSecurityGroupCRN            = ibmc.RandomString()
-	defaultSecurityGroupHref           = ibmc.RandomString()
-	defaultSecurityGroupID             = ibmc.RandomString()
-	defaultSecurityGroupName           = ibmc.RandomString()
-	resourceGroupName                  = ibmc.RandomString()
-	resourceGroupHref                  = ibmc.RandomString()
+	cseSourceIpsIPAddress              = ibmc.RandomString(false)
+	cseSourceZoneHref                  = ibmc.RandomString(false)
+	cseSourceZoneName                  = ibmc.RandomString(false)
+	defaultNetworkACLCRN               = ibmc.RandomString(false)
+	defaultNetworkACLHref              = ibmc.RandomString(false)
+	defaultNetworkACLID                = ibmc.RandomString(false)
+	defaultNetworkACLName              = ibmc.RandomString(false)
+	defaultNetworkACLDeletedMoreInfo   = ibmc.RandomString(false)
+	defaultRoutingTableDeletedMoreInfo = ibmc.RandomString(false)
+	defaultRoutingTableHref            = ibmc.RandomString(false)
+	defaultRoutingTableID              = ibmc.RandomString(false)
+	defaultRoutingTableName            = ibmc.RandomString(false)
+	defaultRoutingTableResourceType    = ibmc.RandomString(false)
+	defaultSecurityGroupCRN            = ibmc.RandomString(false)
+	defaultSecurityGroupHref           = ibmc.RandomString(false)
+	defaultSecurityGroupID             = ibmc.RandomString(false)
+	defaultSecurityGroupName           = ibmc.RandomString(false)
+	resourceGroupName                  = ibmc.RandomString(false)
+	resourceGroupHref                  = ibmc.RandomString(false)
 
 	headersMapVal = map[string]string{"a": "b", "c": "d"} // maps cannot be constants hence var. Do not modify.
 )
@@ -154,9 +154,7 @@ func generateCombinations(numElems int) [][]bool {
 //	    an object appropriately populated
 func GetDummyCloudVPCObservation( // nolint:gocyclo
 	createdAtNonNil bool,
-	crnNonNil bool,
 	hrefNonNil bool,
-	nameNonNil bool,
 	statusNonNil bool,
 	cseSourceIpsIPAdressNonNil bool,
 	cseSourceIpsZoneNonNil bool,
@@ -191,10 +189,10 @@ func GetDummyCloudVPCObservation( // nolint:gocyclo
 	result := ibmVPC.VPC{
 		ClassicAccess: &classicAccessVal,
 		CreatedAt:     ibmc.ReturnConditionalDate(createdAtNonNil, createdAtVal),
-		CRN:           ibmc.ReturnConditionalStr(crnNonNil, crnVal),
+		CRN:           reference.ToPtrValue(crnVal),
 		Href:          ibmc.ReturnConditionalStr(hrefNonNil, hrefVal),
 		ID:            reference.ToPtrValue(idVal),
-		Name:          ibmc.ReturnConditionalStr(nameNonNil, randomName),
+		Name:          reference.ToPtrValue(randomName),
 		Status:        ibmc.ReturnConditionalStr(statusNonNil, statusVal),
 	}
 
