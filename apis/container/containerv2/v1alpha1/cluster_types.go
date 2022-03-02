@@ -55,7 +55,23 @@ type WorkerPoolConfig struct {
 	Name string `json:"name" description:"The workerpool's name"`
 
 	// +immutable
-	VpcID string `json:"vpcID"`
+	// +optional
+	VpcID *string `json:"vpcID"`
+
+	// Crossplane reference of the VPC name
+	//
+	// Note:
+	//    One of 'VpcID', 'VPCRef', 'VPCSelector' should be specified
+	//
+	// +immutable
+	// +optional
+	VPCRef *runtimev1alpha1.Reference `json:"vpcRef,omitempty"`
+
+	// Selects a reference to a VPC
+	//
+	// +immutable
+	// +optional
+	VPCSelector *runtimev1alpha1.Selector `json:"vpcSelector,omitempty"`
 
 	// +immutable
 	WorkerCount int `json:"workerCount"`
@@ -133,8 +149,8 @@ type Addon struct {
 	Version string `json:"version"`
 }
 
-// ClusterInfo contains the "observation" info
-type ClusterInfo struct {
+// ClusterObservation contains the "observation" info
+type ClusterObservation struct {
 	CreatedDate       *metav1.Time  `json:"createdDate"`
 	DataCenter        string        `json:"dataCenter"`
 	ID                string        `json:"id"`
@@ -180,7 +196,7 @@ type ClusterSpec struct {
 // ClusterStatus represents the observed state of a AccessGroup.
 type ClusterStatus struct {
 	runtimev1alpha1.ResourceStatus `json:",inline"`
-	AtProvider                     ClusterInfo `json:"atProvider,omitempty"`
+	AtProvider                     ClusterObservation `json:"atProvider,omitempty"`
 }
 
 // +kubebuilder:object:root=true

@@ -291,7 +291,7 @@ func TestGenerateClusterCreateRequest(t *testing.T) {
 				cloudVal:      ibmCloudRequest.WorkerPools.Name,
 			},
 			"VpcID": {
-				crossplaneVal: crossplaneRequest.WorkerPools.VpcID,
+				crossplaneVal: *crossplaneRequest.WorkerPools.VpcID,
 				cloudVal:      ibmCloudRequest.WorkerPools.VpcID,
 			},
 			"WorkerCount": {

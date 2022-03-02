@@ -9,7 +9,7 @@ spec:
   forProvider:
     name:
     nameRef: 
-      name: configurable-1
+      name: harry-bucket-2
     nameSelector:
     hardQuota: 201
     metricsMonitoring:

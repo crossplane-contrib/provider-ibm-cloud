@@ -14,11 +14,8 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package cos
-
-// AStrArray returns an array of strings
-func AStrArray() []string {
-	result := []string{"a", "b", "cd"}
-
-	return result
-}
+// Package v1alpha1 contains the v1alpha1 group eventstreamsadminv1 resources of the IBM Cloud provider.
+// +kubebuilder:object:generate=true
+// +groupName=vpcv1.ibmcloud.crossplane.io
+// +versionName=v1alpha1
+package v1alpha1
