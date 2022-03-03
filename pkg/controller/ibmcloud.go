@@ -29,6 +29,7 @@ import (
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/iampolicymanagementv1"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/ibmclouddatabasesv5"
 	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/resourcecontrollerv2"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/controller/vpcv1"
 )
 
 // Setup creates all IBM Cloud controllers with the supplied logger and adds
@@ -52,6 +53,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		cos.SetupBucket,
 		cos.SetupBucketConfig,
 		containerv2.SetupCluster,
+		vpcv1.SetupVPC,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

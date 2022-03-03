@@ -1,0 +1,12 @@
+apiVersion: cos.ibmcloud.crossplane.io/v1alpha1
+kind: BucketConfig
+metadata:
+  name: meta-configurable-1
+spec:
+  deletionPolicy: Orphan
+  forProvider:
+    nameRef: 
+      name: harry-bucket-4
+    hardQuota: 201
+  providerConfigRef:
+    name: ibm-cloud

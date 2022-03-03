@@ -99,7 +99,7 @@ func TestGenerateS3BucketInput(t *testing.T) {
 				s3ValStr := reference.FromPtrValue(tc.s3Val)
 
 				if diff := cmp.Diff(crossplaneValStr, s3ValStr); diff != "" {
-					t.Errorf("TestGenerateS3BucketInput(...): -wanted, +got:\n%s", diff)
+					t.Errorf(name+", TestGenerateS3BucketInput(...): -wanted, +got:\n%s", diff)
 				}
 			})
 		}
@@ -113,11 +113,10 @@ func TestGenerateBucketObservation(t *testing.T) {
 		t.Run("", func(t *testing.T) {
 			s3Bucket := &s3.Bucket{CreationDate: &tt}
 			obs, err := GenerateBucketObservation(s3Bucket)
-
 			if err != nil {
-				t.Errorf("GenerateObservation() returned an error: %s", err)
+				t.Errorf("TestGenerateBucketObservation() returned an error: %s", err)
 			} else if !reflect.DeepEqual(obs.CreationDate.Time, *s3Bucket.CreationDate) {
-				t.Errorf("GenerateObservation() = %v, want %v", obs.CreationDate, s3Bucket.CreationDate)
+				t.Errorf("TestGenerateBucketObservation() = %v, want %v", obs.CreationDate, s3Bucket.CreationDate)
 			}
 		})
 	}

@@ -267,7 +267,7 @@ func TestBucketCreate(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, err := setupServerAndGetUnitTestExternalBucket(t, &tc.handlers, &tc.kube)
 			if err != nil {
-				t.Errorf("Create(...): problem setting up the test server %s", err)
+				t.Errorf(name+", Create(...): problem setting up the test server %s", err)
 			}
 
 			defer server.Close()
@@ -279,18 +279,18 @@ func TestBucketCreate(t *testing.T) {
 				returnedNoSpace := strings.ReplaceAll(err.Error(), " ", "")
 				if strings.HasPrefix(returnedNoSpace, expectedNoSpace) == false {
 					diff := cmp.Diff(tc.want.err.Error(), err.Error())
-					t.Errorf("Create(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.cre, cre); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Create(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Create(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -386,7 +386,7 @@ func TestBucketDelete(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternalBucket(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+				t.Errorf(name+", Delete(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
@@ -398,14 +398,14 @@ func TestBucketDelete(t *testing.T) {
 				returnedNoSpace := strings.ReplaceAll(err.Error(), " ", "")
 				if strings.HasPrefix(returnedNoSpace, expectedNoSpace) == false {
 					diff := cmp.Diff(tc.want.err.Error(), err.Error())
-					t.Errorf("Delete(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Delete(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Delete(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
@@ -536,7 +536,7 @@ func TestBucketObserve(t *testing.T) {
 		t.Run(name, func(t *testing.T) {
 			e, server, errCr := setupServerAndGetUnitTestExternalBucket(t, &tc.handlers, &tc.kube)
 			if errCr != nil {
-				t.Errorf("Delete(...): problem setting up the test server %s", errCr)
+				t.Errorf(name+", Observe(...): problem setting up the test server %s", errCr)
 			}
 
 			defer server.Close()
@@ -548,18 +548,18 @@ func TestBucketObserve(t *testing.T) {
 				returnedNoSpace := strings.ReplaceAll(err.Error(), " ", "")
 				if strings.HasPrefix(returnedNoSpace, expectedNoSpace) == false {
 					diff := cmp.Diff(tc.want.err.Error(), err.Error())
-					t.Errorf("Observe(...): -want, +got:\n%s", diff)
+					t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 				}
 			} else if diff := cmp.Diff(tc.want.err, err); diff != "" {
-				t.Errorf("Observe(...): want error != got error:\n%s", diff)
+				t.Errorf(name+", Observe(...): want error != got error:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.obs, obs); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 			}
 
 			if diff := cmp.Diff(tc.want.mg, tc.args.Managed); diff != "" {
-				t.Errorf("Observe(...): -want, +got:\n%s", diff)
+				t.Errorf(name+", Observe(...): -want, +got:\n%s", diff)
 			}
 		})
 	}
