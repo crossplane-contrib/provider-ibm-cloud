@@ -71,8 +71,7 @@ echo "created cache dir at ${CACHE_PATH}"
 docker save "${BUILD_IMAGE}" -o "${CACHE_PATH}/${PACKAGE_NAME}.xpkg" && chmod 644 "${CACHE_PATH}/${PACKAGE_NAME}.xpkg"
 
 # create kind cluster with extra mounts
-KIND_NODE_IMAGE="kindest/node:${KIND_NODE_IMAGE_TAG}"
-echo_step "creating k8s cluster using kind ${KIND_VERSION} and node image ${KIND_NODE_IMAGE}"
+echo_step "creating k8s cluster using kind"
 KIND_CONFIG="$( cat <<EOF
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
@@ -83,7 +82,7 @@ nodes:
     containerPath: /cache
 EOF
 )"
-echo "${KIND_CONFIG}" | "${KIND}" create cluster --name="${K8S_CLUSTER}" --wait=5m --image="${KIND_NODE_IMAGE}" --config=-
+echo "${KIND_CONFIG}" | "${KIND}" create cluster --name="${K8S_CLUSTER}" --wait=5m --config=-
 
 # tag controller image and load it into kind cluster
 docker tag "${CONTROLLER_IMAGE}" "${PACKAGE_CONTROLLER_IMAGE}"
@@ -135,15 +134,15 @@ EOF
 )"
 echo "${PVC_YAML}" | "${KUBECTL}" create -f -
 
-# install crossplane from master channel
-echo_step "installing crossplane from master channel"
-"${HELM3}" repo add crossplane-master https://charts.crossplane.io/master/
-chart_version="$("${HELM3}" search repo crossplane-master/crossplane --devel | awk 'FNR == 2 {print $2}')"
+# install crossplane from stable channel
+echo_step "installing crossplane from stable channel"
+"${HELM3}" repo add crossplane-stable https://charts.crossplane.io/stable/ --force-update
+chart_version="$("${HELM3}" search repo crossplane-stable/crossplane | awk 'FNR == 2 {print $2}')"
 echo_info "using crossplane version ${chart_version}"
 echo
 # we replace empty dir with our PVC so that the /cache dir in the kind node
 # container is exposed to the crossplane pod
-"${HELM3}" install crossplane --namespace crossplane-system crossplane-master/crossplane --version ${chart_version} --devel --wait --set packageCache.pvc=package-cache
+"${HELM3}" install crossplane --namespace crossplane-system crossplane-stable/crossplane --version 1.6.4 --wait --set packageCache.pvc=package-cache
 
 # ----------- integration tests
 echo_step "--- INTEGRATION TESTS ---"
@@ -180,7 +179,7 @@ echo "${INSTALL_YAML}" | "${KUBECTL}" delete -f -
 timeout=60
 current=0
 step=3
-while [[ $(kubectl get providerrevision.pkg.crossplane.io -o name | wc -l) -gt 0 ]]; do
+while [[ $(kubectl get providerrevision.pkg.crossplane.io -o name | wc -l) -ne 0 ]]; do
   echo "waiting for provider to be deleted for another $step seconds"
   current=$current+$step
   if ! [[ $timeout > $current ]]; then
