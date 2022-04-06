@@ -5,11 +5,6 @@ PROJECT_NAME := provider-ibm-cloud
 PROJECT_REPO := github.com/crossplane-contrib/$(PROJECT_NAME)
 
 PLATFORMS ?= linux_amd64 linux_arm64
-
-# kind-related versions
-KIND_VERSION ?= v0.11.1
-KIND_NODE_IMAGE_TAG ?= v1.19.11
-
 # -include will silently skip missing files, which allows us
 # to load those files with a target in the Makefile. If only
 # "include" was used, the make command would fail and refuse
@@ -47,7 +42,7 @@ GO111MODULE = on
 # ====================================================================================
 # Setup Images
 
-DOCKER_REGISTRY = crossplane
+DOCKER_REGISTRY ?= crossplane
 IMAGES = provider-ibm-cloud provider-ibm-cloud-controller
 -include build/makelib/image.mk
 
@@ -65,6 +60,15 @@ fallthrough: submodules
 	@echo Initial setup complete. Running make again . . .
 	@make
 
+# NOTE(hasheddan): the build submodule currently overrides XDG_CACHE_HOME in
+# order to force the Helm 3 to use the .work/helm directory. This causes Go on
+# Linux machines to use that directory as the build cache as well. We should
+# adjust this behavior in the build submodule because it is also causing Linux
+# users to duplicate their build cache, but for now we just make it easier to
+# identify its location in CI so that we cache between builds.
+go.cachedir:
+	@go env GOCACHE
+
 # Generate a coverage report for cobertura applying exclusions on
 # - generated file
 cobertura:
@@ -72,23 +76,7 @@ cobertura:
 		grep -v zz_generated.deepcopy | \
 		$(GOCOVER_COBERTURA) > $(GO_TEST_OUTPUT)/cobertura-coverage.xml
 
-crds.clean:
-	@$(INFO) cleaning generated CRDs
-	@find package/crds -name *.yaml -exec sed -i.sed -e '1,2d' {} \; || $(FAIL)
-	@find package/crds -name *.yaml.sed -delete || $(FAIL)
-	@$(OK) cleaned generated CRDs
-
-generate: crds.clean
-
-# Ensure a PR is ready for review.
-reviewable: generate lint
-	@go mod tidy
-
-# Ensure branch is clean.
-check-diff: reviewable
-	@$(INFO) checking that branch is clean
-	@test -z "$$(git status --porcelain)" || $(FAIL)
-	@$(OK) branch is clean
+CRD_DIR=package/crds
 
 # integration tests
 e2e.run: test-integration
@@ -96,7 +84,7 @@ e2e.run: test-integration
 # Run integration tests.
 test-integration: $(KIND) $(KUBECTL) $(HELM3)
 	@$(INFO) running integration tests using kind $(KIND_VERSION)
-	@KIND_NODE_IMAGE_TAG=${KIND_NODE_IMAGE_TAG} $(ROOT_DIR)/cluster/local/integration_tests.sh || $(FAIL)
+	@$(ROOT_DIR)/cluster/local/integration_tests.sh || $(FAIL)
 	@$(OK) integration tests passed
 
 # Update the submodules, such as the common build scripts.
@@ -112,14 +100,25 @@ run: go.build
 	@# To see other arguments that can be provided, run the command with --help instead
 	$(GO_OUT_DIR)/provider --debug
 
-dev: generate
-	kubectl apply -f package/crds/ -R
-	go run cmd/provider/main.go -d
+dev: $(KIND) $(KUBECTL)
+	@$(INFO) Creating kind cluster
+	@$(KIND) create cluster --name=provider-ibm-cloud-dev
+	@$(KUBECTL) cluster-info --context kind-provider-ibm-cloud-dev
+	@$(INFO) Installing Crossplane CRDs
+	@$(KUBECTL) apply -k https://github.com/crossplane/crossplane//cluster?ref=master
+	@$(INFO) Installing Provider GCP CRDs
+	@$(KUBECTL) apply -f $(CRD_DIR) -R
+	@$(INFO) Starting Provider GCP controllers
+	@$(GO) run cmd/provider/main.go --debug
+
+dev-clean: $(KIND) $(KUBECTL)
+	@$(INFO) Deleting kind cluster
+	@$(KIND) delete cluster --name=provider-ibm-cloud-dev
 
 manifests:
 	@$(INFO) Deprecated. Run make generate instead.
 
-.PHONY: cobertura reviewable submodules fallthrough test-integration run crds.clean manifests
+.PHONY: cobertura reviewable submodules fallthrough test-integration run crds.clean manifests dev dev-clean
 
 # ====================================================================================
 # Special Targets
