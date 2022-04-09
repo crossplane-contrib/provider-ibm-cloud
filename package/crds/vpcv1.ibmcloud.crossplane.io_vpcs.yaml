@@ -81,11 +81,6 @@ spec:
                       we would be allowed to specicy an \"empty\" forProvider section
                       in the yaml file, and crossplane would complain"
                     type: boolean
-                  headers:
-                    additionalProperties:
-                      type: string
-                    description: Allows users to set headers on API requests
-                    type: object
                   name:
                     description: The unique user-defined name for this VPC. If unspecified,
                       the name will be a hyphenated list of randomly-selected words.
@@ -304,6 +299,8 @@ spec:
                   status:
                     description: The status of this VPC.
                     type: string
+                required:
+                - defaultNetworkAcl
                 type: object
               conditions:
                 description: Conditions of the resource.

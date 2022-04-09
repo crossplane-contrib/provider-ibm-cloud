@@ -54,6 +54,7 @@ func Setup(mgr ctrl.Manager, l logging.Logger) error {
 		cos.SetupBucketConfig,
 		containerv2.SetupCluster,
 		vpcv1.SetupVPC,
+		vpcv1.SetupSubnet,
 	} {
 		if err := setup(mgr, l); err != nil {
 			return err

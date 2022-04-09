@@ -1,0 +1,561 @@
+
+---
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  annotations:
+    controller-gen.kubebuilder.io/version: v0.2.4
+  creationTimestamp: null
+  name: subnets.vpcv1.ibmcloud.crossplane.io
+spec:
+  group: vpcv1.ibmcloud.crossplane.io
+  names:
+    categories:
+    - crossplane
+    - managed
+    - ibmcloud
+    kind: Subnet
+    listKind: SubnetList
+    plural: subnets
+    singular: subnet
+  scope: Cluster
+  versions:
+  - additionalPrinterColumns:
+    - jsonPath: .status.bindingPhase
+      name: STATUS
+      type: string
+    - jsonPath: .status.atProvider.state
+      name: STATE
+      type: string
+    - jsonPath: .spec.classRef.name
+      name: CLASS
+      type: string
+    - jsonPath: .metadata.creationTimestamp
+      name: AGE
+      type: date
+    name: v1alpha1
+    schema:
+      openAPIV3Schema:
+        description: Subnet contains all the info (spec + status) for a Subnet
+        properties:
+          apiVersion:
+            description: 'APIVersion defines the versioned schema of this representation
+              of an object. Servers should convert recognized schemas to the latest
+              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+            type: string
+          kind:
+            description: 'Kind is a string value representing the REST resource this
+              object represents. Servers may infer this from the endpoint the client
+              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
+            type: string
+          metadata:
+            type: object
+          spec:
+            description: SubnetSpec is the desired end-state of a subnet in the IBM
+              cloud
+            properties:
+              deletionPolicy:
+                description: DeletionPolicy specifies what will happen to the underlying
+                  external when this managed resource is deleted - either "Delete"
+                  or "Orphan" the external resource. The "Delete" policy is the default
+                  when no policy is specified.
+                enum:
+                - Orphan
+                - Delete
+                type: string
+              forProvider:
+                description: Info the IBM cloud needs to create a subnet
+                properties:
+                  byCIDR:
+                    description: "Second way to specify the subnet \n _optional"
+                    properties:
+                      ip_version:
+                        description: The IP version(s) to support for this subnet.
+                          Only current allowable value is 'ipv4'
+                        type: string
+                      ipv4CIDRBlock:
+                        description: The IPv4 range of the subnet, expressed in CIDR
+                          format. The prefix length of the subnet's CIDR must be between
+                          `/9` (8,388,608 addresses) and `/29` (8 addresses). The
+                          IPv4 range of the subnet's CIDR must fall within an existing
+                          address prefix in the VPC. The subnet will be created in
+                          the zone of the address prefix that contains the IPv4 CIDR.
+                          If zone is specified, it must match the zone of the address
+                          prefix that contains the subnet's IPv4 CIDR.
+                        type: string
+                      name:
+                        description: The user-defined name for this subnet. Names
+                          must be unique within the VPC the subnet resides in. If
+                          unspecified, the name will be a hyphenated list of randomly-selected
+                          words.
+                        type: string
+                      networkACL:
+                        description: The network ACL to use for this subnet.
+                        properties:
+                          id:
+                            description: The unique identifier for this network ACL.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      publicGateway:
+                        description: The public gateway to use for internet-bound
+                          traffic for this subnet. If unspecified, the subnet will
+                          not be attached to a public gateway.
+                        properties:
+                          id:
+                            description: The unique identifier for this public gateway.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      resourceGroup:
+                        description: The resource group to use. If unspecified, the
+                          account's [default resource group](https://cloud.ibm.com/apidocs/resource-manager#introduction)
+                          is used.
+                        properties:
+                          id:
+                            description: The unique identifier for this resource group.
+                            type: string
+                        type: object
+                      routingTable:
+                        description: The routing table to use for this subnet. If
+                          unspecified, the default routing table for the VPC is used.
+                          The routing table properties `route_direct_link_ingress`,
+                          `route_transit_gateway_ingress`, and `route_vpc_zone_ingress`
+                          must be `false`.
+                        properties:
+                          id:
+                            description: The unique identifier for this routing table.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      vpc:
+                        description: The VPC the subnet is to be a part of.
+                        properties:
+                          id:
+                            description: The unique identifier for this VPC.
+                            type: string
+                          vpcRef:
+                            description: Crossplane reference of the VPC name
+                            properties:
+                              name:
+                                description: Name of the referenced object.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          vpcSelector:
+                            description: Selects a reference to a VPC
+                            properties:
+                              matchControllerRef:
+                                description: MatchControllerRef ensures an object
+                                  with the same controller reference as the selecting
+                                  object is selected.
+                                type: boolean
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: MatchLabels ensures an object with matching
+                                  labels is selected.
+                                type: object
+                            type: object
+                        type: object
+                      zone:
+                        description: The zone this subnet will reside in.
+                        properties:
+                          name:
+                            description: The globally unique name for this zone.
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    required:
+                    - ipv4CIDRBlock
+                    - vpc
+                    type: object
+                  byTocalCount:
+                    description: First way to specify the subnet
+                    properties:
+                      ip_version:
+                        description: The IP version(s) to support for this subnet.
+                          Only current allowable value is 'ipv4'
+                        type: string
+                      name:
+                        description: The user-defined name for this subnet. Names
+                          must be unique within the VPC the subnet resides in. If
+                          unspecified, the name will be a hyphenated list of randomly-selected
+                          words.
+                        type: string
+                      networkACL:
+                        description: The network ACL to use for this subnet.
+                        properties:
+                          id:
+                            description: The unique identifier for this network ACL.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      publicGateway:
+                        description: The public gateway to use for internet-bound
+                          traffic for this subnet. If unspecified, the subnet will
+                          not be attached to a public gateway.
+                        properties:
+                          id:
+                            description: The unique identifier for this public gateway.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      resourceGroup:
+                        description: The resource group to use. If unspecified, the
+                          account's [default resource group](https://cloud.ibm.com/apidocs/resource-manager#introduction)
+                          is used.
+                        properties:
+                          id:
+                            description: The unique identifier for this resource group.
+                            type: string
+                        type: object
+                      routingTable:
+                        description: The routing table to use for this subnet. If
+                          unspecified, the default routing table for the VPC is used.
+                          The routing table properties `route_direct_link_ingress`,
+                          `route_transit_gateway_ingress`, and `route_vpc_zone_ingress`
+                          must be `false`.
+                        properties:
+                          id:
+                            description: The unique identifier for this routing table.
+                            type: string
+                        required:
+                        - id
+                        type: object
+                      totalIpv4AddressCount:
+                        description: The total number of IPv4 addresses required.
+                          Must be a power of 2. The VPC must have a default address
+                          prefix in the specified zone, and that prefix must have
+                          a free CIDR range with at least this number of addresses.
+                        format: int64
+                        type: integer
+                      vpc:
+                        description: The VPC the subnet is to be a part of.
+                        properties:
+                          id:
+                            description: The unique identifier for this VPC.
+                            type: string
+                          vpcRef:
+                            description: Crossplane reference of the VPC name
+                            properties:
+                              name:
+                                description: Name of the referenced object.
+                                type: string
+                            required:
+                            - name
+                            type: object
+                          vpcSelector:
+                            description: Selects a reference to a VPC
+                            properties:
+                              matchControllerRef:
+                                description: MatchControllerRef ensures an object
+                                  with the same controller reference as the selecting
+                                  object is selected.
+                                type: boolean
+                              matchLabels:
+                                additionalProperties:
+                                  type: string
+                                description: MatchLabels ensures an object with matching
+                                  labels is selected.
+                                type: object
+                            type: object
+                        type: object
+                      zone:
+                        description: The zone this subnet will reside in.
+                        properties:
+                          name:
+                            description: The globally unique name for this zone.
+                            type: string
+                        required:
+                        - name
+                        type: object
+                    required:
+                    - totalIpv4AddressCount
+                    - vpc
+                    - zone
+                    type: object
+                type: object
+              providerConfigRef:
+                description: ProviderConfigReference specifies how the provider that
+                  will be used to create, observe, update, and delete this managed
+                  resource should be configured.
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              providerRef:
+                description: 'ProviderReference specifies the provider that will be
+                  used to create, observe, update, and delete this managed resource.
+                  Deprecated: Please use ProviderConfigReference, i.e. `providerConfigRef`'
+                properties:
+                  name:
+                    description: Name of the referenced object.
+                    type: string
+                required:
+                - name
+                type: object
+              writeConnectionSecretToRef:
+                description: WriteConnectionSecretToReference specifies the namespace
+                  and name of a Secret to which any connection details for this managed
+                  resource should be written. Connection details frequently include
+                  the endpoint, username, and password required to connect to the
+                  managed resource.
+                properties:
+                  name:
+                    description: Name of the secret.
+                    type: string
+                  namespace:
+                    description: Namespace of the secret.
+                    type: string
+                required:
+                - name
+                - namespace
+                type: object
+            required:
+            - forProvider
+            type: object
+          status:
+            description: SubnetStatus - whatever the status is (the IBM cloud decides
+              that)
+            properties:
+              atProvider:
+                description: Info the IBM cloud returns about a subnet
+                properties:
+                  NetworkACL:
+                    description: The network ACL for this subnet.
+                    properties:
+                      crn:
+                        description: The CRN for this network ACL.
+                        type: string
+                      deleted:
+                        description: If present, this property indicates the referenced
+                          resource has been deleted and provides some supplementary
+                          information.
+                        properties:
+                          moreIinfo:
+                            description: Link to documentation about deleted resources.
+                            type: string
+                        type: object
+                      href:
+                        description: The URL for this network ACL.
+                        type: string
+                      id:
+                        description: The unique identifier for this network ACL.
+                        type: string
+                      name:
+                        description: The user-defined name for this network ACL.
+                        type: string
+                    type: object
+                  availableIpv4AddressCount:
+                    description: The number of IPv4 addresses in this subnet that
+                      are not in-use, and have not been reserved by the user or the
+                      provider.
+                    format: int64
+                    type: integer
+                  createdAt:
+                    description: The date and time that the subnet was created.
+                    format: date-time
+                    type: string
+                  crn:
+                    description: The CRN for this subnet.
+                    type: string
+                  href:
+                    description: The URL for this subnet.
+                    type: string
+                  id:
+                    description: The unique identifier for this subnet.
+                    type: string
+                  ipVersion:
+                    description: The IP version(s) supported by this subnet.
+                    type: string
+                  name:
+                    description: The user-defined name for this subnet.
+                    type: string
+                  opv4CIDRBlock:
+                    description: The IPv4 range of the subnet, expressed in CIDR format.
+                    type: string
+                  publicGateway:
+                    description: The public gateway to use for internet-bound traffic
+                      for this subnet.
+                    properties:
+                      crn:
+                        description: The CRN for this public gateway.
+                        type: string
+                      deleted:
+                        description: If present, this property indicates the referenced
+                          resource has been deleted and provides some supplementary
+                          information.
+                        properties:
+                          moreInfo:
+                            description: Link to documentation about deleted resources.
+                            type: string
+                        required:
+                        - moreInfo
+                        type: object
+                      href:
+                        description: The URL for this public gateway.
+                        type: string
+                      id:
+                        description: The unique identifier for this public gateway.
+                        type: string
+                      name:
+                        description: The user-defined name for this public gateway.
+                        type: string
+                      resourceType:
+                        description: The resource type.
+                        type: string
+                    type: object
+                  resourceGroup:
+                    description: The resource group for this subnet.
+                    properties:
+                      href:
+                        description: The URL for this resource group.
+                        type: string
+                      id:
+                        description: The unique identifier for this resource group.
+                        type: string
+                      name:
+                        description: The user-defined name for this resource group.
+                        type: string
+                    type: object
+                  routingTable:
+                    description: The routing table for this subnet.
+                    properties:
+                      deleted:
+                        description: If present, this property indicates the referenced
+                          resource has been deleted and provides some supplementary
+                          information.
+                        properties:
+                          moreInfo:
+                            description: Link to documentation about deleted resources.
+                            type: string
+                        type: object
+                      href:
+                        description: The URL for this routing table.
+                        type: string
+                      id:
+                        description: The unique identifier for this routing table.
+                        type: string
+                      name:
+                        description: The user-defined name for this routing table.
+                        type: string
+                      resourceType:
+                        description: The resource type.
+                        type: string
+                    type: object
+                  status:
+                    description: The status of the subnet.
+                    type: string
+                  totalIpv4AddressCount:
+                    description: "The total number of IPv4 addresses in this subnet.
+                      \n Note: This is calculated as 2<sup>(32 − prefix length)</sup>.
+                      For example, the prefix length `/24` gives:<br> 2<sup>(32 −
+                      24)</sup> = 2<sup>8</sup> = 256 addresses."
+                    format: int64
+                    type: integer
+                  vpc:
+                    description: The VPC this subnet is a part of.
+                    properties:
+                      crn:
+                        description: The CRN for this VPC.
+                        type: string
+                      deleted:
+                        description: If present, this property indicates the referenced
+                          resource has been deleted and provides some supplementary
+                          information.
+                        properties:
+                          moreInfo:
+                            description: Link to documentation about deleted resources.
+                            type: string
+                        type: object
+                      href:
+                        description: The URL for this VPC.
+                        type: string
+                      id:
+                        description: The unique identifier for this VPC.
+                        type: string
+                      name:
+                        description: The unique user-defined name for this VPC.
+                        type: string
+                    type: object
+                  zone:
+                    description: The zone this subnet resides in.
+                    properties:
+                      href:
+                        description: The URL for this zone.
+                        type: string
+                      name:
+                        description: The globally unique name for this zone.
+                        type: string
+                    type: object
+                required:
+                - availableIpv4AddressCount
+                - createdAt
+                - crn
+                - href
+                - id
+                - ipVersion
+                - name
+                - resourceGroup
+                - status
+                - vpc
+                - zone
+                type: object
+              conditions:
+                description: Conditions of the resource.
+                items:
+                  description: A Condition that may apply to a resource.
+                  properties:
+                    lastTransitionTime:
+                      description: LastTransitionTime is the last time this condition
+                        transitioned from one status to another.
+                      format: date-time
+                      type: string
+                    message:
+                      description: A Message containing details about this condition's
+                        last transition from one status to another, if any.
+                      type: string
+                    reason:
+                      description: A Reason for this condition's last transition from
+                        one status to another.
+                      type: string
+                    status:
+                      description: Status of this condition; is it currently True,
+                        False, or Unknown?
+                      type: string
+                    type:
+                      description: Type of this condition. At most one of each condition
+                        type may apply to a resource at any point in time.
+                      type: string
+                  required:
+                  - lastTransitionTime
+                  - reason
+                  - status
+                  - type
+                  type: object
+                type: array
+            type: object
+        required:
+        - spec
+        type: object
+    served: true
+    storage: true
+    subresources:
+      status: {}
+status:
+  acceptedNames:
+    kind: ""
+    plural: ""
+  conditions: []
+  storedVersions: []

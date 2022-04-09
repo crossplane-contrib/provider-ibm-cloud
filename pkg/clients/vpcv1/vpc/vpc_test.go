@@ -14,11 +14,12 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package vpcv1
+package vpc
 
 import (
 	"reflect"
 	"strconv"
+	"strings"
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
@@ -26,6 +27,7 @@ import (
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
 	"github.com/crossplane-contrib/provider-ibm-cloud/apis/vpcv1/v1alpha1"
+	"github.com/crossplane-contrib/provider-ibm-cloud/pkg/clients/vpcv1"
 
 	"github.com/google/go-cmp/cmp"
 )
@@ -34,64 +36,57 @@ import (
 //    value - a value. May be nil
 //
 // Returns
-//    the value of the parameter (of the appopriate type), or nil
+//    the value of the parameter, (of the appopriate type, dereferenced if a pointer), or nil
 func typeVal(value interface{}) interface{} {
-	var result interface{}
+	if value == nil {
+		return nil
+	}
 
-	switch typed := value.(type) {
-	case string:
-		result = &typed
-	case *string:
-		result = typed
-	case bool:
-		result = &typed
-	case *bool:
-		result = typed
-	case *map[string]string:
-		result = typed
-	case map[string]string:
-		if typed == nil {
-			result = nil
-		} else {
-			result = &typed
+	result := vpcv1.TypeVal(value)
+
+	if result == nil && strings.Contains(reflect.TypeOf(value).String(), ".ResourceGroupIdentity") &&
+		!reflect.ValueOf(value).IsNil() {
+		switch typed := value.(type) {
+		case *v1alpha1.ResourceGroupIdentity:
+			result = *typed
+		case *ibmVPC.ResourceGroupIdentity:
+			result = *typed
+		case *ibmVPC.ResourceGroupIdentityByID:
+			result = *typed
 		}
-	case *v1alpha1.ResourceGroupIdentity:
-		result = typed
-	case *ibmVPC.ResourceGroupIdentity:
-		result = typed
-	case *ibmVPC.ResourceGroupIdentityByID:
-		result = typed
 	}
 
 	return result
 }
 
 // Params
-//    crossplaneRGIntf - a crossplane resource group (must be of type *v1alpha1.ResourceGroupIdentityAlsoByID; interface for convenience). May be nil
-//    cloudRGIntf - a cloud resource group (must be of type *ibmVPC.ResourceGroupIdentityIntf; interface for convenience). May be nil
+//    crossplaneRGIntf - a crossplane resource group (must be of type v1alpha1.ResourceGroupIdentityAlsoByID; interface for convenience). May be nil
+//    cloudRGIntf - a cloud resource group (must be of type ibmVPC.ResourceGroupIdentityIntf; interface for convenience). May be nil
 //
 //    Note that both params should NOT be at the same time nil (or point to nil structures)
 //
 // Returns
-//    whether they point to the same underlying resource
-func sameResource(crossplaneRGIntf interface{}, cloudRGIntf interface{}) bool {
-	result := false
+//    crossplaneID, cloudID
+func getResourceIds(crossplaneRGIntf interface{}, cloudRGIntf interface{}) (string, string) {
+	var crossplaneID, cloudID string
 
-	if crossplaneRGIntf != nil && !reflect.ValueOf(crossplaneRGIntf).IsNil() && cloudRGIntf != nil && !reflect.ValueOf(cloudRGIntf).IsNil() {
-		crossplaneRG := crossplaneRGIntf.(*v1alpha1.ResourceGroupIdentity)
+	if crossplaneRGIntf != nil && cloudRGIntf != nil &&
+		reflect.TypeOf(crossplaneRGIntf).String() == "v1alpha1.ResourceGroupIdentity" {
+		crossplaneRG := crossplaneRGIntf.(v1alpha1.ResourceGroupIdentity)
+		crossplaneID = crossplaneRG.ID
 
-		cloudRG, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentity)
+		cloudRG, ok := cloudRGIntf.(ibmVPC.ResourceGroupIdentity)
 		if ok && cloudRG.ID != nil {
-			result = (crossplaneRG.ID == *cloudRG.ID)
-		}
-
-		cloudRGByID, ok := cloudRGIntf.(*ibmVPC.ResourceGroupIdentityByID)
-		if ok && cloudRGByID.ID != nil {
-			result = (crossplaneRG.ID == *cloudRGByID.ID)
+			cloudID = reference.FromPtrValue(cloudRG.ID)
+		} else {
+			cloudRGByID, ok := cloudRGIntf.(ibmVPC.ResourceGroupIdentityByID)
+			if ok && cloudRGByID.ID != nil {
+				cloudID = reference.FromPtrValue(cloudRGByID.ID)
+			}
 		}
 	}
 
-	return result
+	return crossplaneID, cloudID
 }
 
 // Params
@@ -189,124 +184,6 @@ func createTestsCreateParams(ibmVPCInfo *ibmVPC.CreateVPCOptions, crossplaneVPCI
 			cloudVal:      ibmVPCInfo.ResourceGroup,
 			crossplaneVal: crossplaneVPCInfo.ResourceGroup,
 		},
-		"Headers": {
-			cloudVal:      ibmVPCInfo.Headers,
-			crossplaneVal: crossplaneVPCInfo.Headers,
-		},
-	}
-}
-
-// Compares 2 interface values for nilness (there own or the variable they point to..)
-//
-// Params
-//    a - an inteface. May be nil
-//    b - an interaface. May be nil
-//
-// Returns
-//    whether they are both pointing to nil values or are nil
-func areEquallyNil(a interface{}, b interface{}) bool {
-	result := false
-
-	if (a == nil || reflect.ValueOf(a).IsNil()) &&
-		(b == nil || reflect.ValueOf(b).IsNil()) {
-		result = true
-	}
-
-	return result
-}
-
-// Tests the GenerateCrossplaneVPCObservation function
-func TestGenerateCrossplaneVPCObservation(t *testing.T) {
-	functionTstName := "GenerateCrossplaneVPCObservation"
-
-	numVars := 10 // as many as the params of booleanComb we will be using
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 32, true) {
-		varCombinationLogging := GetBinaryRep(i, numVars)
-
-		ibmVPCInfo := GetDummyCloudVPCObservation(
-			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
-			booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
-			booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
-			booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
-			booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
-			booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
-			booleanComb[30], booleanComb[31])
-		crossplaneVPCInfo, err := GenerateCrossplaneVPCObservation(&ibmVPCInfo)
-		if err != nil {
-			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateCrossplaneVPCObservation() returned error: " + err.Error())
-
-			return
-		}
-
-		tests := createTestsObservation(&ibmVPCInfo, &crossplaneVPCInfo)
-		for name, tc := range tests {
-			t.Run(functionTstName, func(t *testing.T) {
-				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
-
-				cloudVal := typeVal(tc.cloudVal)
-				crossplaneVal := typeVal(tc.crossplaneVal)
-
-				if areEquallyNil(cloudVal, crossplaneVal) {
-					return
-				}
-
-				if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
-					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-				}
-			})
-		}
-	}
-}
-
-// Tests the GenerateCloudVPCParams function
-func TestGenerateCloudVPCParams(t *testing.T) {
-	functionTstName := "GenerateCloudVPCParams"
-
-	numVars := 4 // does not make sense to have more than the num of vars used...
-	for i, booleanComb := range generateCombinations(numVars) {
-		varCombinationLogging := GetBinaryRep(i, numVars)
-
-		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
-		ibmVPCInfo, err := GenerateCloudVPCParams(&crossplaneVPCInfo)
-		if err != nil {
-			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateCloudVPCParams() returned error: " + err.Error())
-
-			return
-		}
-
-		tests := createTestsCreateParams(&ibmVPCInfo, &crossplaneVPCInfo)
-		for name, tc := range tests {
-			t.Run(functionTstName, func(t *testing.T) {
-				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
-
-				cloudVal := typeVal(tc.cloudVal)
-				crossplaneVal := typeVal(tc.crossplaneVal)
-
-				if areEquallyNil(crossplaneVal, cloudVal) {
-					return
-				}
-
-				if crossplaneVal != nil {
-					if reflect.TypeOf(crossplaneVal).String() == "*v1alpha1.ResourceGroupIdentity" {
-						if !sameResource(crossplaneVal, cloudVal) {
-							t.Errorf(fullTstName+": different IDs - cloudVal=%s, crossplaneVal=%s", cloudVal, crossplaneVal)
-						}
-
-						return
-					} else if reflect.TypeOf(crossplaneVal).String() == "*map[string]string" {
-						if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
-							t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-						}
-
-						return
-					}
-				}
-
-				if diff := cmp.Diff(crossplaneVal, cloudVal); diff != "" {
-					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
-				}
-			})
-		}
 	}
 }
 
@@ -359,10 +236,10 @@ func createLateInitializeSpecTests(orig v1alpha1.VPCParameters) map[string]lateI
 	for _, nameIsNil := range []bool{true, false} {
 		for _, rgIsNil := range []bool{true, false} {
 			result[strconv.FormatBool(nameIsNil)+","+strconv.FormatBool(nameIsNil)] = lateInitTstSpec{
-				spec:            orig,
+				spec:            *orig.DeepCopy(),
 				setName:         nameIsNil,
 				setReourceGroup: rgIsNil,
-				expects:         withResourceGroup(withName(orig, nameIsNil), rgIsNil),
+				expects:         withResourceGroup(withName(*orig.DeepCopy(), nameIsNil), rgIsNil),
 			}
 		}
 	}
@@ -370,9 +247,81 @@ func createLateInitializeSpecTests(orig v1alpha1.VPCParameters) map[string]lateI
 	return result
 }
 
+// Tests the GenerateObservation function
+func TestGenerateObservation(t *testing.T) {
+	functionTstName := "GenerateObservation"
+
+	numVars := 10 // as many as the params of booleanComb we will be using
+	for i, booleanComb := range vpcv1.GenerateSomePermutations(numVars, 32, true) {
+		varCombinationLogging := vpcv1.GetBinaryRep(i, numVars)
+
+		ibmVPCInfo := GetDummyObservation(
+			booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+			booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
+			booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
+			booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
+			booleanComb[20], booleanComb[21], booleanComb[22], booleanComb[23], booleanComb[24],
+			booleanComb[25], booleanComb[26], booleanComb[27], booleanComb[28], booleanComb[29],
+			booleanComb[30], booleanComb[31])
+		crossplaneVPCInfo, err := GenerateObservation(&ibmVPCInfo)
+		if err != nil {
+			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateObservation() returned error: " + err.Error())
+
+			return
+		}
+
+		tests := createTestsObservation(&ibmVPCInfo, &crossplaneVPCInfo)
+		for name, tc := range tests {
+			t.Run(functionTstName, func(t *testing.T) {
+				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
+
+				cloudVal := typeVal(tc.cloudVal)
+				crossplaneVal := typeVal(tc.crossplaneVal)
+
+				if diff := cmp.Diff(cloudVal, crossplaneVal); diff != "" {
+					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
+				}
+			})
+		}
+	}
+}
+
+// Tests the GenerateCreateOptions function
+func TestGenerateCreateOptions(t *testing.T) {
+	functionTstName := "GenerateCreateOptions"
+
+	numVars := 3 // does not make sense to have more than the num of vars used...
+	for i, booleanComb := range vpcv1.GeneratePermutations(numVars) {
+		varCombinationLogging := vpcv1.GetBinaryRep(i, numVars)
+
+		crossplaneVPCInfo := GetDummyCreateParams(booleanComb[0], booleanComb[1], booleanComb[2])
+		ibmVPCInfo, err := GenerateCreateOptions(&crossplaneVPCInfo)
+		if err != nil {
+			t.Errorf(functionTstName + " " + varCombinationLogging + ", GenerateCreateOptions() returned error: " + err.Error())
+
+			return
+		}
+
+		tests := createTestsCreateParams(&ibmVPCInfo, &crossplaneVPCInfo)
+		for name, tc := range tests {
+			t.Run(functionTstName, func(t *testing.T) {
+				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
+
+				cloudVal := typeVal(tc.cloudVal)
+				crossplaneVal := typeVal(tc.crossplaneVal)
+
+				crossplaneID, cloudID := getResourceIds(crossplaneVal, cloudVal)
+				if diff := cmp.Diff(crossplaneID, cloudID); diff != "" {
+					t.Errorf(fullTstName+": -wanted, +got:\n%s", diff)
+				}
+			})
+		}
+	}
+}
+
 // Tests the IsUpToDate function
 func TestIsUpToDate(t *testing.T) {
-	functionTstName := "TestIsUpToDate"
+	functionTstName := "IsUpToDate"
 
 	cases := map[string]struct {
 		spec     v1alpha1.VPCParameters
@@ -449,19 +398,19 @@ func TestIsUpToDate(t *testing.T) {
 func TestLateInitializeSpec(t *testing.T) {
 	functionTstName := "LateInitializeSpec"
 
-	numVars := 10 // does not make sense to have more than the num of vars used... If we put too many,
+	numVars := 3 // does not make sense to have more than the num of vars used... If we put too many,
 	// then testing timeouts (30 secs)
-	for i, booleanComb := range GenerateSomeCombinations(numVars, 32, true) {
-		varCombinationLogging := GetBinaryRep(i, numVars)
+	for i, booleanComb := range vpcv1.GenerateSomePermutations(numVars, 32, true) {
+		varCombinationLogging := vpcv1.GetBinaryRep(i, numVars)
 
-		crossplaneVPCInfo := GetDummyCrossplaneVPCParams(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3])
+		crossplaneVPCInfo := GetDummyCreateParams(booleanComb[0], booleanComb[1], booleanComb[2])
 
 		tests := createLateInitializeSpecTests(crossplaneVPCInfo)
 		for name, tc := range tests {
 			t.Run(functionTstName, func(t *testing.T) {
 				fullTstName := functionTstName + " " + varCombinationLogging + " " + name
 
-				cloudVPC := GetDummyCloudVPCObservation(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
+				cloudVPC := GetDummyObservation(booleanComb[0], booleanComb[1], booleanComb[2], booleanComb[3], booleanComb[4],
 					booleanComb[5], booleanComb[6], booleanComb[7], booleanComb[8], booleanComb[9],
 					booleanComb[10], booleanComb[11], booleanComb[12], booleanComb[13], booleanComb[14],
 					booleanComb[15], booleanComb[16], booleanComb[17], booleanComb[18], booleanComb[19],
@@ -477,13 +426,13 @@ func TestLateInitializeSpec(t *testing.T) {
 
 				if tc.setReourceGroup {
 					cloudVPC.ResourceGroup = &ibmVPC.ResourceGroupReference{
-						ID: &resourceGroupName,
+						ID: &randomResourceGroupID,
 					}
 				} else {
 					cloudVPC.ResourceGroup = nil
 				}
 
-				if _, err := LateInitializeSpec(crossplaneVPCInfo.DeepCopy(), &cloudVPC); err != nil {
+				if _, err := LateInitializeSpec(&tc.spec, &cloudVPC); err != nil {
 					t.Errorf(fullTstName+": got error in LateInitializeSpec:\n%s", err)
 
 					return

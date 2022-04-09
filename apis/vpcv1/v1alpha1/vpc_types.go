@@ -60,9 +60,6 @@ type VPCParameters struct {
 	// +immutable
 	// +optional
 	ResourceGroup *ResourceGroupIdentity `json:"resourceGroup,omitempty"`
-
-	// Allows users to set headers on API requests
-	Headers *map[string]string `json:"headers,omitempty"`
 }
 
 // VPCSpec is the desired end-state of a VPC in the IBM cloud
@@ -73,13 +70,13 @@ type VPCSpec struct {
 	ForProvider VPCParameters `json:"forProvider"`
 }
 
-// ZoneReference : ZoneReference struct
+// ZoneReference ...for observation only
 type ZoneReference struct {
 	// The URL for this zone.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The globally unique name for this zone.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // IP contains the ip address
@@ -93,10 +90,10 @@ type IP struct {
 // VpccseSourceIP ...
 type VpccseSourceIP struct {
 	// The cloud service endpoint source IP address for this zone.
-	IP *IP `json:"ip,omitempty"`
+	IP IP `json:"ip,omitempty"`
 
 	// The zone this cloud service endpoint source IP resides in.
-	Zone *ZoneReference `json:"zone,omitempty"`
+	Zone ZoneReference `json:"zone,omitempty"`
 }
 
 // NetworkACLReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -109,20 +106,20 @@ type NetworkACLReferenceDeleted struct {
 // NetworkACLReference ...
 type NetworkACLReference struct {
 	// The CRN for this network ACL.
-	CRN *string `json:"crn,omitempty"`
+	CRN string `json:"crn,omitempty"`
 
 	// If present, this property indicates the referenced resource has been deleted and provides
 	// some supplementary information.
 	Deleted *NetworkACLReferenceDeleted `json:"deleted,omitempty"`
 
 	// The URL for this network ACL.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The unique identifier for this network ACL.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The user-defined name for this network ACL.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // RoutingTableReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -139,16 +136,16 @@ type RoutingTableReference struct {
 	Deleted *RoutingTableReferenceDeleted `json:"deleted,omitempty"`
 
 	// The URL for this routing table.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The unique identifier for this routing table.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The user-defined name for this routing table.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// The resource type.
-	ResourceType *string `json:"resourceType,omitempty"`
+	ResourceType string `json:"resourceType,omitempty"`
 }
 
 // SecurityGroupReferenceDeleted : If present, this property indicates the referenced resource has been deleted and provides some supplementary
@@ -161,32 +158,32 @@ type SecurityGroupReferenceDeleted struct {
 // SecurityGroupReference : SecurityGroupReference struct
 type SecurityGroupReference struct {
 	// The security group's CRN.
-	CRN *string `json:"crn,omitempty"`
+	CRN string `json:"crn,omitempty"`
 
 	// If present, this property indicates the referenced resource has been deleted and provides
 	// some supplementary information.
 	Deleted *SecurityGroupReferenceDeleted `json:"deleted,omitempty"`
 
 	// The security group's canonical URL.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The unique identifier for this security group.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The user-defined name for this security group. Names must be unique within the VPC the security group resides in.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // ResourceGroupReference ...
 type ResourceGroupReference struct {
 	// The URL for this resource group.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The unique identifier for this resource group.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The user-defined name for this resource group.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 }
 
 // VPCObservation ...what comes back
@@ -194,41 +191,41 @@ type VPCObservation struct {
 	// Indicates whether this VPC is connected to Classic Infrastructure. If true, this VPC's resources have private
 	// network connectivity to the account's Classic Infrastructure resources. Only one VPC, per region, may be connected
 	// in this way. This value is set at creation and subsequently immutable.
-	ClassicAccess *bool `json:"classicAccess,omitempty"`
+	ClassicAccess bool `json:"classicAccess,omitempty"`
 
 	// The date and time that the VPC was created.
 	CreatedAt *metav1.Time `json:"createdAt,omitempty"`
 
 	// The CRN for this VPC.
-	CRN *string `json:"crn,omitempty"`
+	CRN string `json:"crn,omitempty"`
 
 	// Array of CSE ([Cloud Service Endpoint](https://cloud.ibm.com/docs/resources?topic=resources-service-endpoints))
 	// source IP addresses for the VPC. The VPC will have one CSE source IP address per zone.
 	CseSourceIps []VpccseSourceIP `json:"cseSourceIps,omitempty"`
 
 	// The default network ACL to use for subnets created in this VPC.
-	DefaultNetworkACL *NetworkACLReference `json:"defaultNetworkAcl,omitempty"`
+	DefaultNetworkACL NetworkACLReference `json:"defaultNetworkAcl"`
 
 	// The default routing table to use for subnets created in this VPC.
-	DefaultRoutingTable *RoutingTableReference `json:"defaultRoutingTable,omitempty"`
+	DefaultRoutingTable RoutingTableReference `json:"defaultRoutingTable,omitempty"`
 
 	// The default security group to use for network interfaces created in this VPC.
-	DefaultSecurityGroup *SecurityGroupReference `json:"defaultSecurityGroup,omitempty"`
+	DefaultSecurityGroup SecurityGroupReference `json:"defaultSecurityGroup,omitempty"`
 
 	// The URL for this VPC.
-	Href *string `json:"href,omitempty"`
+	Href string `json:"href,omitempty"`
 
 	// The unique identifier for this VPC.
-	ID *string `json:"id,omitempty"`
+	ID string `json:"id,omitempty"`
 
 	// The unique user-defined name for this VPC.
-	Name *string `json:"name,omitempty"`
+	Name string `json:"name,omitempty"`
 
 	// The resource group for this VPC.
-	ResourceGroup *ResourceGroupReference `json:"resourceGroup,omitempty"`
+	ResourceGroup ResourceGroupReference `json:"resourceGroup,omitempty"`
 
 	// The status of this VPC.
-	Status *string `json:"status,omitempty"`
+	Status string `json:"status,omitempty"`
 }
 
 // VPCStatus - whatever the status is (the IBM cloud decides that)
@@ -258,11 +255,11 @@ type VPC struct {
 
 // +kubebuilder:object:root=true
 
-// VPCList - list of existing buckets...
+// VPCList - list of existing VPCs...
 type VPCList struct {
 	metav1.TypeMeta `json:",inline"`
 	metav1.ListMeta `json:"metadata,omitempty"`
 
-	// List of buckets returned
+	// List of VPCs returned
 	Items []VPC `json:"vpcs"`
 }

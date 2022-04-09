@@ -39,14 +39,21 @@ var (
 
 // types metadata.
 var (
-	VPCKind             = reflect.TypeOf(VPC{}).Name()
-	VPCGroupKind        = schema.GroupKind{Group: Group, Kind: VPCKind}.String()
-	VPCKindAPIVersion   = VPCKind + "." + SchemeGroupVersion.String()
-	VPCGroupVersionKind = SchemeGroupVersion.WithKind(VPCKind)
+	VPCKind                = reflect.TypeOf(VPC{}).Name()
+	VPCGroupKind           = schema.GroupKind{Group: Group, Kind: VPCKind}.String()
+	VPCKindAPIVersion      = VPCKind + "." + SchemeGroupVersion.String()
+	VPCGroupVersionKind    = SchemeGroupVersion.WithKind(VPCKind)
+	SubnetKind             = reflect.TypeOf(Subnet{}).Name()
+	SubnetGroupKind        = schema.GroupKind{Group: Group, Kind: SubnetKind}.String()
+	SubnetKindAPIVersion   = SubnetKind + "." + SchemeGroupVersion.String()
+	SubnetGroupVersionKind = SchemeGroupVersion.WithKind(SubnetKind)
 )
 
 func init() {
 	SchemeBuilder.Register(
 		&VPC{},
-		&VPCList{})
+		&VPCList{},
+		&Subnet{},
+		&SubnetList{},
+	)
 }
