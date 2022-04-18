@@ -64,7 +64,7 @@ spec:
 Things to keep in mind
 
 * _deletionPolicy_ is ALWAYS _Orphan_
-* after the first call to crossplane's `Observe`... whatever fields were left upopulated on the k8s side will get their values from the IBM cloud (so the minimal example may "expand" during the next sync cycle)
+* after the first call to crossplane's `Observe`... whatever fields were left unpopulated on the k8s side will get their values from the IBM cloud (so the minimal example may "expand" during the next sync cycle)
 * updates to the config in the IBM cloud happen via JSON patch. Hence, if you want to update the value of some fields only, create a yaml file with __values for only those fields__, and `kubeclt apply -f ...`
   * ...but if you leave the values empty, or do not enter them at all (in the code it is the same thing - those values are just 'nil') <ins>nothing will happen</ins>: the corresp fields in the IBM cloud <ins>WILL NOT</ins> get affected
   * CRNs are needed the first time around (essentially when creating the thing) - from then on you can leave them empty 

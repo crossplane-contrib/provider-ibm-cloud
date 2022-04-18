@@ -38,11 +38,11 @@ func (mg *Cluster) ResolveReferences(ctx context.Context, c client.Reader) error
 		Reference:    mg.Spec.ForProvider.WorkerPools.VPCRef,
 		Selector:     mg.Spec.ForProvider.WorkerPools.VPCSelector,
 		To:           reference.To{Managed: &vpc.VPC{}, List: &vpc.VPCList{}},
-		Extract:      VpcID(),
+		Extract:      vpcID(),
 	})
 
 	if err != nil {
-		return errors.Wrap(err, "spec.forProvider.Source")
+		return errors.Wrap(err, "spec.forProvider.WorkerPools")
 	}
 
 	mg.Spec.ForProvider.WorkerPools.VpcID = reference.ToPtrValue(rsp.ResolvedValue)
@@ -51,14 +51,14 @@ func (mg *Cluster) ResolveReferences(ctx context.Context, c client.Reader) error
 	return nil
 }
 
-// VpcID extracts the resolved VPC CRN - "" if it cannot
-func VpcID() reference.ExtractValueFn {
+// Extracts the resolved VPC CRN - "" if it cannot
+func vpcID() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
 		cr, ok := mg.(*vpc.VPC)
 		if !ok {
 			return ""
 		}
 
-		return *cr.Status.AtProvider.ID
+		return cr.Status.AtProvider.ID
 	}
 }

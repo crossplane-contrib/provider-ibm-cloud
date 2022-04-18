@@ -1,0 +1,20 @@
+apiVersion: vpcv1.ibmcloud.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: harry-subnet-1
+  annotations:
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    byTocalCount:
+      totalIpv4AddressCount: 64
+      routingTable:
+        id: r006-005c9d92-08f1-452d-b553-1f43ac6b5cf2
+      publicGateway:
+        id: r006-8c6df89c-3ea4-4d56-bd38-00d6d68302d9
+      zone: 
+        name: us-south-2
+      vpc: 
+        id: r006-6ddd36ba-20be-4e5a-b44f-a781897358c3
+  providerConfigRef:
+    name: ibm-cloud

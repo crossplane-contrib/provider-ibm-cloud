@@ -38,7 +38,7 @@ func (mg *Bucket) ResolveReferences(ctx context.Context, c client.Reader) error 
 		Reference:    mg.Spec.ForProvider.IbmServiceInstanceIDRef,
 		Selector:     mg.Spec.ForProvider.IbmServiceInstanceIDSelector,
 		To:           reference.To{Managed: &rc2.ResourceInstance{}, List: &rc2.ResourceInstanceList{}},
-		Extract:      SourceGUID(),
+		Extract:      sourceGUID(),
 	})
 
 	if err != nil {
@@ -60,7 +60,7 @@ func (mg *BucketConfig) ResolveReferences(ctx context.Context, c client.Reader) 
 		Reference:    mg.Spec.ForProvider.NameRef,
 		Selector:     mg.Spec.ForProvider.NameSelector,
 		To:           reference.To{Managed: &Bucket{}, List: &BucketList{}},
-		Extract:      SourceName(),
+		Extract:      sourceName(),
 	})
 
 	if err != nil {
@@ -73,8 +73,8 @@ func (mg *BucketConfig) ResolveReferences(ctx context.Context, c client.Reader) 
 	return nil
 }
 
-// SourceGUID extracts the resolved ResourceInstance's GUID - "" if it cannot
-func SourceGUID() reference.ExtractValueFn {
+// Extracts the resolved ResourceInstance's GUID - "" if it cannot
+func sourceGUID() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
 		cr, ok := mg.(*rc2.ResourceInstance)
 		if !ok {
@@ -85,8 +85,8 @@ func SourceGUID() reference.ExtractValueFn {
 	}
 }
 
-// SourceName extracts the resolved Bucket's name - "" if it cannot
-func SourceName() reference.ExtractValueFn {
+// Extracts the resolved Bucket's name - "" if it cannot
+func sourceName() reference.ExtractValueFn {
 	return func(mg resource.Managed) string {
 		cr, ok := mg.(*Bucket)
 		if !ok {

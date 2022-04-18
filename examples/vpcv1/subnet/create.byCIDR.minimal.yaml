@@ -1,0 +1,15 @@
+apiVersion: vpcv1.ibmcloud.crossplane.io/v1alpha1
+kind: Subnet
+metadata:
+  name: harry-subnet-cidr-1
+  annotations:
+spec:
+  deletionPolicy: Delete
+  forProvider:
+    byCIDR:
+      ipv4CIDRBlock: 10.240.64.32/29
+      vpc: 
+        vpcRef: 
+          name: harry-vpc-2-meta-name
+  providerConfigRef:
+    name: ibm-cloud
