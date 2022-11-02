@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -180,15 +181,16 @@ func agrInstance(m ...func(*iamagv2.Rule)) *iamagv2.Rule {
 // Sets up a unit test http server, and creates an external access-group-rule structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalAGR(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*agrExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -227,7 +229,10 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&iamagv2.Rule{})
+						err := json.NewEncoder(w).Encode(&iamagv2.Rule{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -250,7 +255,10 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&iamagv2.Group{})
+						err := json.NewEncoder(w).Encode(&iamagv2.Group{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -273,7 +281,10 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&iamagv2.Group{})
+						err := json.NewEncoder(w).Encode(&iamagv2.Group{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -297,7 +308,10 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.Header().Set("ETag", eTag)
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -338,7 +352,10 @@ func TestAccessGroupRuleObserve(t *testing.T) {
 						cr := agrInstance(func(p *iamagv2.Rule) {
 							p.Name = &ruleName2
 						})
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -421,7 +438,10 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -448,7 +468,10 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -474,7 +497,10 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusConflict)
 						_ = r.Body.Close()
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -500,7 +526,10 @@ func TestAccessGroupRuleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusForbidden)
 						_ = r.Body.Close()
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -698,7 +727,10 @@ func TestAccessGroupRuleUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						cr := agrInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

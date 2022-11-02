@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+	"k8s.io/klog"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -66,8 +67,9 @@ func withExternalSubnetName() subnetModifier {
 // Sets the name in the spec part of the Subnet
 //
 // Params
-//    newName - the new name. If nil, it will be ignored, unless the second parameter is set
-//    acceptNilAsNewName - will set the name to nil
+//
+//	newName - the new name. If nil, it will be ignored, unless the second parameter is set
+//	acceptNilAsNewName - will set the name to nil
 func withSubnetSpecName(newName *string, acceptNilAsNewName bool) subnetModifier {
 	return func(c *crossplaneApi.Subnet) {
 		if newName != nil {
@@ -166,15 +168,16 @@ func withSubnetStatus() subnetModifier {
 // Sets up a unit test http server, and creates an external cluster structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalSubnet(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*subnetExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -193,20 +196,22 @@ func setupServerAndGetUnitTestExternalSubnet(testingObj *testing.T, handlers *[]
 // Creates a Subnet, by creating a generic one + applying a list of modifiers to the Spec part (which is the only one populated)
 //
 // Params
-//      byTotalCount - whether the returned object is "ByTotalCount" or "ByCIDR"
-//		ipVersionNil - whether to set the 'IPVersion' member to nil
-// 		nameNil - whether to set the 'Name' member to nil
-//      networkACLNil - whether to set the 'NetworkACL' member to nil
-//      publicGatewayNil - whether to set the 'PublicGateway' member to nil..
-//		resourceGroupNil - whether to set the 'ResourceGroup' member to nil
-//		routingTableNil - whether to set the 'RoutingTable' member to nil
-//      totalIpv4AddressCountNil - whether to set the 'TotalIpv4AddressCount' member to nil (does not apply if the returned object is 'ByTotalCount')
-//      zoneNil - whether to set the 'Zone' member to nil  (does not apply if the returned object is 'ByTotalCount')
-//      ipv4CIDRBlockNil - whether to set the 'Ipv4CIDRBlockNil' member to nil (does not apply if the returned object is 'ByCIDR')
-//      modifiers... - well, a list thereof
+//
+//	     byTotalCount - whether the returned object is "ByTotalCount" or "ByCIDR"
+//			ipVersionNil - whether to set the 'IPVersion' member to nil
+//			nameNil - whether to set the 'Name' member to nil
+//	     networkACLNil - whether to set the 'NetworkACL' member to nil
+//	     publicGatewayNil - whether to set the 'PublicGateway' member to nil..
+//			resourceGroupNil - whether to set the 'ResourceGroup' member to nil
+//			routingTableNil - whether to set the 'RoutingTable' member to nil
+//	     totalIpv4AddressCountNil - whether to set the 'TotalIpv4AddressCount' member to nil (does not apply if the returned object is 'ByTotalCount')
+//	     zoneNil - whether to set the 'Zone' member to nil  (does not apply if the returned object is 'ByTotalCount')
+//	     ipv4CIDRBlockNil - whether to set the 'Ipv4CIDRBlockNil' member to nil (does not apply if the returned object is 'ByCIDR')
+//	     modifiers... - well, a list thereof
 //
 // Returns
-//      a Subnet
+//
+//	a Subnet
 func createCrossplaneSubnet(byTotalCount bool, ipVersionNil bool, nameNil bool, networkACLNil bool, publicGatewayNil bool,
 	resourceGroupNil bool, routingTableNil bool, totalIpv4AddressCountNil bool, zoneNil bool, ipv4CIDRBlockNil bool,
 	modifiers ...subnetModifier) *crossplaneApi.Subnet {
@@ -268,7 +273,10 @@ func sendBackCollection(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
-	_ = json.NewEncoder(w).Encode(collection)
+	err := json.NewEncoder(w).Encode(collection)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // Tests the Subnet "Create" method
@@ -310,7 +318,10 @@ func testCreateSubnet(t *testing.T) {
 							booleanCombSubnet[40], booleanCombSubnet[41], booleanCombSubnet[42], booleanCombSubnet[43], booleanCombSubnet[44],
 							booleanCombSubnet[45])
 
-						_ = json.NewEncoder(w).Encode(cloudInfo)
+						err := json.NewEncoder(w).Encode(cloudInfo)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

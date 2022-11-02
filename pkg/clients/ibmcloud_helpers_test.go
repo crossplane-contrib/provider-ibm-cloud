@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/pkg/errors"
+	"k8s.io/klog/v2"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 
@@ -68,7 +69,10 @@ var tagsHandler = func(w http.ResponseWriter, r *http.Request) {
 			Items: map2tags(tagsCache),
 		}
 	}
-	_ = json.NewEncoder(w).Encode(tags)
+	err := json.NewEncoder(w).Encode(tags)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 func map2tags(m map[string]bool) []gtagv1.Tag {
@@ -95,7 +99,10 @@ var rgHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(rgl)
+	err := json.NewEncoder(w).Encode(rgl)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // handler to mock client SDK call to global catalog API for plans
@@ -111,7 +118,10 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(planEntry)
+	err := json.NewEncoder(w).Encode(planEntry)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // handler to mock client SDK call to global catalog API for services
@@ -136,7 +146,10 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		}
 	}
-	_ = json.NewEncoder(w).Encode(catEntry)
+	err := json.NewEncoder(w).Encode(catEntry)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 func TestGetResourcePlanID(t *testing.T) {

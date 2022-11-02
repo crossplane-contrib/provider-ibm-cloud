@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -309,15 +310,16 @@ func generateTestarv1Replicas() []int64 {
 // Sets up a unit test http server, and creates an external topic structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*topicExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -357,7 +359,10 @@ func TestTopicObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&arv1.TopicDetail{})
+						err := json.NewEncoder(w).Encode(&arv1.TopicDetail{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -380,7 +385,10 @@ func TestTopicObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&arv1.TopicDetail{})
+						err := json.NewEncoder(w).Encode(&arv1.TopicDetail{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -403,7 +411,10 @@ func TestTopicObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						t := tInstance()
-						_ = json.NewEncoder(w).Encode(t)
+						err := json.NewEncoder(w).Encode(t)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -442,7 +453,10 @@ func TestTopicObserve(t *testing.T) {
 						t := tInstance(func(p *arv1.TopicDetail) {
 							p.Partitions = ibmc.Int64Ptr(int64(3))
 						})
-						_ = json.NewEncoder(w).Encode(t)
+						err := json.NewEncoder(w).Encode(t)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -524,7 +538,10 @@ func TestTopicCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						t := tInstance()
-						_ = json.NewEncoder(w).Encode(t)
+						err := json.NewEncoder(w).Encode(t)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -551,7 +568,10 @@ func TestTopicCreate(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
 						t := tInstance()
-						_ = json.NewEncoder(w).Encode(t)
+						err := json.NewEncoder(w).Encode(t)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -727,7 +747,10 @@ func TestTopicUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						t := tInstance()
-						_ = json.NewEncoder(w).Encode(t)
+						err := json.NewEncoder(w).Encode(t)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

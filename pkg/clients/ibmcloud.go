@@ -32,6 +32,7 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/meta"
@@ -349,12 +350,14 @@ func NewClient(opts ClientOptions) (ClientSession, error) { // nolint:gocyclo
 }
 
 // Params
-//      url - the server url
-// 		bearerToken - the IAM access token
-//      refreshToken - sent from the server
+//
+//	     url - the server url
+//			bearerToken - the IAM access token
+//	     refreshToken - sent from the server
 //
 // Returns
-//      a client which has established a connection with the server
+//
+//	a client which has established a connection with the server
 func generateClustersClientV2(url string, bearerToken string, refreshToken string) (ibmContainerV2.Clusters, error) {
 	blueMixConf := new(bluemix.Config)
 	if url != "" {
@@ -512,7 +515,10 @@ func InterfaceToRawExtension(in interface{}) *runtime.RawExtension {
 	if in == nil {
 		return nil
 	}
-	js, _ := json.Marshal(in)
+	js, err := json.Marshal(in)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 	o := &runtime.RawExtension{
 		Raw: js,
 	}
@@ -525,15 +531,22 @@ func RawExtensionToInterface(in *runtime.RawExtension) interface{} {
 		return nil
 	}
 	o := make(map[string]interface{})
-	_ = json.Unmarshal(in.Raw, &o)
+	err := json.Unmarshal(in.Raw, &o)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 	return o
 }
 
 // MapToRawExtension - create a RawExtension from a Map
 func MapToRawExtension(in map[string]interface{}) *runtime.RawExtension {
 	js := []byte("{}")
+	var err error
 	if len(in) > 0 {
-		js, _ = json.Marshal(in)
+		js, err = json.Marshal(in)
+		if err != nil {
+			klog.Errorf("%s", err)
+		}
 	}
 	o := &runtime.RawExtension{
 		Raw: js,
@@ -547,7 +560,10 @@ func RawExtensionToMap(in *runtime.RawExtension) map[string]interface{} {
 		return nil
 	}
 	o := make(map[string]interface{})
-	_ = json.Unmarshal(in.Raw, &o)
+	err := json.Unmarshal(in.Raw, &o)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 	return o
 }
 

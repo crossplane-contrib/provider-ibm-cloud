@@ -22,7 +22,8 @@ require (
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
 	k8s.io/api v0.18.8
 	k8s.io/apimachinery v0.18.8
-	k8s.io/client-go v0.18.8
+	k8s.io/klog v1.0.0
+	k8s.io/klog/v2 v2.0.0
 	sigs.k8s.io/controller-runtime v0.6.2
 	sigs.k8s.io/controller-tools v0.2.4
 )
@@ -96,8 +97,7 @@ require (
 	gopkg.in/yaml.v2 v2.4.0 // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200605160147-a5ece683394c // indirect
 	k8s.io/apiextensions-apiserver v0.18.6 // indirect
-	k8s.io/klog v1.0.0 // indirect
-	k8s.io/klog/v2 v2.0.0 // indirect
+	k8s.io/client-go v0.18.8 // indirect
 	k8s.io/kube-openapi v0.0.0-20200410145947-61e04a5be9a6 // indirect
 	k8s.io/utils v0.0.0-20200603063816-c1c6865ac451 // indirect
 	sigs.k8s.io/structured-merge-diff/v3 v3.0.0 // indirect

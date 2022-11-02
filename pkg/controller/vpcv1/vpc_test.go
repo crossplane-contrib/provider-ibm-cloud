@@ -25,6 +25,7 @@ import (
 	"testing"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
+	"k8s.io/klog"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -232,7 +233,10 @@ func testCreateVPC(t *testing.T) {
 							booleanCombVPC[25], booleanCombVPC[26], booleanCombVPC[27], booleanCombVPC[28], booleanCombVPC[29],
 							booleanCombVPC[30], booleanCombVPC[31])
 
-						_ = json.NewEncoder(w).Encode(ibmVPCInfo)
+						err := json.NewEncoder(w).Encode(ibmVPCInfo)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -586,7 +590,10 @@ func testObserveVPC(t *testing.T) {
 							booleanCombVPC[25], !booleanCombVPC[26], booleanCombVPC[27], booleanCombVPC[28], booleanCombVPC[29],
 							booleanCombVPC[30], !booleanCombVPC[31], !booleanCombVPC[32])
 
-						_ = json.NewEncoder(w).Encode(collection)
+						err := json.NewEncoder(w).Encode(collection)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
