@@ -28,6 +28,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -174,15 +175,16 @@ func crInstance(m ...func(*iampmv1.CustomRole)) *iampmv1.CustomRole {
 // Sets up a unit test http server, and creates an external client structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external bucket config, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      - an error (iff...)
+//   - the external bucket config, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//   - an error (iff...)
 func setupServerAndGetUnitTestExternalCR(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*crExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil {
@@ -222,7 +224,10 @@ func TestCustomRoleObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						err := json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -245,7 +250,10 @@ func TestCustomRoleObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						err := json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -269,7 +277,10 @@ func TestCustomRoleObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						err := json.NewEncoder(w).Encode(&iampmv1.CustomRole{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -293,7 +304,10 @@ func TestCustomRoleObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.Header().Set("ETag", eTag)
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -334,7 +348,10 @@ func TestCustomRoleObserve(t *testing.T) {
 						cr := crInstance(func(p *iampmv1.CustomRole) {
 							p.Actions = []string{action1}
 						})
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -417,7 +434,10 @@ func TestCustomRoleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -444,7 +464,10 @@ func TestCustomRoleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -470,7 +493,10 @@ func TestCustomRoleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusConflict)
 						_ = r.Body.Close()
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -496,7 +522,10 @@ func TestCustomRoleCreate(t *testing.T) {
 						w.WriteHeader(http.StatusForbidden)
 						_ = r.Body.Close()
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -694,7 +723,10 @@ func TestCustomRoleUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						cr := crInstance()
-						_ = json.NewEncoder(w).Encode(cr)
+						err := json.NewEncoder(w).Encode(cr)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -148,15 +149,16 @@ func wlInstance(m ...func(*icdv5.Whitelist)) *icdv5.Whitelist {
 // Sets up a unit test http server, and creates an external white list structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalWL(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*wlExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -196,7 +198,10 @@ func TestWhitelistObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						err := json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -219,7 +224,10 @@ func TestWhitelistObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						err := json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -242,7 +250,10 @@ func TestWhitelistObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						err := json.NewEncoder(w).Encode(&icdv5.Whitelist{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -264,7 +275,10 @@ func TestWhitelistObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(wlInstance())
+						err := json.NewEncoder(w).Encode(wlInstance())
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -301,7 +315,10 @@ func TestWhitelistObserve(t *testing.T) {
 						sg := wlInstance(func(p *icdv5.Whitelist) {
 							p.IpAddresses[0].Address = &ip3
 						})
-						_ = json.NewEncoder(w).Encode(sg)
+						err := json.NewEncoder(w).Encode(sg)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -381,7 +398,10 @@ func TestWhitelistCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
-						_ = json.NewEncoder(w).Encode(wlInstance())
+						err := json.NewEncoder(w).Encode(wlInstance())
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -450,7 +470,10 @@ func TestWhitelistDelete(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusAccepted)
 						_ = r.Body.Close()
-						_ = json.NewEncoder(w).Encode(wlInstance())
+						err := json.NewEncoder(w).Encode(wlInstance())
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -514,7 +537,10 @@ func TestWhitelistUpdate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
-						_ = json.NewEncoder(w).Encode(wlInstance())
+						err := json.NewEncoder(w).Encode(wlInstance())
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

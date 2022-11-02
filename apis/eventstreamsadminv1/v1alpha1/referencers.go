@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -80,16 +81,23 @@ func ConnSecretRef() reference.ExtractValueFn {
 		if !ok {
 			return ""
 		}
-		return namespacedNameToJSONString(cr.Spec.WriteConnectionSecretToReference.Namespace, cr.Spec.WriteConnectionSecretToReference.Name)
+		n, err := namespacedNameToJSONString(cr.Spec.WriteConnectionSecretToReference.Namespace, cr.Spec.WriteConnectionSecretToReference.Name)
+		if err != nil {
+			klog.Errorf("ConnSecretRef: %s", err)
+		}
+		return n
 	}
 }
 
-func namespacedNameToJSONString(namespace, name string) string {
+func namespacedNameToJSONString(namespace, name string) (string, error) {
 	nsName := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name}
-	b, _ := json.Marshal(nsName)
-	return string(b)
+	b, err := json.Marshal(nsName)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }
 
 func jsonStringToNamespacedName(nsNameStr string) (types.NamespacedName, error) {

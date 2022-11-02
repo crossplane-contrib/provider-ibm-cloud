@@ -27,6 +27,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog"
 
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
@@ -144,15 +145,16 @@ func createCrossplaneBucketConfig(im ...bucketConfigModifier) *v1alpha1.BucketCo
 // Sets up a unit test http server, and creates an external bucket config structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external bucket config, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      - an error (iff...)
+//   - the external bucket config, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//   - an error (iff...)
 func setupServerAndGetUnitTestExternalBucketConfig(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*bucketConfigExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil {
@@ -268,7 +270,10 @@ func TestBucketConfigObserve(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 
 						bc := getIBMBucketConfig()
-						_ = json.NewEncoder(w).Encode(bc)
+						err := json.NewEncoder(w).Encode(bc)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

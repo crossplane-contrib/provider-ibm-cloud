@@ -26,6 +26,7 @@ import (
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
 	"github.com/go-openapi/strfmt"
+	"k8s.io/klog/v2"
 
 	"github.com/IBM/go-sdk-core/core"
 	gcat "github.com/IBM/platform-services-go-sdk/globalcatalogv1"
@@ -65,7 +66,8 @@ func seedTheRandomGenerator() {
 // RandomString returns a random string (of lenth <= 15)
 //
 // Params
-//     withMinLen - if true, the return value has a minimum size of 1 (we need to avoid the reference.ToPtrValue() returning nil
+//
+//	withMinLen - if true, the return value has a minimum size of 1 (we need to avoid the reference.ToPtrValue() returning nil
 //
 // (note that the seed is being taken care of)
 func RandomString(withMinLen bool) string {
@@ -122,10 +124,12 @@ func ReturnConditionalDate(condition bool, val *strfmt.DateTime) *strfmt.DateTim
 // GetTestClient creates a client appropriate for unit testing.
 //
 // Params
-// 	   serverURL - the test server url
+//
+//	serverURL - the test server url
 //
 // Returns
-//     the test client ready to go
+//
+//	the test client ready to go
 func GetTestClient(serverURL string) (ClientSession, error) {
 	opts := ClientOptions{
 		URL: serverURL,
@@ -151,7 +155,10 @@ var TagsTestHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(tags)
+	err := json.NewEncoder(w).Encode(tags)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // RgTestHandler handler to mock client SDK call to resource manager API
@@ -166,7 +173,10 @@ var RgTestHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(rgl)
+	err := json.NewEncoder(w).Encode(rgl)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // PcatTestHandler handler to mock client SDK call to global catalog API for plans
@@ -182,7 +192,10 @@ var PcatTestHandler = func(planName string, planId string) func(w http.ResponseW
 				},
 			},
 		}
-		_ = json.NewEncoder(w).Encode(planEntry)
+		err := json.NewEncoder(w).Encode(planEntry)
+		if err != nil {
+			klog.Errorf("%s", err)
+		}
 	}
 }
 
@@ -202,6 +215,9 @@ var SvcatTestHandler = func(serviceName string) func(w http.ResponseWriter, r *h
 				},
 			},
 		}
-		_ = json.NewEncoder(w).Encode(catEntry)
+		err := json.NewEncoder(w).Encode(catEntry)
+		if err != nil {
+			klog.Errorf("%s", err)
+		}
 	}
 }

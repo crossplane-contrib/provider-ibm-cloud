@@ -27,6 +27,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -246,15 +247,16 @@ func instance(m ...func(*iampmv1.Policy)) *iampmv1.Policy {
 // Sets up a unit test http server, and creates an external policy structure, appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalPM(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*pExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -293,7 +295,10 @@ func TestPolicyObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						err := json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -316,7 +321,10 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						err := json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -339,7 +347,10 @@ func TestPolicyObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						err := json.NewEncoder(w).Encode(&iampmv1.Policy{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -363,7 +374,10 @@ func TestPolicyObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.Header().Set("ETag", eTag)
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -404,7 +418,10 @@ func TestPolicyObserve(t *testing.T) {
 						p := instance(func(p *iampmv1.Policy) {
 							p.Type = &policyTypeAuth
 						})
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -487,7 +504,10 @@ func TestPolicyCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -514,7 +534,10 @@ func TestPolicyCreate(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -540,7 +563,10 @@ func TestPolicyCreate(t *testing.T) {
 						w.WriteHeader(http.StatusConflict)
 						_ = r.Body.Close()
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -566,7 +592,10 @@ func TestPolicyCreate(t *testing.T) {
 						w.WriteHeader(http.StatusForbidden)
 						_ = r.Body.Close()
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -764,7 +793,10 @@ func TestPolicyUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						p := instance()
-						_ = json.NewEncoder(w).Encode(p)
+						err := json.NewEncoder(w).Encode(p)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

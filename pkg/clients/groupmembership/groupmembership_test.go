@@ -13,6 +13,7 @@ import (
 	"github.com/go-openapi/strfmt"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"k8s.io/klog/v2"
 
 	iamagv2 "github.com/IBM/platform-services-go-sdk/iamaccessgroupsv2"
 
@@ -331,7 +332,10 @@ var iamMembersHandler = func(w http.ResponseWriter, r *http.Request) {
 	}
 	resp.Members = members
 	resp.TotalCount = ibmc.Int64Ptr(int64(len(members)))
-	_ = json.NewEncoder(w).Encode(resp)
+	err := json.NewEncoder(w).Encode(resp)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 func TestUpdateAccessGroupMembers(t *testing.T) {

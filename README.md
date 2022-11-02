@@ -10,7 +10,7 @@ adds the following new functionality:
   (e.g. [Resource Controller](https://cloud.ibm.com/apidocs/resource-controller/resource-controller), 
   [IAM](https://cloud.ibm.com/apidocs/iam-access-groups/), etc.)
 * Controllers to provision these resources in IBM Cloud based on the users desired
-  state captured in CRDs they create.
+  state captured in CRs they create.
 * Implementations of Crossplane's portable resource abstractions, enabling IBM Cloud
   resources to fulfill a user's general need for cloud services.
 

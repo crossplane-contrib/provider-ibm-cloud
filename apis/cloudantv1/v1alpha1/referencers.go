@@ -23,6 +23,7 @@ import (
 	"github.com/pkg/errors"
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	"github.com/crossplane/crossplane-runtime/pkg/reference"
@@ -88,7 +89,10 @@ func namespacedNameToJSONString(namespace, name string) string {
 	nsName := types.NamespacedName{
 		Namespace: namespace,
 		Name:      name}
-	b, _ := json.Marshal(nsName)
+	b, err := json.Marshal(nsName)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 	return string(b)
 }
 

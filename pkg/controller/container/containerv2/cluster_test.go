@@ -26,6 +26,7 @@ import (
 	"testing"
 
 	ibmContainerV2 "github.com/IBM-Cloud/bluemix-go/api/container/containerv2"
+	"k8s.io/klog/v2"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
 	"github.com/crossplane/crossplane-runtime/pkg/logging"
@@ -93,15 +94,16 @@ func aStr() string {
 // Sets up a unit test http server, and creates an external cluster structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*clusterExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -144,9 +146,12 @@ func TestCreate(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusCreated)
 
-						_ = json.NewEncoder(w).Encode(ibmContainerV2.ClusterCreateResponse{
+						err := json.NewEncoder(w).Encode(ibmContainerV2.ClusterCreateResponse{
 							ID: aStr(),
 						})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -441,7 +446,10 @@ func TestObserve(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 
 						cloudResponse := crossplaneClient.GetContainerClusterInfo()
-						_ = json.NewEncoder(w).Encode(cloudResponse)
+						err := json.NewEncoder(w).Encode(cloudResponse)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

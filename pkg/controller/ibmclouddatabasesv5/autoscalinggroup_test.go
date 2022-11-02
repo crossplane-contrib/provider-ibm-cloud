@@ -26,6 +26,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/pkg/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -230,15 +231,16 @@ func asgInstance(m ...func(*icdv5.AutoscalingGroup)) *icdv5.AutoscalingGroup {
 // Sets up a unit test http server, and creates an external autoscaling group structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalASG(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*asgExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -278,7 +280,10 @@ func TestAutoscalingGroupObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						err := json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -301,7 +306,10 @@ func TestAutoscalingGroupObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						err := json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -324,7 +332,10 @@ func TestAutoscalingGroupObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusForbidden)
-						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						err := json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -346,7 +357,10 @@ func TestAutoscalingGroupObserve(t *testing.T) {
 							t.Errorf("r: -want, +got:\n%s", diff)
 						}
 						w.Header().Set("Content-Type", "application/json")
-						_ = json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{Autoscaling: asgInstance()})
+						err := json.NewEncoder(w).Encode(&icdv5.GetAutoscalingConditionsResponse{Autoscaling: asgInstance()})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -385,7 +399,10 @@ func TestAutoscalingGroupObserve(t *testing.T) {
 								ag.Cpu.Rate.IncreasePercent = ibmc.Int64PtrToFloat64Ptr(ibmc.Int64Ptr(int64(cpuRateIncreasePercent2)))
 							},
 						)}
-						_ = json.NewEncoder(w).Encode(asg)
+						err := json.NewEncoder(w).Encode(asg)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -466,7 +483,10 @@ func TestAutoscalingGroupCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						resp := icdv5.SetAutoscalingConditionsResponse{Task: &icdv5.Task{}}
-						_ = json.NewEncoder(w).Encode(resp)
+						err := json.NewEncoder(w).Encode(resp)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -599,7 +619,10 @@ func TestAutoscalingGroupUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						resp := icdv5.SetAutoscalingConditionsResponse{Task: &icdv5.Task{}}
-						_ = json.NewEncoder(w).Encode(resp)
+						err := json.NewEncoder(w).Encode(resp)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},

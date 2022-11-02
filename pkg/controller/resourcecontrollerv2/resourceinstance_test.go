@@ -29,6 +29,7 @@ import (
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -174,7 +175,10 @@ var tagsHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(tags)
+	err := json.NewEncoder(w).Encode(tags)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // handler to mock client SDK call to resource manager API
@@ -189,7 +193,10 @@ var rgHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(rgl)
+	err := json.NewEncoder(w).Encode(rgl)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // handler to mock client SDK call to global catalog API for services
@@ -207,14 +214,20 @@ var svcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(catEntry)
+	err := json.NewEncoder(w).Encode(catEntry)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 func listResourceInstancesNoItems(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	_ = r.Body.Close()
-	_ = json.NewEncoder(w).Encode(&rcv2.ResourceInstancesList{RowsCount: ibmc.Int64Ptr(0)})
+	err := json.NewEncoder(w).Encode(&rcv2.ResourceInstancesList{RowsCount: ibmc.Int64Ptr(0)})
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 // handler to mock client SDK call to global catalog API for plans
@@ -229,7 +242,10 @@ var pcatHandler = func(w http.ResponseWriter, r *http.Request) {
 			},
 		},
 	}
-	_ = json.NewEncoder(w).Encode(planEntry)
+	err := json.NewEncoder(w).Encode(planEntry)
+	if err != nil {
+		klog.Errorf("%s", err)
+	}
 }
 
 func resourceInstanceSpec() v1alpha1.ResourceInstanceParameters {
@@ -296,15 +312,16 @@ func genTestCRResourceInstance(im ...instanceModifier) *v1alpha1.ResourceInstanc
 // Sets up a unit test http server, and creates an external resource instance structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalRI(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*resourceinstanceExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -344,7 +361,10 @@ func TestObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&rcv2.ResourceInstance{})
+						err := json.NewEncoder(w).Encode(&rcv2.ResourceInstance{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -367,7 +387,10 @@ func TestObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&rcv2.ResourceInstance{})
+						err := json.NewEncoder(w).Encode(&rcv2.ResourceInstance{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -390,7 +413,10 @@ func TestObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						ri := genTestSDKResourceInstance()
-						_ = json.NewEncoder(w).Encode(ri)
+						err := json.NewEncoder(w).Encode(ri)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 				{
@@ -442,7 +468,10 @@ func TestObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						ri := genTestSDKResourceInstance()
 						ri.Locked = ibmc.BoolPtr(true)
-						_ = json.NewEncoder(w).Encode(ri)
+						err := json.NewEncoder(w).Encode(ri)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 				{
@@ -493,7 +522,10 @@ func TestObserve(t *testing.T) {
 						w.Header().Set("Content-Type", "application/json")
 						ri := genTestSDKResourceInstance()
 						ri.State = reference.ToPtrValue("pending_reclamation")
-						_ = json.NewEncoder(w).Encode(ri)
+						err := json.NewEncoder(w).Encode(ri)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -569,7 +601,10 @@ func TestCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						ri := genTestSDKResourceInstance()
-						_ = json.NewEncoder(w).Encode(ri)
+						err := json.NewEncoder(w).Encode(ri)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 				{
@@ -621,7 +656,10 @@ func TestCreate(t *testing.T) {
 							"message":     errNoRCDep,
 							"status_code": 400,
 						}
-						_ = json.NewEncoder(w).Encode(&b)
+						err := json.NewEncoder(w).Encode(&b)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 				{
@@ -807,7 +845,10 @@ func TestUpdate(t *testing.T) {
 						w.WriteHeader(http.StatusOK)
 						_ = r.Body.Close()
 						ri := genTestSDKResourceInstance()
-						_ = json.NewEncoder(w).Encode(ri)
+						err := json.NewEncoder(w).Encode(ri)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 				{

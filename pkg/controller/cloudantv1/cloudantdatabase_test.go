@@ -27,6 +27,7 @@ import (
 	"github.com/pkg/errors"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/klog/v2"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 
 	cpv1alpha1 "github.com/crossplane/crossplane-runtime/apis/core/v1alpha1"
@@ -219,15 +220,16 @@ func generateTestcv1ContentInformationSizes() *cv1.ContentInformationSizes {
 // Sets up a unit test http server, and creates an external cloudant db structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternal(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*cloudantdatabaseExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {
@@ -266,7 +268,10 @@ func TestCloudantDatabaseObserve(t *testing.T) {
 						// content type should always set before writeHeader()
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusNotFound)
-						_ = json.NewEncoder(w).Encode(&cv1.DatabaseInformation{})
+						err := json.NewEncoder(w).Encode(&cv1.DatabaseInformation{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -289,7 +294,10 @@ func TestCloudantDatabaseObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						w.WriteHeader(http.StatusBadRequest)
-						_ = json.NewEncoder(w).Encode(&cv1.DatabaseInformation{})
+						err := json.NewEncoder(w).Encode(&cv1.DatabaseInformation{})
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -312,7 +320,10 @@ func TestCloudantDatabaseObserve(t *testing.T) {
 						}
 						w.Header().Set("Content-Type", "application/json")
 						cdb := cdbInstance()
-						_ = json.NewEncoder(w).Encode(cdb)
+						err := json.NewEncoder(w).Encode(cdb)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -338,45 +349,6 @@ func TestCloudantDatabaseObserve(t *testing.T) {
 				},
 			},
 		},
-		// "ObservedCloudantDatabaseNotUpToDate": {
-		// 	handlers: []handler{
-		// 		{
-		// 			path: "/",
-		// 			handlerFunc: func(w http.ResponseWriter, r *http.Request) {
-		// 				_ = r.Body.Close()
-		// 				if diff := cmp.Diff(http.MethodGet, r.Method); diff != "" {
-		// 					t.Errorf("r: -want, +got:\n%s", diff)
-		// 				}
-		// 				w.Header().Set("Content-Type", "application/json")
-		// 				cdb := cdbInstance(func(p *cv1.DatabaseInformation) {
-		// 					p.Props.Partitioned = nil
-		// 				})
-		// 				_ = json.NewEncoder(w).Encode(cdb)
-		// 			},
-		// 		},
-		// 	},
-		// 	kube: &test.MockClient{
-		// 		MockUpdate: test.NewMockUpdateFn(nil),
-		// 	},
-		// 	args: args{
-		// 		mg: cloudantdatabase(
-		// 			cdbWithExternalNameAnnotation(cdbName),
-		// 			cdbWithSpec(*cdbParams()),
-		// 			cdbWithStatus(*cdbEmptyObservation(func(p *v1alpha1.CloudantDatabaseObservation) { p.State = "active" })),
-		// 		),
-		// 	},
-		// 	want: want{
-		// 		mg: cloudantdatabase(cdbWithSpec(*cdbParams()),
-		// 			cdbWithConditions(cpv1alpha1.Available()),
-		// 			cdbWithStatus(*cdbObservation()),
-		// 		),
-		// 		obs: managed.ExternalObservation{
-		// 			ResourceExists:    true,
-		// 			ResourceUpToDate:  false,
-		// 			ConnectionDetails: nil,
-		// 		},
-		// 	},
-		// },
 	}
 
 	for name, tc := range cases {
@@ -433,7 +405,10 @@ func TestCloudantDatabaseCreate(t *testing.T) {
 						w.WriteHeader(http.StatusCreated)
 						_ = r.Body.Close()
 						cdb := cdbInstance()
-						_ = json.NewEncoder(w).Encode(cdb)
+						err := json.NewEncoder(w).Encode(cdb)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
@@ -460,7 +435,10 @@ func TestCloudantDatabaseCreate(t *testing.T) {
 						w.WriteHeader(http.StatusBadRequest)
 						_ = r.Body.Close()
 						cdb := cdbInstance()
-						_ = json.NewEncoder(w).Encode(cdb)
+						err := json.NewEncoder(w).Encode(cdb)
+						if err != nil {
+							klog.Errorf("%s", err)
+						}
 					},
 				},
 			},
