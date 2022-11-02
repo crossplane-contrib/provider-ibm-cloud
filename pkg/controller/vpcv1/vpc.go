@@ -18,6 +18,7 @@ package vpcv1
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
@@ -131,7 +132,7 @@ func (c *vpcExternal) Observe(ctx context.Context, mg resource.Managed) (managed
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return managed.ExternalObservation{}, errors.New("ListVpcs returned status code: " + string(response.StatusCode) + ", and response: " + response.String())
+		return managed.ExternalObservation{}, errors.New("ListVpcs returned status code: " + fmt.Sprint(response.StatusCode) + ", and response: " + response.String())
 	}
 
 	if vpcCollection != nil {
