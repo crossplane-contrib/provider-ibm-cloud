@@ -49,7 +49,7 @@ import (
 )
 
 const (
-	numTests = 9 // decent size (we want to avoid timing out, too)
+	numTests = 3 // decent size (we want to avoid timing out, too)
 )
 
 var (
@@ -71,8 +71,9 @@ func withExternalVPCName() vpcModifier {
 // Sets the name in the spec part of the VPC
 //
 // Params
-//    newName - the new name. If nil, it will be ignored, unless the second parameter is set
-//    acceptNilAsNewName - will set the name to nil
+//
+//	newName - the new name. If nil, it will be ignored, unless the second parameter is set
+//	acceptNilAsNewName - will set the name to nil
 func withVPCSpecName(newName *string, acceptNilAsNewName bool) vpcModifier {
 	return func(c *crossplaneApi.VPC) {
 		if newName != nil {
@@ -141,13 +142,15 @@ func withVPCStatus() vpcModifier {
 // Creates a VPC, by creating a generic one + applying a list of modifiers to the Spec part (which is the only one populated)
 //
 // Params
-//		addressNil - whether to set the 'AddressPrefixManagement' member to nil
-// 		nameNil - whether to set the 'Name' member to nil
-//		resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
-//      modifiers... - well, a list thereof
+//
+//			addressNil - whether to set the 'AddressPrefixManagement' member to nil
+//			nameNil - whether to set the 'Name' member to nil
+//			resourceGroupIDNil - whether to set the 'resourceGroupIDNil' member to nil
+//	     modifiers... - well, a list thereof
 //
 // Returns
-//      a VPC
+//
+//	a VPC
 func createCrossplaneVPC(addressNil bool, nameNil bool, resourceGroupIDNil bool, modifiers ...vpcModifier) *crossplaneApi.VPC {
 	result := &crossplaneApi.VPC{
 		Spec: crossplaneApi.VPCSpec{
@@ -168,15 +171,16 @@ func createCrossplaneVPC(addressNil bool, nameNil bool, resourceGroupIDNil bool,
 // Sets up a unit test http server, and creates an external cluster structure appropriate for unit test.
 //
 // Params
-//	   testingObj - the test object
-//	   handlers - the handlers that create the responses
-//	   client - the controller runtime client
+//
+//	testingObj - the test object
+//	handlers - the handlers that create the responses
+//	client - the controller runtime client
 //
 // Returns
-//		- the external object, ready for unit test
-//		- the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
-//		  garbage collection)
-//      -- an error (if...)
+//   - the external object, ready for unit test
+//   - the test http server, on which the caller should call 'defer ....Close()' (reason for this is we need to keep it around to prevent
+//     garbage collection)
+//     -- an error (if...)
 func setupServerAndGetUnitTestExternalVPC(testingObj *testing.T, handlers *[]tstutil.Handler, kube *client.Client) (*vpcExternal, *httptest.Server, error) {
 	mClient, tstServer, err := tstutil.SetupTestServerClient(testingObj, handlers)
 	if err != nil || mClient == nil || tstServer == nil {

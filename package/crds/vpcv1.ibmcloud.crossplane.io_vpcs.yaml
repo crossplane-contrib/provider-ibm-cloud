@@ -21,10 +21,10 @@ spec:
   scope: Cluster
   versions:
   - additionalPrinterColumns:
-    - jsonPath: .status.bindingPhase
-      name: STATUS
+    - jsonPath: .status.conditions[?(@.type=='Synced')].status
+      name: SYNCED
       type: string
-    - jsonPath: .status.atProvider.state
+    - jsonPath: .status.atProvider.status
       name: STATE
       type: string
     - jsonPath: .spec.classRef.name

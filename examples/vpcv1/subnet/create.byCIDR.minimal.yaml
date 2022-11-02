@@ -7,9 +7,11 @@ spec:
   deletionPolicy: Delete
   forProvider:
     byCIDR:
-      ipv4CIDRBlock: 10.240.64.32/29
+      ipv4CIDRBlock: 10.240.64.0/24
       vpc: 
         vpcRef: 
           name: harry-vpc-2-meta-name
+      resourceGroup:
+        id: b706e89f4ddc4a90b59a383409673135    
   providerConfigRef:
     name: ibm-cloud

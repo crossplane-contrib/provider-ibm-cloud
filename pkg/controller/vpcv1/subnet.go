@@ -18,6 +18,7 @@ package vpcv1
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	ibmVPC "github.com/IBM/vpc-go-sdk/vpcv1"
@@ -109,11 +110,13 @@ type subnetExternal struct {
 }
 
 // Params
-//     c - ...
-//     crn - a subnet's crn
+//
+//	c - ...
+//	crn - a subnet's crn
 //
 // Returns
-//     the subnet with the given CRN, nil o/w
+//
+//	the subnet with the given CRN, nil o/w
 func getSubnet(c *subnetExternal, crn string) (*ibmVPC.Subnet, error) {
 	subnetCollection, response, err := c.client.VPCClient().ListSubnets(&ibmVPC.ListSubnetsOptions{})
 	if err != nil {
@@ -121,7 +124,7 @@ func getSubnet(c *subnetExternal, crn string) (*ibmVPC.Subnet, error) {
 	}
 
 	if response.StatusCode != http.StatusOK {
-		return nil, errors.New("ListSubnets returned status code: " + string(response.StatusCode) + ", and response: " + response.String())
+		return nil, errors.New("ListSubnets returned status code: " + fmt.Sprint(response.StatusCode) + ", and response: " + response.String())
 	}
 
 	if subnetCollection != nil {

@@ -9,6 +9,6 @@ spec:
     classicAccess: false
     name: harry-vpc-2
     resourceGroup:
-      id: 80bd19ee87314085bb8ac243e6e010d9
+      id: b706e89f4ddc4a90b59a383409673135
   providerConfigRef:
     name: ibm-cloud

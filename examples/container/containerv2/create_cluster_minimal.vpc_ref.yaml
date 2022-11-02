@@ -12,17 +12,17 @@ spec:
     kubeVersion: 1.21.7_1541
     podSubnet: 172.17.0.0/18
     serviceSubnet: 172.21.0.0/16
-    cosInstanceCRN: 'crn:v1:bluemix:public:containers-kubernetes:us-south:a/0b5a00334eaf9eb9339d2ab48f20d7f5:c7jkited0fh21rkqk92g::'
+    cosInstanceCRN: 'crn:v1:bluemix:public:cloud-object-storage:global:a/4916c9cb6f87d36886c13a43cb4e7786:5ffc919d-1366-4396-b624-bc577a412664::'
     defaultWorkerPoolEntitlement: ''
     workerPool:
       name: my-worker-pool
       entitlement: ''
       flavor: cx2.2x4
       vpcRef: 
-        name: the-meta-name
-      workerCount: 3
+        name: harry-vpc-2-meta-name
+      workerCount: 2
       zones:
         - id: us-south-1
-          subnetID: 0717-2af44258-e749-481a-868e-a7cc167464d0
+          subnetID: 0727-9b298420-022d-40a8-bb28-143d4c9e94c1
   providerConfigRef:
     name: ibm-cloud
